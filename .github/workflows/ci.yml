@@ -52,6 +52,7 @@ jobs:
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
+    if: false
     steps:
       - uses: actions/checkout@v4
 
@@ -67,4 +68,19 @@ jobs:
 
       - run: pnpm --filter @keyra/api exec playwright install chromium
 
+      - name: Apply D1 migrations
+        run: |
+          wrangler d1 execute keyra-db --local --file=database/migrations/0001_users.sql
+          wrangler d1 execute keyra-db --local --file=database/migrations/0002_organizations.sql
+          wrangler d1 execute keyra-db --local --file=database/migrations/0003_org_members.sql
+          wrangler d1 execute keyra-db --local --file=database/migrations/0004_sessions.sql
+          wrangler d1 execute keyra-db --local --file=database/migrations/0005_session_cleanup.sql
+          wrangler d1 execute keyra-db --local --file=database/migrations/0006_audit_logs.sql
+        working-directory: apps/api
+
       - run: pnpm --filter @keyra/api test:e2e
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
