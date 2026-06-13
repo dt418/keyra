@@ -15,16 +15,17 @@ export async function authMiddleware(c: Context, next: Next) {
   }
 
   const token = authHeader.slice(7);
+  let payload;
   try {
-    const payload = await verifyToken(token, c.env.JWT_SECRET);
-    if (payload.type !== 'access') {
-      throw new AppError('UNAUTHORIZED', 'Invalid token type', 401);
-    }
-    c.set('userId', payload.sub);
-    c.set('userEmail', payload.email as string);
-    c.set('sessionId', (payload as { sessionId?: string }).sessionId);
-    await next();
+    payload = await verifyToken(token, c.env.JWT_SECRET);
   } catch {
     throw new AppError('UNAUTHORIZED', 'Invalid or expired token', 401);
   }
+  if (payload.type !== 'access') {
+    throw new AppError('UNAUTHORIZED', 'Invalid token type', 401);
+  }
+  c.set('userId', payload.sub);
+  c.set('userEmail', payload.email as string);
+  c.set('sessionId', (payload as { sessionId?: string }).sessionId);
+  await next();
 }

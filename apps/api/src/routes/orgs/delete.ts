@@ -3,9 +3,6 @@ import { AppError } from '../../middleware/error';
 
 export async function deleteOrgHandler(c: Context) {
   const userId = c.get('userId');
-  if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'User not authenticated', 401);
-  }
 
   const orgId = c.req.param('id');
 
