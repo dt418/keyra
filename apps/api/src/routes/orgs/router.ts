@@ -4,6 +4,7 @@ import { listOrgsHandler } from './list';
 import { createOrgHandler } from './create';
 import { getOrgHandler } from './get';
 import { updateOrgHandler } from './update';
+import { deleteOrgHandler } from './delete';
 
 export const orgsRouter = new Hono();
 
@@ -13,3 +14,4 @@ orgsRouter.get('/', listOrgsHandler);
 orgsRouter.post('/', createOrgHandler);
 orgsRouter.get('/:id', getOrgHandler);
 orgsRouter.patch('/:id', updateOrgHandler);
+orgsRouter.delete('/:id', deleteOrgHandler);

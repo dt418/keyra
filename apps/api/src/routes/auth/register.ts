@@ -60,12 +60,13 @@ export async function registerHandler(c: Context) {
     .bind(userId, email.toLowerCase(), hashedPassword, name, now, now)
     .run();
 
+  const sessionId = crypto.randomUUID();
   const accessToken = await signAccessToken(
-    { sub: userId, email: email.toLowerCase() },
+    { sub: userId, email: email.toLowerCase(), sessionId },
     c.env.JWT_SECRET
   );
   const refreshToken = await signRefreshToken(
-    { sub: userId, email: email.toLowerCase() },
+    { sub: userId, email: email.toLowerCase(), jti: sessionId },
     c.env.JWT_REFRESH_SECRET
   );
 

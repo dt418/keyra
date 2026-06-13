@@ -27,10 +27,6 @@ interface OAuthUserInfo {
   avatar_url?: string;
 }
 
-interface TokenResponse {
-  access_token?: string;
-}
-
 interface GoogleUserInfo {
   id: string;
   email: string;
@@ -203,12 +199,13 @@ export async function oauthCallbackHandler(c: Context) {
     .first() as DbUser | null | undefined;
 
   if (existingByOAuth) {
+    const sessionId = crypto.randomUUID();
     const jwtAccessToken = await signAccessToken(
-      { sub: existingByOAuth.id, email: existingByOAuth.email },
+      { sub: existingByOAuth.id, email: existingByOAuth.email, sessionId },
       c.env.JWT_SECRET
     );
     const jwtRefreshToken = await signRefreshToken(
-      { sub: existingByOAuth.id, email: existingByOAuth.email },
+      { sub: existingByOAuth.id, email: existingByOAuth.email, jti: sessionId },
       c.env.JWT_REFRESH_SECRET
     );
     await storeRefreshToken(c, existingByOAuth.id, jwtRefreshToken);
@@ -228,12 +225,13 @@ export async function oauthCallbackHandler(c: Context) {
     .first() as DbUser | null | undefined;
 
   if (existingByEmail) {
+    const sessionId = crypto.randomUUID();
     const jwtAccessToken = await signAccessToken(
-      { sub: existingByEmail.id, email: existingByEmail.email },
+      { sub: existingByEmail.id, email: existingByEmail.email, sessionId },
       c.env.JWT_SECRET
     );
     const jwtRefreshToken = await signRefreshToken(
-      { sub: existingByEmail.id, email: existingByEmail.email },
+      { sub: existingByEmail.id, email: existingByEmail.email, jti: sessionId },
       c.env.JWT_REFRESH_SECRET
     );
     await storeRefreshToken(c, existingByEmail.id, jwtRefreshToken);
@@ -257,12 +255,13 @@ export async function oauthCallbackHandler(c: Context) {
     .bind(userId, userInfo.email.toLowerCase(), name, userInfo.avatar_url ?? null, provider, userInfo.id, now, now)
     .run();
 
+  const sessionId = crypto.randomUUID();
   const jwtAccessToken = await signAccessToken(
-    { sub: userId, email: userInfo.email.toLowerCase() },
+    { sub: userId, email: userInfo.email.toLowerCase(), sessionId },
     c.env.JWT_SECRET
   );
   const jwtRefreshToken = await signRefreshToken(
-    { sub: userId, email: userInfo.email.toLowerCase() },
+    { sub: userId, email: userInfo.email.toLowerCase(), jti: sessionId },
     c.env.JWT_REFRESH_SECRET
   );
 

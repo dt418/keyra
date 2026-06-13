@@ -9,7 +9,7 @@ export interface TokenPayload extends JWTPayload {
 }
 
 export async function signAccessToken(
-  payload: { sub: string; email: string },
+  payload: { sub: string; email: string; sessionId?: string },
   secret: string,
   expiresIn = '15m'
 ): Promise<string> {
@@ -21,7 +21,7 @@ export async function signAccessToken(
 }
 
 export async function signRefreshToken(
-  payload: { sub: string; email: string },
+  payload: { sub: string; email: string; jti?: string },
   secret: string,
   expiresIn = '7d'
 ): Promise<string> {

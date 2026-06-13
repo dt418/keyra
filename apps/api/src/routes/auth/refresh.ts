@@ -56,12 +56,19 @@ export async function refreshHandler(c: Context) {
     throw new AppError('UNAUTHORIZED', 'User not found', 401);
   }
 
+  if (payload.jti) {
+    await c.env.DB.prepare('UPDATE sessions SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL')
+      .bind(new Date().toISOString(), payload.jti)
+      .run();
+  }
+
+  const newSessionId = crypto.randomUUID();
   const newAccessToken = await signAccessToken(
-    { sub: user.id, email: user.email },
+    { sub: user.id, email: user.email, sessionId: newSessionId },
     c.env.JWT_SECRET
   );
   const newRefreshToken = await signRefreshToken(
-    { sub: user.id, email: user.email },
+    { sub: user.id, email: user.email, jti: newSessionId },
     c.env.JWT_REFRESH_SECRET
   );
 

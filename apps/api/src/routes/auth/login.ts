@@ -53,12 +53,13 @@ export async function loginHandler(c: Context) {
     throw new AppError('UNAUTHORIZED', 'Invalid email or password', 401);
   }
 
+  const sessionId = crypto.randomUUID();
   const accessToken = await signAccessToken(
-    { sub: user.id, email: user.email },
+    { sub: user.id, email: user.email, sessionId },
     c.env.JWT_SECRET
   );
   const refreshToken = await signRefreshToken(
-    { sub: user.id, email: user.email },
+    { sub: user.id, email: user.email, jti: sessionId },
     c.env.JWT_REFRESH_SECRET
   );
 
