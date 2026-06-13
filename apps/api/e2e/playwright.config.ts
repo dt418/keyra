@@ -1,11 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const isCI = process.env.CI === 'true';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
+  workers: isCI ? 1 : 1,
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:8788',
@@ -20,7 +22,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm --filter @keyra/api dev',
     url: 'http://localhost:8788',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !isCI,
     timeout: 120 * 1000,
     env: {
       CLOUDFLARE_ACCOUNT_ID: 'test-account',

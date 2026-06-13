@@ -27,10 +27,16 @@ const mockEnv = {
 };
 
 function createMockContext(overrides: Record<string, unknown> = {}) {
+  const reqOverrides = (overrides.req || {}) as Record<string, unknown>;
   return {
     req: {
-      json: vi.fn().mockResolvedValue({}),
-      param: vi.fn().mockReturnValue({}),
+      json: (reqOverrides.json as typeof vi.fn) || vi.fn().mockResolvedValue({}),
+      param: (reqOverrides.param as typeof vi.fn) || vi.fn().mockReturnValue({}),
+      header: (name?: string) => {
+        if (name === 'cf-connecting-ip') return '127.0.0.1';
+        if (name === 'user-agent') return 'test-agent';
+        return undefined;
+      },
     },
     env: mockEnv,
     json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
@@ -143,8 +149,8 @@ describe('oauthCallbackHandler', () => {
     mockDB.first.mockResolvedValueOnce(null);
 
     const fetchMock = vi.fn();
-    fetchMock.mockResolvedValueOnce(new Response(new URLSearchParams({ access_token: 'provider-token' }).toString()), { ok: true });
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: '123', email: 'new@example.com', name: 'New User' }), { ok: true }));
+    fetchMock.mockResolvedValueOnce(new Response(new URLSearchParams({ access_token: 'provider-token' }).toString(), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: '123', email: 'new@example.com', name: 'New User' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await oauthCallbackHandler(ctx);
@@ -173,8 +179,8 @@ describe('oauthCallbackHandler', () => {
     mockDB.first.mockResolvedValueOnce({ id: 'existing-oauth-user', email: 'existing@example.com', name: 'Existing User' });
 
     const fetchMock = vi.fn();
-    fetchMock.mockResolvedValueOnce(new Response(new URLSearchParams({ access_token: 'provider-token' }).toString()), { ok: true });
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: '456', email: 'existing@example.com', name: 'Existing' }), { ok: true }));
+    fetchMock.mockResolvedValueOnce(new Response(new URLSearchParams({ access_token: 'provider-token' }).toString(), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: '456', email: 'existing@example.com', name: 'Existing' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await oauthCallbackHandler(ctx);
@@ -245,8 +251,8 @@ describe('oauthCallbackHandler', () => {
       .mockResolvedValueOnce({ id: 'linked-user', email: 'linked@example.com', name: 'Linked User' });
 
     const fetchMock = vi.fn();
-    fetchMock.mockResolvedValueOnce(new Response(new URLSearchParams({ access_token: 'provider-token' }).toString()), { ok: true });
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: '789', email: 'linked@example.com', name: 'Linked' }), { ok: true }));
+    fetchMock.mockResolvedValueOnce(new Response(new URLSearchParams({ access_token: 'provider-token' }).toString(), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: '789', email: 'linked@example.com', name: 'Linked' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await oauthCallbackHandler(ctx);

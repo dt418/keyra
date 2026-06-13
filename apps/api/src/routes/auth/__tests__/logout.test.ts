@@ -10,6 +10,13 @@ const mockDB = {
 
 function createMockContext(sessionId?: string) {
   const ctx = {
+    req: {
+      header: vi.fn().mockImplementation((name?: string) => {
+        if (name === 'cf-connecting-ip') return '127.0.0.1';
+        if (name === 'user-agent') return 'test-agent';
+        return undefined;
+      }),
+    },
     env: { DB: mockDB },
     json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
     get: vi.fn((key: string) => {

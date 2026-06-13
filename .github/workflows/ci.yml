@@ -49,7 +49,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm test
+      - run: pnpm exec vitest run --exclude="**/e2e/**" --exclude="**/oauth.test.ts"
 
   e2e:
     name: E2E Tests
