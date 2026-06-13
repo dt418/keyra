@@ -67,4 +67,4 @@ jobs:
 
       - run: pnpm --filter @keyra/api exec playwright install chromium
 
-      - run: pnpm test:e2e
+      - run: pnpm --filter @keyra/api test:e2e
