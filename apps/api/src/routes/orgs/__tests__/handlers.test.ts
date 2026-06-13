@@ -77,7 +77,13 @@ describe('listOrgsHandler', () => {
 
 describe('createOrgHandler', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockDB.prepare.mockClear();
+    mockDB.bind.mockClear();
+    mockDB.first.mockReset();
+    mockDB.first.mockResolvedValue(null);
+    mockDB.all.mockReset();
+    mockDB.run.mockReset();
+    mockDB.run.mockResolvedValue({ success: true });
   });
 
   it('should create organization successfully', async () => {
@@ -108,7 +114,7 @@ describe('createOrgHandler', () => {
   });
 
   it('should reject duplicate slug', async () => {
-    mockDB.first.mockResolvedValueOnce({ id: 'existing-org' });
+    mockDB.run.mockRejectedValueOnce(new Error('UNIQUE constraint failed: organizations.slug'));
 
     const ctx = createMockContext({
       req: {
@@ -125,7 +131,13 @@ describe('createOrgHandler', () => {
 
 describe('getOrgHandler', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockDB.prepare.mockClear();
+    mockDB.bind.mockClear();
+    mockDB.first.mockReset();
+    mockDB.first.mockResolvedValue(null);
+    mockDB.all.mockReset();
+    mockDB.run.mockReset();
+    mockDB.run.mockResolvedValue({ success: true });
   });
 
   it('should return organization details for member', async () => {
@@ -150,6 +162,7 @@ describe('getOrgHandler', () => {
           id: 'org-1',
           name: 'Test Org',
           slug: 'test-org',
+          updated_at: '2024-01-01',
         }),
       })
     );
@@ -173,7 +186,13 @@ describe('getOrgHandler', () => {
 
 describe('updateOrgHandler', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockDB.prepare.mockClear();
+    mockDB.bind.mockClear();
+    mockDB.first.mockReset();
+    mockDB.first.mockResolvedValue(null);
+    mockDB.all.mockReset();
+    mockDB.run.mockReset();
+    mockDB.run.mockResolvedValue({ success: true });
   });
 
   it('should update organization as owner', async () => {

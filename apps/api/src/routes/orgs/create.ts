@@ -4,9 +4,6 @@ import { AppError } from '../../middleware/error';
 
 export async function createOrgHandler(c: Context) {
   const userId = c.get('userId');
-  if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
-  }
 
   const body = await c.req.json();
   const parsed = createOrgSchema.safeParse(body);
@@ -16,25 +13,23 @@ export async function createOrgHandler(c: Context) {
 
   const { name, slug } = parsed.data;
 
-  const existing = await c.env.DB.prepare(
-    'SELECT id FROM organizations WHERE slug = ?'
-  )
-    .bind(slug.toLowerCase())
-    .first();
-
-  if (existing) {
-    throw new AppError('SLUG_EXISTS', 'Organization slug already exists', 409);
-  }
-
   const orgId = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  await c.env.DB.prepare(
-    `INSERT INTO organizations (id, name, slug, plan, created_at, updated_at)
-     VALUES (?, ?, ?, 'free', ?, ?)`
-  )
-    .bind(orgId, name, slug.toLowerCase(), now, now)
-    .run();
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO organizations (id, name, slug, plan, created_at, updated_at)
+       VALUES (?, ?, ?, 'free', ?, ?)`
+    )
+      .bind(orgId, name, slug.toLowerCase(), now, now)
+      .run();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('UNIQUE constraint failed: organizations.slug')) {
+      throw new AppError('SLUG_EXISTS', 'Organization slug already exists', 409);
+    }
+    throw err;
+  }
 
   const memberId = crypto.randomUUID();
   await c.env.DB.prepare(

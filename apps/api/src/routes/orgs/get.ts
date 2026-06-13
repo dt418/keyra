@@ -3,10 +3,6 @@ import { AppError } from '../../middleware/error';
 
 export async function getOrgHandler(c: Context) {
   const userId = c.get('userId');
-  if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
-  }
-
   const { id } = c.req.param();
 
   const membership = await c.env.DB.prepare(
@@ -36,6 +32,7 @@ export async function getOrgHandler(c: Context) {
       slug: org.slug,
       plan: org.plan,
       created_at: org.created_at,
+      updated_at: org.updated_at,
     },
   });
 }

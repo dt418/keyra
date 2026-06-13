@@ -4,11 +4,9 @@ import { AppError } from '../../middleware/error';
 
 export async function updateOrgHandler(c: Context) {
   const userId = c.get('userId');
-  if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
-  }
-
   const { id } = c.req.param();
+
+  const ALLOWED_COLUMNS = ['name', 'settings'] as const;
 
   const membership = await c.env.DB.prepare(
     'SELECT role FROM org_members WHERE org_id = ? AND user_id = ?'
@@ -28,6 +26,12 @@ export async function updateOrgHandler(c: Context) {
   const parsed = updateOrgSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;
+  }
+
+  const bodyKeys = Object.keys(body);
+  const invalidKeys = bodyKeys.filter((key) => !(ALLOWED_COLUMNS as readonly string[]).includes(key));
+  if (invalidKeys.length > 0) {
+    throw new AppError('BAD_REQUEST', `Updating column '${invalidKeys[0]}' is not allowed`, 400);
   }
 
   const { name, settings } = parsed.data;
