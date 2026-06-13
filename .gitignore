@@ -11,4 +11,4 @@ coverage/
 .DS_Store
 *.log
 .cache/
-.rollup.cache/
+.rollup.cache/keyra.db

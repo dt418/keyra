@@ -7,16 +7,20 @@
     {
       "binding": "DB",
       "database_name": "keyra-db",
-      "database_id": "${D1_DATABASE_ID}"
+      "database_id": "e2adcab2-65f0-41b2-8c09-56c18f8da262",
+      "migrations_dir": "../../database/migrations"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "SESSIONS",
-      "id": "${SESSIONS_KV_ID}"
+      "id": "a5a762f9abea41678f39c59d151b883e"
     }
   ],
   "vars": {
     "ENVIRONMENT": "${ENVIRONMENT}"
+  },
+  "observability": {
+    "enabled": true
   }
 }
