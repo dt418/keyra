@@ -5,6 +5,6 @@
     "outDir": "./dist",
     "noEmit": false
   },
-  "include": ["src/**/*", "wrangler.jsonc"],
+  "include": ["src/**/*", "e2e/**/*", "wrangler.jsonc"],
   "exclude": ["node_modules", "dist", ".turbo"]
 }
