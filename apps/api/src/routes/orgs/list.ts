@@ -14,34 +14,43 @@ export async function listOrgsHandler(c: Context) {
     throw parsed.error;
   }
 
-  const { page, pageSize } = parsed.data;
-  const offset = (page - 1) * pageSize;
+  const { limit, cursor } = parsed.data;
 
-  const countResult = await c.env.DB.prepare(`
-    SELECT COUNT(*) as total
-    FROM organizations o
-    INNER JOIN org_members om ON o.id = om.org_id
-    WHERE om.user_id = ?
-  `)
-    .bind(userId)
-    .first() as { total: number } | null;
-
-  const total = countResult?.total ?? 0;
-  const totalPages = Math.ceil(total / pageSize);
-
-  const orgs = await c.env.DB.prepare(`
+  let sql = `
     SELECT o.id, o.name, o.slug, o.plan, o.created_at, o.updated_at
     FROM organizations o
     INNER JOIN org_members om ON o.id = om.org_id
     WHERE om.user_id = ?
-    ORDER BY o.created_at DESC
-    LIMIT ? OFFSET ?
-  `)
-    .bind(userId, pageSize, offset)
+  `;
+  const params: unknown[] = [userId];
+
+  if (cursor) {
+    sql += ` AND o.id < ?`;
+    params.push(cursor);
+  }
+
+  sql += ` ORDER BY o.created_at DESC, o.id DESC LIMIT ?`;
+
+  const fetchLimit = limit + 1;
+  params.push(fetchLimit);
+
+  const orgs = await c.env.DB.prepare(sql)
+    .bind(...params)
     .all() as { id: string; name: string; slug: string; plan: string; created_at: string; updated_at: string }[];
 
+  let hasMore = false;
+  let data = orgs;
+
+  if (orgs.length > limit) {
+    hasMore = true;
+    data = orgs.slice(0, limit);
+  }
+
+  const last = data[data.length - 1];
+  const nextCursor = hasMore ? last.id : null;
+
   return c.json({
-    data: orgs.map((org) => ({
+    data: data.map((org) => ({
       id: org.id,
       name: org.name,
       slug: org.slug,
@@ -50,10 +59,8 @@ export async function listOrgsHandler(c: Context) {
       updated_at: org.updated_at,
     })),
     pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages,
+      cursor: nextCursor,
+      has_more: hasMore,
     },
   });
 }

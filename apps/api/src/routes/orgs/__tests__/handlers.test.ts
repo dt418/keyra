@@ -43,8 +43,7 @@ describe('listOrgsHandler', () => {
     vi.clearAllMocks();
   });
 
-  it('should list user organizations with pagination', async () => {
-    mockDB.first.mockResolvedValueOnce({ total: 2 });
+  it('should list user organizations with cursor pagination', async () => {
     mockDB.all.mockResolvedValueOnce([
       { id: 'org-1', name: 'Org 1', slug: 'org-1', plan: 'free', created_at: '2024-01-01', updated_at: '2024-01-01' },
       { id: 'org-2', name: 'Org 2', slug: 'org-2', plan: 'pro', created_at: '2024-01-02', updated_at: '2024-01-02' },
@@ -60,10 +59,8 @@ describe('listOrgsHandler', () => {
           expect.objectContaining({ id: 'org-2', name: 'Org 2' }),
         ]),
         pagination: expect.objectContaining({
-          page: 1,
-          pageSize: 20,
-          total: 2,
-          totalPages: 1,
+          cursor: null,
+          has_more: false,
         }),
       })
     );

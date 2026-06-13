@@ -30,7 +30,7 @@ export async function updateOrgHandler(c: Context) {
     throw parsed.error;
   }
 
-  const { name, slug } = parsed.data;
+  const { name, settings } = parsed.data;
   const now = new Date().toISOString();
 
   const updates: string[] = [];
@@ -40,9 +40,9 @@ export async function updateOrgHandler(c: Context) {
     updates.push('name = ?');
     values.push(name);
   }
-  if (slug !== undefined) {
-    updates.push('slug = ?');
-    values.push(slug.toLowerCase());
+  if (settings !== undefined) {
+    updates.push('settings = ?');
+    values.push(JSON.stringify(settings));
   }
 
   if (updates.length === 0) {
