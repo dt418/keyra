@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.turbo/
+.wrangler/
+.dev.vars
+.env
+.env.local
+.env.*.local
+*.local
+coverage/
+.DS_Store
+*.log
+.cache/
+.rollup.cache/

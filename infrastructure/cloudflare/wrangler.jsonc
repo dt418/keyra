@@ -1,0 +1,6 @@
+{
+  "$schema": "wrangler.json-schema",
+  "name": "keyra-infrastructure",
+  "compatibility_date": "2024-06-13",
+  "main": "./apps/api/src/index.ts"
+}
