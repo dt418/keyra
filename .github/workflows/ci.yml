@@ -17,14 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 9
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
+
+      - run: corepack enable && corepack prepare pnpm@9
 
       - run: pnpm install
 
@@ -38,14 +35,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 9
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
+
+      - run: corepack enable && corepack prepare pnpm@9
 
       - run: pnpm install
 
@@ -57,14 +51,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 9
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
+
+      - run: corepack enable && corepack prepare pnpm@9
 
       - run: pnpm install
 
