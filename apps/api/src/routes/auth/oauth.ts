@@ -60,27 +60,31 @@ async function exchangeCodeForToken(
   const clientId = ctx.env[`OAUTH_${provider.toUpperCase()}_CLIENT_ID` as keyof typeof ctx.env] as string | undefined;
   const clientSecret = ctx.env[`OAUTH_${provider.toUpperCase()}_CLIENT_SECRET` as keyof typeof ctx.env] as string | undefined;
 
+  const params = new URLSearchParams({
+    client_id: clientId ?? '',
+    client_secret: clientSecret ?? '',
+    code,
+    redirect_uri: redirectUri,
+    grant_type: 'authorization_code',
+  });
+
   const response = await fetch(config.tokenUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      client_id: clientId ?? '',
-      client_secret: clientSecret ?? '',
-      code,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code',
-    }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
   });
 
   if (!response.ok) {
     throw new AppError('TOKEN_EXCHANGE_FAILED', 'Failed to exchange code for token', 400);
   }
 
-  const data = (await response.json()) as TokenResponse;
-  if (!data.access_token) {
+  const text = await response.text();
+  const parsed = new URLSearchParams(text);
+  const accessToken = parsed.get('access_token');
+  if (!accessToken) {
     throw new AppError('TOKEN_EXCHANGE_FAILED', 'Failed to exchange code for token', 400);
   }
-  return data.access_token;
+  return accessToken;
 }
 
 async function getUserInfo(
