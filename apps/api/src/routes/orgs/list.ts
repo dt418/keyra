@@ -46,7 +46,7 @@ export async function listOrgsHandler(c: Context) {
     data = orgs.slice(0, limit);
   }
 
-  const last = data[data.length - 1];
+  const last = data[data.length - 1]!;
   const nextCursor = hasMore ? last.id : null;
 
   return c.json({

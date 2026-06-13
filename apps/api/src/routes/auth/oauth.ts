@@ -112,16 +112,16 @@ async function getUserInfo(
     return {
       id: data.id,
       email: data.email,
-      name: data.name,
-      avatar_url: data.picture,
+      name: data.name ?? '',
+      avatar_url: data.picture ?? '',
     };
   } else {
     const data = (await response.json()) as GitHubUserInfo;
     return {
       id: String(data.id),
       email: data.email,
-      name: data.name ?? data.login,
-      avatar_url: data.avatar_url,
+      name: data.name ?? data.login ?? '',
+      avatar_url: data.avatar_url ?? '',
     };
   }
 }
