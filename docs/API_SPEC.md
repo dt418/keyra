@@ -1,6 +1,6 @@
 # API Specification
 
-Base URL: `https://keyra.yourworkers.dev/api/v1`
+Base URL: `https://keyra-api.danhthanh418.workers.dev/api/v1`
 
 ## Response Format
 
@@ -11,7 +11,7 @@ All responses follow this structure:
 { "data": { ... } }
 
 // Error
-{ "error": { "code": "ERROR_CODE", "message": "Human readable message" } }
+{ "error": { "code": "ERROR_CODE", "message": "Human readable message", "details"?: [...] } }
 ```
 
 ## Authentication
@@ -30,7 +30,8 @@ Register a new user account.
 ```json
 {
   "email": "user@example.com",
-  "password": "securePassword123"
+  "password": "securePassword123",
+  "name": "John Doe"
 }
 ```
 
@@ -38,9 +39,9 @@ Register a new user account.
 ```json
 {
   "data": {
-    "user": { "id": "uuid", "email": "user@example.com" },
-    "accessToken": "jwt...",
-    "refreshToken": "token..."
+    "user": { "id": "uuid", "email": "user@example.com", "name": "John Doe" },
+    "access_token": "jwt...",
+    "refresh_token": "token..."
   }
 }
 ```
@@ -63,9 +64,9 @@ Authenticate with email and password.
 ```json
 {
   "data": {
-    "user": { "id": "uuid", "email": "user@example.com" },
-    "accessToken": "jwt...",
-    "refreshToken": "token..."
+    "user": { "id": "uuid", "email": "user@example.com", "name": "John Doe" },
+    "access_token": "jwt...",
+    "refresh_token": "token..."
   }
 }
 ```
@@ -74,7 +75,12 @@ Authenticate with email and password.
 
 #### POST /auth/logout
 
-Invalidate refresh token. **Auth required.**
+Invalidate refresh token.
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
 
 **Response (200):**
 ```json
@@ -90,7 +96,7 @@ Exchange refresh token for new access token.
 **Request:**
 ```json
 {
-  "refreshToken": "token..."
+  "refresh_token": "token..."
 }
 ```
 
@@ -98,8 +104,8 @@ Exchange refresh token for new access token.
 ```json
 {
   "data": {
-    "accessToken": "jwt...",
-    "refreshToken": "token..."
+    "access_token": "jwt...",
+    "refresh_token": "token..."
   }
 }
 ```
@@ -134,7 +140,8 @@ Complete OAuth flow.
 **Request:**
 ```json
 {
-  "code": "oauth_code"
+  "code": "oauth_code",
+  "state": "csrf_token"
 }
 ```
 
@@ -142,9 +149,9 @@ Complete OAuth flow.
 ```json
 {
   "data": {
-    "user": { "id": "uuid", "email": "user@example.com" },
-    "accessToken": "jwt...",
-    "refreshToken": "token..."
+    "user": { "id": "uuid", "email": "user@example.com", "name": "John Doe" },
+    "access_token": "jwt...",
+    "refresh_token": "token..."
   }
 }
 ```
@@ -157,13 +164,24 @@ Complete OAuth flow.
 
 List user's organizations. **Auth required.**
 
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+- `limit` — Max results (default: 20, max: 100)
+- `cursor` — Pagination cursor (optional)
+
 **Response (200):**
 ```json
 {
-  "data": {
-    "organizations": [
-      { "id": "uuid", "name": "Acme Corp", "role": "owner" }
-    ]
+  "data": [
+    { "id": "uuid", "name": "Acme Corp", "slug": "acme", "plan": "free", "role": "owner", "created_at": "2024-01-01T00:00:00Z" }
+  ],
+  "pagination": {
+    "cursor": "next_page_cursor",
+    "has_more": true
   }
 }
 ```
@@ -174,10 +192,16 @@ List user's organizations. **Auth required.**
 
 Create organization. **Auth required.**
 
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
 **Request:**
 ```json
 {
-  "name": "Acme Corp"
+  "name": "Acme Corp",
+  "slug": "acme"
 }
 ```
 
@@ -185,7 +209,11 @@ Create organization. **Auth required.**
 ```json
 {
   "data": {
-    "organization": { "id": "uuid", "name": "Acme Corp", "ownerId": "uuid" }
+    "id": "uuid",
+    "name": "Acme Corp",
+    "slug": "acme",
+    "plan": "free",
+    "created_at": "2024-01-01T00:00:00Z"
   }
 }
 ```
@@ -196,11 +224,20 @@ Create organization. **Auth required.**
 
 Get organization details. **Auth required.**
 
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
 **Response (200):**
 ```json
 {
   "data": {
-    "organization": { "id": "uuid", "name": "Acme Corp", "ownerId": "uuid" }
+    "id": "uuid",
+    "name": "Acme Corp",
+    "slug": "acme",
+    "plan": "free",
+    "created_at": "2024-01-01T00:00:00Z"
   }
 }
 ```
@@ -209,12 +246,18 @@ Get organization details. **Auth required.**
 
 #### PATCH /organizations/:id
 
-Update organization. **Auth required.**
+Update organization. **Auth required. Admin/Owner only.**
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
 
 **Request:**
 ```json
 {
-  "name": "New Name"
+  "name": "New Name",
+  "settings": {}
 }
 ```
 
@@ -222,7 +265,12 @@ Update organization. **Auth required.**
 ```json
 {
   "data": {
-    "organization": { "id": "uuid", "name": "New Name", "ownerId": "uuid" }
+    "id": "uuid",
+    "name": "New Name",
+    "slug": "acme",
+    "plan": "free",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-02T00:00:00Z"
   }
 }
 ```
@@ -233,11 +281,14 @@ Update organization. **Auth required.**
 
 Delete organization. **Auth required. Owner only.**
 
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
 **Response (200):**
 ```json
-{
-  "data": { "success": true }
-}
+{ "data": { "success": true } }
 ```
 
 ---
@@ -246,13 +297,23 @@ Delete organization. **Auth required. Owner only.**
 
 #### GET /users/me
 
-Get current user. **Auth required.**
+Get current user profile. **Auth required.**
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
 
 **Response (200):**
 ```json
 {
   "data": {
-    "user": { "id": "uuid", "email": "user@example.com" }
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "avatar_url": "https://...",
+    "email_verified": true,
+    "created_at": "2024-01-01T00:00:00Z"
   }
 }
 ```
@@ -263,10 +324,20 @@ Get current user. **Auth required.**
 
 | Code | HTTP Status | Description |
 |------|------------|-------------|
-| `INVALID_CREDENTIALS` | 401 | Wrong email/password |
 | `UNAUTHORIZED` | 401 | Missing/invalid token |
 | `FORBIDDEN` | 403 | Insufficient permissions |
 | `NOT_FOUND` | 404 | Resource not found |
-| `VALIDATION_ERROR` | 400 | Invalid request body |
+| `VALIDATION_ERROR` | 400 | Invalid request data |
+| `CONFLICT` | 409 | Resource already exists |
 | `RATE_LIMITED` | 429 | Too many requests |
 | `INTERNAL_ERROR` | 500 | Server error |
+
+## Rate Limits
+
+| Endpoint | Limit |
+|----------|-------|
+| `/auth/register` | 10/min |
+| `/auth/login` | 20/min |
+| `/auth/logout` | 10/min |
+| `/auth/refresh` | 30/min |
+| `/auth/oauth/*` | 20/min |
