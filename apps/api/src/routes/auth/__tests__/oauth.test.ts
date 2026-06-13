@@ -29,6 +29,11 @@ const mockEnv = {
 function createMockContext(overrides: Record<string, unknown> = {}) {
   const reqOverrides = (overrides.req || {}) as Record<string, unknown>;
   return {
+    env: mockEnv,
+    json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
+    get: vi.fn(),
+    set: vi.fn(),
+    ...overrides,
     req: {
       json: (reqOverrides.json as typeof vi.fn) || vi.fn().mockResolvedValue({}),
       param: (reqOverrides.param as typeof vi.fn) || vi.fn().mockReturnValue({}),
@@ -38,11 +43,6 @@ function createMockContext(overrides: Record<string, unknown> = {}) {
         return undefined;
       },
     },
-    env: mockEnv,
-    json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
-    get: vi.fn(),
-    set: vi.fn(),
-    ...overrides,
   };
 }
 
