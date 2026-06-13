@@ -7,7 +7,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --config=e2e/playwright.config.ts",
     "test:e2e:setup": "wrangler d1 execute keyra-db --local --file=../database/migrations/0001_users.sql && wrangler d1 execute keyra-db --local --file=../database/migrations/0002_organizations.sql && wrangler d1 execute keyra-db --local --file=../database/migrations/0003_org_members.sql && wrangler d1 execute keyra-db --local --file=../database/migrations/0004_sessions.sql && wrangler d1 execute keyra-db --local --file=../database/migrations/0005_session_cleanup.sql && wrangler d1 execute keyra-db --local --file=../database/migrations/0006_audit_logs.sql",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
