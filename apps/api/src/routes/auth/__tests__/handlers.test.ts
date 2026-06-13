@@ -5,6 +5,7 @@ import { refreshHandler } from '../refresh';
 import { signAccessToken, signRefreshToken } from '../../../lib/jwt';
 
 const TEST_SECRET = 'test-secret-key';
+const TEST_REFRESH_SECRET = 'test-refresh-secret-key';
 
 const mockDB = {
   prepare: vi.fn().mockReturnThis(),
@@ -24,6 +25,7 @@ const mockEnv = {
   DB: mockDB,
   SESSIONS: mockKV,
   JWT_SECRET: TEST_SECRET,
+  JWT_REFRESH_SECRET: TEST_REFRESH_SECRET,
 };
 
 function createMockContext(body: unknown) {
@@ -34,7 +36,7 @@ function createMockContext(body: unknown) {
       header: vi.fn().mockReturnValue(undefined),
     },
     env: mockEnv,
-    json: vi.fn().mockReturnThis(),
+    json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
     get: vi.fn(),
     set: vi.fn(),
   };
@@ -53,9 +55,11 @@ describe('registerHandler', () => {
     
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        user: expect.objectContaining({ email: 'test@example.com' }),
-        accessToken: expect.any(String),
-        refreshToken: expect.any(String),
+        data: expect.objectContaining({
+          access_token: expect.any(String),
+          refresh_token: expect.any(String),
+          user: expect.objectContaining({ email: 'test@example.com' }),
+        }),
       })
     );
   });
@@ -90,9 +94,11 @@ describe('loginHandler', () => {
     
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        user: expect.objectContaining({ email: 'test@example.com' }),
-        accessToken: expect.any(String),
-        refreshToken: expect.any(String),
+        data: expect.objectContaining({
+          access_token: expect.any(String),
+          refresh_token: expect.any(String),
+          user: expect.objectContaining({ email: 'test@example.com' }),
+        }),
       })
     );
   });
@@ -113,18 +119,20 @@ describe('refreshHandler', () => {
   it('should refresh tokens with valid refresh token', async () => {
     const refreshToken = await signRefreshToken(
       { sub: 'user-123', email: 'test@example.com' },
-      TEST_SECRET
+      TEST_REFRESH_SECRET
     );
     
-    mockDB.first.mockResolvedValueOnce({ id: 'user-123' });
+    mockDB.first.mockResolvedValueOnce({ id: 'user-123', email: 'test@example.com' });
     const ctx = createMockContext({ refreshToken }) as any;
     
     await refreshHandler(ctx);
     
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        accessToken: expect.any(String),
-        refreshToken: expect.any(String),
+        data: expect.objectContaining({
+          access_token: expect.any(String),
+          refresh_token: expect.any(String),
+        }),
       })
     );
   });

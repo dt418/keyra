@@ -1,12 +1,32 @@
 import type { Context } from 'hono';
 import { loginSchema } from '@keyra/shared-validation';
-import { verifyPassword } from '../../lib/password';
+import { verifyPassword, hashPassword } from '../../lib/password';
 import { signAccessToken, signRefreshToken } from '../../lib/jwt';
 import { AppError } from '../../middleware/error';
 
 interface LoginBody {
   email: string;
   password: string;
+}
+
+async function storeRefreshToken(
+  c: Context,
+  userId: string,
+  refreshToken: string,
+  userAgent?: string,
+  ipAddress?: string
+): Promise<void> {
+  const sessionId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const tokenHash = await hashPassword(refreshToken);
+
+  await c.env.DB.prepare(
+    `INSERT INTO sessions (id, user_id, refresh_token_hash, user_agent, ip_address, expires_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  )
+    .bind(sessionId, userId, tokenHash, userAgent ?? null, ipAddress ?? null, expiresAt, now)
+    .run();
 }
 
 export async function loginHandler(c: Context) {
@@ -39,12 +59,16 @@ export async function loginHandler(c: Context) {
   );
   const refreshToken = await signRefreshToken(
     { sub: user.id, email: user.email },
-    c.env.JWT_SECRET
+    c.env.JWT_REFRESH_SECRET
   );
 
+  await storeRefreshToken(c, user.id, refreshToken);
+
   return c.json({
-    user: { id: user.id, email: user.email, name: user.name },
-    accessToken,
-    refreshToken,
+    data: {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      user: { id: user.id, email: user.email, name: user.name },
+    },
   });
 }

@@ -10,6 +10,26 @@ interface RegisterBody {
   name: string;
 }
 
+async function storeRefreshToken(
+  c: Context,
+  userId: string,
+  refreshToken: string,
+  userAgent?: string,
+  ipAddress?: string
+): Promise<void> {
+  const sessionId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const tokenHash = await hashPassword(refreshToken);
+
+  await c.env.DB.prepare(
+    `INSERT INTO sessions (id, user_id, refresh_token_hash, user_agent, ip_address, expires_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  )
+    .bind(sessionId, userId, tokenHash, userAgent ?? null, ipAddress ?? null, expiresAt, now)
+    .run();
+}
+
 export async function registerHandler(c: Context) {
   const body = await c.req.json<RegisterBody>();
   const parsed = registerSchema.safeParse(body);
@@ -34,8 +54,8 @@ export async function registerHandler(c: Context) {
   const now = new Date().toISOString();
 
   await c.env.DB.prepare(
-    `INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO users (id, email, password_hash, name, email_verified, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 1, ?, ?)`
   )
     .bind(userId, email.toLowerCase(), hashedPassword, name, now, now)
     .run();
@@ -46,12 +66,16 @@ export async function registerHandler(c: Context) {
   );
   const refreshToken = await signRefreshToken(
     { sub: userId, email: email.toLowerCase() },
-    c.env.JWT_SECRET
+    c.env.JWT_REFRESH_SECRET
   );
 
+  await storeRefreshToken(c, userId, refreshToken);
+
   return c.json({
-    user: { id: userId, email: email.toLowerCase(), name },
-    accessToken,
-    refreshToken,
+    data: {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      user: { id: userId, email: email.toLowerCase(), name },
+    },
   });
 }
