@@ -3,7 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 const isCI = process.env.CI === 'true';
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: '.',
+  testMatch: '**/*.spec.ts',
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
