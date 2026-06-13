@@ -123,7 +123,7 @@ describe('refreshHandler', () => {
     );
     
     mockDB.first.mockResolvedValueOnce({ id: 'user-123', email: 'test@example.com' });
-    const ctx = createMockContext({ refreshToken }) as any;
+    const ctx = createMockContext({ refresh_token: refreshToken }) as any;
     
     await refreshHandler(ctx);
     
@@ -138,7 +138,7 @@ describe('refreshHandler', () => {
   });
 
   it('should reject invalid refresh token', async () => {
-    const ctx = createMockContext({ refreshToken: 'invalid-token' }) as any;
+    const ctx = createMockContext({ refresh_token: 'invalid-token' }) as any;
     
     await expect(refreshHandler(ctx)).rejects.toThrow('Invalid or expired refresh token');
   });

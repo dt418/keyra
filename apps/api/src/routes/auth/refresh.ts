@@ -4,22 +4,18 @@ import { verifyToken, signAccessToken, signRefreshToken } from '../../lib/jwt';
 import { AppError } from '../../middleware/error';
 import { hashPassword } from '../../lib/password';
 
-interface RefreshBody {
-  refreshToken: string;
-}
-
 export async function refreshHandler(c: Context) {
-  const body = await c.req.json<RefreshBody>();
+  const body = await c.req.json();
   const parsed = refreshSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;
   }
 
-  const { refreshToken } = parsed.data;
+  const { refresh_token } = parsed.data;
 
   let payload;
   try {
-    payload = await verifyToken(refreshToken, c.env.JWT_REFRESH_SECRET);
+    payload = await verifyToken(refresh_token, c.env.JWT_REFRESH_SECRET);
   } catch {
     throw new AppError('UNAUTHORIZED', 'Invalid or expired refresh token', 401);
   }

@@ -47,7 +47,7 @@ export async function registerHandler(c: Context) {
     .first();
 
   if (existing) {
-    throw new AppError('USER_EXISTS', 'User already exists', 409);
+      throw new AppError('CONFLICT', 'User already exists', 409);
   }
 
   const hashedPassword = await hashPassword(password);

@@ -12,7 +12,7 @@ export const loginSchema = z.object({
 });
 
 export const refreshSchema = z.object({
-  refreshToken: z.string(),
+  refresh_token: z.string(),
 });
 
 export const oauthCallbackSchema = z.object({

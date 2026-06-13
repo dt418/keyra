@@ -31,7 +31,7 @@ export async function updateOrgHandler(c: Context) {
   const bodyKeys = Object.keys(body);
   const invalidKeys = bodyKeys.filter((key) => !(ALLOWED_COLUMNS as readonly string[]).includes(key));
   if (invalidKeys.length > 0) {
-    throw new AppError('BAD_REQUEST', `Updating column '${invalidKeys[0]}' is not allowed`, 400);
+      throw new AppError('FORBIDDEN', `Updating column '${invalidKeys[0]}' is not allowed`, 403);
   }
 
   const { name, settings } = parsed.data;

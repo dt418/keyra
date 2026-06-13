@@ -26,7 +26,7 @@ export async function createOrgHandler(c: Context) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (message.includes('UNIQUE constraint failed: organizations.slug')) {
-      throw new AppError('SLUG_EXISTS', 'Organization slug already exists', 409);
+      throw new AppError('CONFLICT', 'Organization slug already exists', 409);
     }
     throw err;
   }
