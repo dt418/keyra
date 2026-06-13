@@ -1,8 +1,11 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { router } from './router';
+import { errorMiddleware } from './middleware/error';
 
 const app = new Hono();
+
+app.use('*', errorMiddleware);
 
 app.use(
   '*',

@@ -23,5 +23,6 @@ export type PaginatedResponse<T> = {
 export type CloudflareBindings = {
   Bindings: {
     DB: D1Database;
+    SESSIONS: KVNamespace;
   };
 };
