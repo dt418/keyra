@@ -18,6 +18,7 @@ function createMockContext(sessionId?: string) {
       }),
     },
     env: { DB: mockDB },
+    executionCtx: { waitUntil: vi.fn() },
     json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
     get: vi.fn((key: string) => {
       if (key === 'sessionId') return sessionId;

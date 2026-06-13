@@ -28,6 +28,7 @@ function createMockContext(overrides: Record<string, unknown> = {}) {
       header: vi.fn().mockReturnValue('Bearer token'),
     },
     env: mockEnv,
+    executionCtx: { waitUntil: vi.fn() },
     json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
     get: vi.fn().mockImplementation((key: string) => {
       if (key === 'userId') return 'user-123';

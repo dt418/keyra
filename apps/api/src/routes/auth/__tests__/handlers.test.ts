@@ -36,6 +36,7 @@ function createMockContext(body: unknown) {
       header: vi.fn().mockReturnValue(undefined),
     },
     env: mockEnv,
+    executionCtx: { waitUntil: vi.fn() },
     json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
     get: vi.fn(),
     set: vi.fn(),
