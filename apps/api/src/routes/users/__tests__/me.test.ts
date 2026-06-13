@@ -45,8 +45,9 @@ describe('meHandler', () => {
       id: 'user-123',
       email: 'test@example.com',
       name: 'Test User',
+      avatar_url: 'https://example.com/avatar.png',
+      email_verified: true,
       created_at: '2024-01-01T00:00:00.000Z',
-      updated_at: '2024-01-01T00:00:00.000Z',
     });
 
     const ctx = createMockContext() as any;
@@ -58,6 +59,9 @@ describe('meHandler', () => {
           id: 'user-123',
           email: 'test@example.com',
           name: 'Test User',
+          avatar_url: 'https://example.com/avatar.png',
+          email_verified: true,
+          created_at: '2024-01-01T00:00:00.000Z',
         }),
       })
     );
@@ -68,8 +72,9 @@ describe('meHandler', () => {
       id: 'user-123',
       email: 'test@example.com',
       name: null,
+      avatar_url: null,
+      email_verified: false,
       created_at: '2024-01-01T00:00:00.000Z',
-      updated_at: '2024-01-01T00:00:00.000Z',
     });
 
     const ctx = createMockContext() as any;
@@ -81,6 +86,8 @@ describe('meHandler', () => {
           id: 'user-123',
           email: 'test@example.com',
           name: null,
+          avatar_url: null,
+          email_verified: false,
         }),
       })
     );
@@ -98,8 +105,9 @@ describe('meHandler', () => {
       id: 'user-456',
       email: 'other@example.com',
       name: 'Other User',
+      avatar_url: null,
+      email_verified: true,
       created_at: '2024-01-01T00:00:00.000Z',
-      updated_at: '2024-01-01T00:00:00.000Z',
     });
 
     const ctx = createMockContext({
@@ -112,5 +120,22 @@ describe('meHandler', () => {
     await meHandler(ctx);
 
     expect(mockDB.bind).toHaveBeenCalledWith('user-456');
+  });
+
+  it('should NOT return updated_at field', async () => {
+    mockDB.first.mockResolvedValueOnce({
+      id: 'user-123',
+      email: 'test@example.com',
+      name: 'Test User',
+      avatar_url: 'https://example.com/avatar.png',
+      email_verified: true,
+      created_at: '2024-01-01T00:00:00.000Z',
+    });
+
+    const ctx = createMockContext() as any;
+    await meHandler(ctx);
+
+    const response = ctx.json.mock.calls[0][0];
+    expect(response.data).not.toHaveProperty('updated_at');
   });
 });

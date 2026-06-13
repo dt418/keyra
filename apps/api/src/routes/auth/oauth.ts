@@ -3,6 +3,7 @@ import { oauthCallbackSchema } from '@keyra/shared-validation';
 import { signAccessToken, signRefreshToken } from '../../lib/jwt';
 import { AppError } from '../../middleware/error';
 import { hashPassword } from '../../lib/password';
+import { logAuditEvent, extractRequestInfo } from '../../lib/audit';
 
 interface OAuthConfig {
   tokenUrl: string;
@@ -209,6 +210,18 @@ export async function oauthCallbackHandler(c: Context) {
       c.env.JWT_REFRESH_SECRET
     );
     await storeRefreshToken(c, existingByOAuth.id, jwtRefreshToken);
+
+    const requestInfo = extractRequestInfo(c);
+    logAuditEvent(c, {
+      action: 'user.oauth',
+      userId: existingByOAuth.id,
+      resourceType: 'user',
+      resourceId: existingByOAuth.id,
+      ipAddress: requestInfo.ipAddress,
+      userAgent: requestInfo.userAgent,
+      metadata: { provider, email: existingByOAuth.email },
+    });
+
     return c.json({
       data: {
         access_token: jwtAccessToken,
@@ -235,6 +248,18 @@ export async function oauthCallbackHandler(c: Context) {
       c.env.JWT_REFRESH_SECRET
     );
     await storeRefreshToken(c, existingByEmail.id, jwtRefreshToken);
+
+    const requestInfo = extractRequestInfo(c);
+    logAuditEvent(c, {
+      action: 'user.oauth',
+      userId: existingByEmail.id,
+      resourceType: 'user',
+      resourceId: existingByEmail.id,
+      ipAddress: requestInfo.ipAddress,
+      userAgent: requestInfo.userAgent,
+      metadata: { provider, email: existingByEmail.email },
+    });
+
     return c.json({
       data: {
         access_token: jwtAccessToken,
@@ -266,6 +291,17 @@ export async function oauthCallbackHandler(c: Context) {
   );
 
   await storeRefreshToken(c, userId, jwtRefreshToken);
+
+  const requestInfo = extractRequestInfo(c);
+  logAuditEvent(c, {
+    action: 'user.oauth',
+    userId,
+    resourceType: 'user',
+    resourceId: userId,
+    ipAddress: requestInfo.ipAddress,
+    userAgent: requestInfo.userAgent,
+    metadata: { provider, email: userInfo.email.toLowerCase(), isNewUser: true },
+  });
 
   return c.json({
     data: {

@@ -3,6 +3,7 @@ import { registerSchema } from '@keyra/shared-validation';
 import { hashPassword } from '../../lib/password';
 import { signAccessToken, signRefreshToken } from '../../lib/jwt';
 import { AppError } from '../../middleware/error';
+import { logAuditEvent, extractRequestInfo } from '../../lib/audit';
 
 interface RegisterBody {
   email: string;
@@ -71,6 +72,17 @@ export async function registerHandler(c: Context) {
   );
 
   await storeRefreshToken(c, userId, refreshToken);
+
+  const requestInfo = extractRequestInfo(c);
+  logAuditEvent(c, {
+    action: 'user.register',
+    userId,
+    resourceType: 'user',
+    resourceId: userId,
+    ipAddress: requestInfo.ipAddress,
+    userAgent: requestInfo.userAgent,
+    metadata: { email: email.toLowerCase() },
+  });
 
   return c.json({
     data: {

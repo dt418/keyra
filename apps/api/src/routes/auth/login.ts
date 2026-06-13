@@ -3,6 +3,7 @@ import { loginSchema } from '@keyra/shared-validation';
 import { verifyPassword, hashPassword } from '../../lib/password';
 import { signAccessToken, signRefreshToken } from '../../lib/jwt';
 import { AppError } from '../../middleware/error';
+import { logAuditEvent, extractRequestInfo } from '../../lib/audit';
 
 interface LoginBody {
   email: string;
@@ -64,6 +65,17 @@ export async function loginHandler(c: Context) {
   );
 
   await storeRefreshToken(c, user.id, refreshToken);
+
+  const requestInfo = extractRequestInfo(c);
+  logAuditEvent(c, {
+    action: 'user.login',
+    userId: user.id,
+    resourceType: 'user',
+    resourceId: user.id,
+    ipAddress: requestInfo.ipAddress,
+    userAgent: requestInfo.userAgent,
+    metadata: { email: user.email },
+  });
 
   return c.json({
     data: {
