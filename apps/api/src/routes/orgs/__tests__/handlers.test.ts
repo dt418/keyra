@@ -3,6 +3,7 @@ import { listOrgsHandler } from '../list';
 import { createOrgHandler } from '../create';
 import { getOrgHandler } from '../get';
 import { updateOrgHandler } from '../update';
+import { deleteOrgHandler } from '../delete';
 
 const mockDB = {
   prepare: vi.fn().mockReturnThis(),
@@ -260,5 +261,77 @@ describe('updateOrgHandler', () => {
         }),
       })
     );
+  });
+});
+
+describe('deleteOrgHandler', () => {
+  beforeEach(() => {
+    mockDB.prepare.mockClear();
+    mockDB.bind.mockClear();
+    mockDB.first.mockReset();
+    mockDB.first.mockResolvedValue(null);
+    mockDB.all.mockReset();
+    mockDB.run.mockReset();
+    mockDB.run.mockResolvedValue({ success: true });
+  });
+
+  it('should delete organization as owner', async () => {
+    mockDB.first.mockResolvedValueOnce({ role: 'owner' });
+
+    const ctx = createMockContext({
+      req: {
+        json: vi.fn().mockResolvedValue({}),
+        query: vi.fn().mockReturnValue({}),
+        param: vi.fn().mockReturnValue({ id: 'org-1' }),
+        header: vi.fn().mockReturnValue('Bearer token'),
+      },
+    }) as any;
+    await deleteOrgHandler(ctx);
+
+    expect(ctx.json).toHaveBeenCalledWith({ data: { success: true } });
+    expect(mockDB.prepare).toHaveBeenCalledWith('DELETE FROM org_members WHERE org_id = ?');
+    expect(mockDB.prepare).toHaveBeenCalledWith('DELETE FROM organizations WHERE id = ?');
+  });
+
+  it('should return 403 for non-owner', async () => {
+    mockDB.first.mockResolvedValueOnce({ role: 'admin' });
+
+    const ctx = createMockContext({
+      req: {
+        json: vi.fn().mockResolvedValue({}),
+        query: vi.fn().mockReturnValue({}),
+        param: vi.fn().mockReturnValue({ id: 'org-1' }),
+        header: vi.fn().mockReturnValue('Bearer token'),
+      },
+    }) as any;
+    await expect(deleteOrgHandler(ctx)).rejects.toThrow('Only owners can delete organizations');
+  });
+
+  it('should return 403 for non-member', async () => {
+    mockDB.first.mockResolvedValueOnce(null);
+
+    const ctx = createMockContext({
+      req: {
+        json: vi.fn().mockResolvedValue({}),
+        query: vi.fn().mockReturnValue({}),
+        param: vi.fn().mockReturnValue({ id: 'org-1' }),
+        header: vi.fn().mockReturnValue('Bearer token'),
+      },
+    }) as any;
+    await expect(deleteOrgHandler(ctx)).rejects.toThrow('Not a member of this organization');
+  });
+
+  it('should return 403 for member role', async () => {
+    mockDB.first.mockResolvedValueOnce({ role: 'member' });
+
+    const ctx = createMockContext({
+      req: {
+        json: vi.fn().mockResolvedValue({}),
+        query: vi.fn().mockReturnValue({}),
+        param: vi.fn().mockReturnValue({ id: 'org-1' }),
+        header: vi.fn().mockReturnValue('Bearer token'),
+      },
+    }) as any;
+    await expect(deleteOrgHandler(ctx)).rejects.toThrow('Only owners can delete organizations');
   });
 });
