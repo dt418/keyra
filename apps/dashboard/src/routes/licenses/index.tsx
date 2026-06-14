@@ -3,17 +3,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { licensesApi, productsApi, type LicenseType } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { Button, Input, Label } from '@/components/ui';
-import { Plus, Loader2, Copy, AlertTriangle } from 'lucide-react';
+import { Plus, Loader2, Copy, AlertTriangle, Key, Search, X, Shield, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime, formatExpiresAt } from '@/lib/date';
 
-const LICENSE_TYPES: { value: LicenseType; label: string }[] = [
-  { value: 'trial', label: 'Trial' },
-  { value: 'free', label: 'Free' },
-  { value: 'personal', label: 'Personal' },
-  { value: 'professional', label: 'Professional' },
-  { value: 'business', label: 'Business' },
-  { value: 'enterprise', label: 'Enterprise' },
+const LICENSE_TYPES: { value: LicenseType; label: string; color: string }[] = [
+  { value: 'trial', label: 'Trial', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+  { value: 'free', label: 'Free', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+  { value: 'personal', label: 'Personal', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  { value: 'professional', label: 'Professional', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  { value: 'business', label: 'Business', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
+  { value: 'enterprise', label: 'Enterprise', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
 ];
 
 export default function Licenses() {
@@ -26,6 +26,8 @@ export default function Licenses() {
     expiresAt: '',
   });
   const [createdLicenseKey, setCreatedLicenseKey] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const { data: products } = useQuery({
     queryKey: ['products'],
@@ -86,15 +88,32 @@ export default function Licenses() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">Active</span>;
+        return <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">Active</span>;
       case 'revoked':
-        return <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">Revoked</span>;
+        return <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400">Revoked</span>;
       case 'expired':
-        return <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">Expired</span>;
+        return <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">Expired</span>;
       default:
-        return <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">{status}</span>;
+        return <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-400">{status}</span>;
     }
   };
+
+  const getTypeBadge = (type: string) => {
+    const t = LICENSE_TYPES.find((lt) => lt.value === type);
+    return (
+      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${t?.color || ''}`}>
+        {t?.label || type}
+      </span>
+    );
+  };
+
+  const filteredLicenses = licenses?.filter((l: any) => {
+    const matchesSearch = searchQuery === '' || 
+      l.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || l.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6">
@@ -110,7 +129,7 @@ export default function Licenses() {
       </div>
 
       {isCreating && (
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-top-2 duration-200">
           <CardHeader>
             <CardTitle>Create License</CardTitle>
             <CardDescription>Generate a new license key</CardDescription>
@@ -146,31 +165,33 @@ export default function Licenses() {
                   ))}
                 </select>
               </div>
-              <div>
-                <Label htmlFor="type">License Type</Label>
-                <select
-                  id="type"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={newLicense.type}
-                  onChange={(e) => setNewLicense({ ...newLicense, type: e.target.value as LicenseType })}
-                >
-                  {LICENSE_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="maxDevices">Max Devices</Label>
-                <Input
-                  id="maxDevices"
-                  type="number"
-                  min={1}
-                  value={newLicense.maxDevices}
-                  onChange={(e) => setNewLicense({ ...newLicense, maxDevices: parseInt(e.target.value) || 1 })}
-                  className="w-32"
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="type">License Type</Label>
+                  <select
+                    id="type"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={newLicense.type}
+                    onChange={(e) => setNewLicense({ ...newLicense, type: e.target.value as LicenseType })}
+                  >
+                    {LICENSE_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="maxDevices">Max Devices</Label>
+                  <Input
+                    id="maxDevices"
+                    type="number"
+                    min={1}
+                    value={newLicense.maxDevices}
+                    onChange={(e) => setNewLicense({ ...newLicense, maxDevices: parseInt(e.target.value) || 1 })}
+                    className="w-full"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="expiresAt">Expires At (optional)</Label>
@@ -179,16 +200,15 @@ export default function Licenses() {
                   type="datetime-local"
                   value={newLicense.expiresAt}
                   onChange={(e) => setNewLicense({ ...newLicense, expiresAt: e.target.value })}
-                  className="w-auto"
+                  className="w-full"
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" disabled={createMutation.isPending || !newLicense.productId}>
                   {createMutation.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    'Create'
-                  )}
+                  ) : null}
+                  Create
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
                   Cancel
@@ -200,10 +220,10 @@ export default function Licenses() {
       )}
 
       {createdLicenseKey && (
-        <Card className="border-green-500">
+        <Card className="border-green-500 bg-green-50/50 dark:bg-green-950/20 animate-in fade-in slide-in-from-top-2 duration-200">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-green-500" />
+            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+              <Shield className="h-5 w-5" />
               License Key Created
             </CardTitle>
             <CardDescription>
@@ -212,8 +232,8 @@ export default function Licenses() {
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
-              <Input value={createdLicenseKey} readOnly className="font-mono" />
-              <Button onClick={() => copyToClipboard(createdLicenseKey)}>
+              <Input value={createdLicenseKey} readOnly className="font-mono text-sm" />
+              <Button onClick={() => copyToClipboard(createdLicenseKey)} variant="default" size="icon">
                 <Copy className="h-4 w-4" />
               </Button>
               <Button variant="outline" onClick={() => setCreatedLicenseKey(null)}>
@@ -225,50 +245,104 @@ export default function Licenses() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : licenses && licenses.length > 0 ? (
-        <div className="space-y-4">
-          {licenses.map((license: any) => (
-            <Card key={license.id}>
-              <CardContent className="flex items-center justify-between p-6">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{license.type}</span>
-                    {getStatusBadge(license.status)}
+      ) : filteredLicenses && filteredLicenses.length > 0 ? (
+        <>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search licenses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {['all', 'active', 'revoked', 'expired'].map((status) => (
+                <Button
+                  key={status}
+                  variant={filterStatus === status ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterStatus(status)}
+                  className="capitalize"
+                >
+                  {status}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-3">
+            {filteredLicenses.map((license: any) => (
+              <Card key={license.id} className="hover:border-primary/50 transition-colors">
+                <CardContent className="flex items-center justify-between p-4 sm:p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                      <Key className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {getTypeBadge(license.type)}
+                        {getStatusBadge(license.status)}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Smartphone className="h-3.5 w-3.5" />
+                          {license.maxDevices} device{license.maxDevices !== 1 ? 's' : ''}
+                        </span>
+                        {license.expiresAt && (
+                          <span>Expires: {formatExpiresAt(license.expiresAt)}</span>
+                        )}
+                        <span>Created {formatRelativeTime(license.created_at)}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    ID: {license.id} • {license.maxDevices} device{license.maxDevices !== 1 ? 's' : ''}
-                    {license.expiresAt && ` • Expires: ${formatExpiresAt(license.expiresAt)}`}
+                  <div className="flex gap-2">
+                    {license.status === 'active' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => revokeMutation.mutate(license.id)}
+                        disabled={revokeMutation.isPending}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      >
+                        Revoke
+                      </Button>
+                    )}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Created {formatRelativeTime(license.created_at)}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {license.status === 'active' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => revokeMutation.mutate(license.id)}
-                      disabled={revokeMutation.isPending}
-                    >
-                      Revoke
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <p className="text-muted-foreground">No licenses yet</p>
-            <Button variant="link" onClick={() => setIsCreating(true)} disabled={!products?.length}>
-              Create your first license
-            </Button>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
+              <Key className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-lg font-medium mb-1">No licenses yet</p>
+            <p className="text-sm text-muted-foreground mb-4 text-center max-w-sm">
+              {searchQuery || filterStatus !== 'all'
+                ? 'No licenses match your filters'
+                : 'Create your first license to start activating devices'}
+            </p>
+            {!searchQuery && filterStatus === 'all' && (
+              <Button onClick={() => setIsCreating(true)} disabled={!products?.length}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create License
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}

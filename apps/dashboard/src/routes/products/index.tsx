@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label } from '@/components/ui';
-import { Plus, Loader2, Copy, Key as KeyIcon } from 'lucide-react';
+import { Plus, Loader2, Copy, Key as KeyIcon, Package, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/date';
 
@@ -11,6 +11,7 @@ export default function Products() {
   const [isCreating, setIsCreating] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', description: '' });
   const [showApiKey, setShowApiKey] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products'],
@@ -55,6 +56,11 @@ export default function Products() {
     toast.success('Copied to clipboard');
   };
 
+  const filteredProducts = products?.filter((p: any) =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -69,7 +75,7 @@ export default function Products() {
       </div>
 
       {isCreating && (
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-top-2 duration-200">
           <CardHeader>
             <CardTitle>Create Product</CardTitle>
             <CardDescription>Add a new product to generate license keys</CardDescription>
@@ -95,6 +101,7 @@ export default function Products() {
                   value={newProduct.name}
                   onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                   className="max-w-md"
+                  autoFocus
                 />
               </div>
               <div>
@@ -108,12 +115,11 @@ export default function Products() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" disabled={createMutation.isPending || !newProduct.name.trim()}>
                   {createMutation.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    'Create'
-                  )}
+                  ) : null}
+                  Create
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
                   Cancel
@@ -125,10 +131,10 @@ export default function Products() {
       )}
 
       {showApiKey && (
-        <Card className="border-green-500">
+        <Card className="border-green-500 bg-green-50/50 dark:bg-green-950/20 animate-in fade-in slide-in-from-top-2 duration-200">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <KeyIcon className="h-5 w-5 text-green-500" />
+            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+              <KeyIcon className="h-5 w-5" />
               API Key Created
             </CardTitle>
             <CardDescription>
@@ -137,8 +143,8 @@ export default function Products() {
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
-              <Input value={showApiKey} readOnly className="font-mono" />
-              <Button onClick={() => copyToClipboard(showApiKey)}>
+              <Input value={showApiKey} readOnly className="font-mono text-sm" />
+              <Button onClick={() => copyToClipboard(showApiKey)} variant="default" size="icon">
                 <Copy className="h-4 w-4" />
               </Button>
               <Button variant="outline" onClick={() => setShowApiKey(null)}>
@@ -150,47 +156,89 @@ export default function Products() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : products && products.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {products.map((product: any) => (
-            <Card key={product.id}>
-              <CardHeader>
-                <CardTitle>{product.name}</CardTitle>
-                <CardDescription>{product.description || 'No description'}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-sm text-muted-foreground">
-                  Created {formatRelativeTime(product.created_at)}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => getApiKeyMutation.mutate(product.id)}
-                    disabled={getApiKeyMutation.isPending}
-                  >
-                    {getApiKeyMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <KeyIcon className="mr-2 h-4 w-4" />
-                    )}
-                    Get API Key
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      ) : filteredProducts && filteredProducts.length > 0 ? (
+        <>
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProducts.map((product: any) => (
+              <Card key={product.id} className="group hover:border-primary/50 transition-colors">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                        <Package className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">{product.name}</CardTitle>
+                      </div>
+                    </div>
+                  </div>
+                  <CardDescription className="line-clamp-2">
+                    {product.description || 'No description'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Created {formatRelativeTime(product.created_at)}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => getApiKeyMutation.mutate(product.id)}
+                      disabled={getApiKeyMutation.isPending}
+                    >
+                      {getApiKeyMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <KeyIcon className="mr-2 h-4 w-4" />
+                      )}
+                      API Key
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <p className="text-muted-foreground">No products yet</p>
-            <Button variant="link" onClick={() => setIsCreating(true)}>
-              Create your first product
-            </Button>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
+              <Package className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-lg font-medium mb-1">No products yet</p>
+            <p className="text-sm text-muted-foreground mb-4 text-center max-w-sm">
+              {searchQuery
+                ? 'No products match your search'
+                : 'Create your first product to start generating license keys'}
+            </p>
+            {!searchQuery && (
+              <Button onClick={() => setIsCreating(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Product
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
