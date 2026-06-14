@@ -243,7 +243,7 @@ export default function Licenses() {
                     {license.expiresAt && ` • Expires: ${new Date(license.expiresAt).toLocaleDateString()}`}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Created {formatRelativeTime(license.createdAt)}
+                    Created {formatRelativeTime(license.created_at)}
                   </div>
                 </div>
                 <div className="flex gap-2">

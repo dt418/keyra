@@ -36,7 +36,7 @@ export async function listOrgsHandler(c: Context) {
 
   const result = await c.env.DB.prepare(sql)
     .bind(...params)
-    .all<{ id: string; name: string; slug: string; plan: string; created_at: string; updated_at: string }>();
+    .all() as { results: { id: string; name: string; slug: string; plan: string; created_at: string; updated_at: string }[] };
 
   const orgs = result.results || [];
 

@@ -95,7 +95,7 @@ export default function Organizations() {
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground">
-                  Created: {new Date(org.createdAt).toLocaleDateString()}
+                  Created: {new Date(org.created_at).toLocaleDateString()}
                 </div>
               </CardContent>
             </Card>

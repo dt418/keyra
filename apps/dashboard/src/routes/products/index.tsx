@@ -163,7 +163,7 @@ export default function Products() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="text-sm text-muted-foreground">
-                  Created {formatRelativeTime(product.createdAt)}
+                  Created {formatRelativeTime(product.created_at)}
                 </div>
                 <div className="flex gap-2">
                   <Button
