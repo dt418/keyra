@@ -16,26 +16,32 @@ export async function listActivationsHandler(c: Context) {
 
   const { limit, cursor, license_id } = parsed.data;
 
-  const member = await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`
+  const members = await c.env.DB.prepare(
+    `SELECT org_id FROM org_members WHERE user_id = ? LIMIT 100`
   )
     .bind(userId)
-    .first() as { org_id: string } | null;
+    .all() as { results: { org_id: string }[] };
 
-  if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+  const orgIds = (members.results || []).map((m) => m.org_id);
+
+  if (orgIds.length === 0) {
+    return c.json({
+      data: [],
+      pagination: { cursor: null, has_more: false },
+    });
   }
 
+  const orgPlaceholders = orgIds.map(() => '?').join(',');
   let sql = `
     SELECT a.id, a.license_id, a.device_id, a.created_at, a.metadata,
-           d.name as device_name, d.platform, d.app_version,
-           l.type as license_type, l.key_hash
+           d.name as device_name, d.platform, d.app_version, d.last_seen_at,
+           l.type as license_type
     FROM activations a
     INNER JOIN devices d ON a.device_id = d.id
     INNER JOIN licenses l ON a.license_id = l.id
-    WHERE l.organization_id = ?
+    WHERE l.organization_id IN (${orgPlaceholders})
   `;
-  const params: unknown[] = [member.org_id];
+  const params: unknown[] = orgIds;
 
   if (license_id) {
     sql += ` AND a.license_id = ?`;
@@ -50,20 +56,24 @@ export async function listActivationsHandler(c: Context) {
   sql += ` ORDER BY a.created_at DESC, a.id DESC LIMIT ?`;
   params.push(limit + 1);
 
-  const activations = await c.env.DB.prepare(sql)
+  const result = await c.env.DB.prepare(sql)
     .bind(...params)
     .all() as {
-      id: string;
-      license_id: string;
-      device_id: string;
-      created_at: string;
-      metadata: string | null;
-      device_name: string;
-      platform: string;
-      app_version: string | null;
-      license_type: string;
-    }[];
+      results: {
+        id: string;
+        license_id: string;
+        device_id: string;
+        created_at: string;
+        metadata: string | null;
+        device_name: string;
+        platform: string;
+        app_version: string | null;
+        last_seen_at: string;
+        license_type: string;
+      }[];
+    };
 
+  const activations = result.results || [];
   let hasMore = false;
   let data = activations;
 
@@ -72,23 +82,31 @@ export async function listActivationsHandler(c: Context) {
     data = activations.slice(0, limit);
   }
 
-  const last = data[data.length - 1]!;
-  const nextCursor = hasMore ? last.id : null;
+  const nextCursor = hasMore && data.length > 0 ? data[data.length - 1]!.id : null;
 
   return c.json({
-    data: data.map((a) => ({
-      id: a.id,
-      license_id: a.license_id,
-      device_id: a.device_id,
-      created_at: a.created_at,
-      metadata: a.metadata ? JSON.parse(a.metadata) : null,
-      device: {
-        name: a.device_name,
-        platform: a.platform,
-        app_version: a.app_version,
-      },
-      license_type: a.license_type,
-    })),
+    data: data.map((a) => {
+      let metadata = null;
+      if (a.metadata) {
+        try {
+          metadata = JSON.parse(a.metadata);
+        } catch {
+          metadata = null;
+        }
+      }
+      return {
+        id: a.id,
+        license_id: a.license_id,
+        device_id: a.device_id,
+        device_name: a.device_name,
+        device_platform: a.platform,
+        device_app_version: a.app_version,
+        device_last_seen_at: a.last_seen_at,
+        license_type: a.license_type,
+        created_at: a.created_at,
+        metadata,
+      };
+    }),
     pagination: {
       cursor: nextCursor,
       has_more: hasMore,

@@ -14,6 +14,6 @@ export const router = new Hono()
   .route('/users', usersRouter)
   .route('/products', productsRouter)
   .route('/licenses', licensesRouter)
-  .route('/activations', activationsRouter)
+  .route('/', activationsRouter)
   .route('/verify', verifyRouter)
   .route('/devices', devicesRouter);
