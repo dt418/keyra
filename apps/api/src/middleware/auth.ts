@@ -11,7 +11,10 @@ export interface AuthVariables {
 export async function authMiddleware(c: Context, next: Next) {
   const authHeader = c.req.header('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
-    throw new AppError('UNAUTHORIZED', 'Missing authorization header', 401);
+    return c.json(
+      { error: { code: 'UNAUTHORIZED', message: 'Missing authorization header' } },
+      401
+    );
   }
 
   const token = authHeader.slice(7);
@@ -19,10 +22,16 @@ export async function authMiddleware(c: Context, next: Next) {
   try {
     payload = await verifyToken(token, c.env.JWT_SECRET);
   } catch {
-    throw new AppError('UNAUTHORIZED', 'Invalid or expired token', 401);
+    return c.json(
+      { error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' } },
+      401
+    );
   }
   if (payload.type !== 'access') {
-    throw new AppError('UNAUTHORIZED', 'Invalid token type', 401);
+    return c.json(
+      { error: { code: 'UNAUTHORIZED', message: 'Invalid token type' } },
+      401
+    );
   }
   c.set('userId', payload.sub);
   c.set('userEmail', payload.email as string);
