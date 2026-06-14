@@ -82,7 +82,8 @@ export async function listActivationsHandler(c: Context) {
     data = activations.slice(0, limit);
   }
 
-  const nextCursor = hasMore && data.length > 0 ? data[data.length - 1]!.id : null;
+  const last = data[data.length - 1];
+  const nextCursor = hasMore && last ? last.id : null;
 
   return c.json({
     data: data.map((a) => {

@@ -53,8 +53,8 @@ export async function listProductsHandler(c: Context) {
     data = products.slice(0, limit);
   }
 
-  const last = data[data.length - 1]!;
-  const nextCursor = hasMore ? last.id : null;
+  const last = data[data.length - 1];
+  const nextCursor = hasMore && last ? last.id : null;
 
   return c.json({
     data: data.map((p) => ({
