@@ -6,7 +6,7 @@ const mockDB = {
   prepare: vi.fn().mockReturnThis(),
   bind: vi.fn().mockReturnThis(),
   first: vi.fn(),
-  all: vi.fn(),
+  all: vi.fn().mockResolvedValue({ results: [] }),
   run: vi.fn().mockResolvedValue({ success: true }),
 };
 
@@ -44,15 +44,22 @@ describe('listActivationsHandler', () => {
     mockDB.bind.mockClear();
     mockDB.first.mockReset();
     mockDB.all.mockReset();
+    mockDB.all.mockResolvedValue({ results: [] });
     mockDB.run.mockReset();
     mockDB.run.mockResolvedValue({ success: true });
   });
 
   it('should list activations for admin user', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
-    mockDB.all.mockResolvedValueOnce([
-      { id: 'act-1', license_id: 'lic-1', device_id: 'dev-1', created_at: '2024-01-01', metadata: null, device_name: 'MacBook', platform: 'macos', app_version: '1.0.0', license_type: 'professional' },
-    ]);
+    mockDB.all.mockResolvedValueOnce({
+      results: [
+        { org_id: 'org-1' },
+      ],
+    });
+    mockDB.all.mockResolvedValueOnce({
+      results: [
+        { id: 'act-1', license_id: 'lic-1', device_id: 'dev-1', created_at: '2024-01-01', metadata: null, device_name: 'MacBook', platform: 'macos', app_version: '1.0.0', last_seen_at: '2024-01-01', license_type: 'professional' },
+      ],
+    });
 
     const ctx = createMockContext() as any;
     await listActivationsHandler(ctx);

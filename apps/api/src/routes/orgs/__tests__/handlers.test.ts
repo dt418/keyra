@@ -46,10 +46,12 @@ describe('listOrgsHandler', () => {
   });
 
   it('should list user organizations with cursor pagination', async () => {
-    mockDB.all.mockResolvedValueOnce([
-      { id: 'org-1', name: 'Org 1', slug: 'org-1', plan: 'free', created_at: '2024-01-01', updated_at: '2024-01-01' },
-      { id: 'org-2', name: 'Org 2', slug: 'org-2', plan: 'pro', created_at: '2024-01-02', updated_at: '2024-01-02' },
-    ]);
+    mockDB.all.mockResolvedValueOnce({
+      results: [
+        { id: 'org-1', name: 'Org 1', slug: 'org-1', plan: 'free', created_at: '2024-01-01', updated_at: '2024-01-01' },
+        { id: 'org-2', name: 'Org 2', slug: 'org-2', plan: 'pro', created_at: '2024-01-02', updated_at: '2024-01-02' },
+      ],
+    });
 
     const ctx = createMockContext() as any;
     await listOrgsHandler(ctx);
@@ -115,8 +117,9 @@ describe('createOrgHandler', () => {
     );
   });
 
-  it('should reject duplicate slug', async () => {
+  it('should auto-generate unique slug on collision', async () => {
     mockDB.run.mockRejectedValueOnce(new Error('UNIQUE constraint failed: organizations.slug'));
+    mockDB.run.mockResolvedValueOnce({ meta: { changes: 1 } });
 
     const ctx = createMockContext({
       req: {
@@ -127,7 +130,16 @@ describe('createOrgHandler', () => {
       },
     }) as any;
 
-    await expect(createOrgHandler(ctx)).rejects.toThrow('Organization slug already exists');
+    await createOrgHandler(ctx);
+
+    expect(ctx.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          slug: 'existing-slug-1',
+        }),
+      }),
+      201
+    );
   });
 });
 
