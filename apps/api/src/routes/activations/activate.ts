@@ -16,7 +16,7 @@ export async function activateDeviceHandler(c: Context) {
 
   const license = await c.env.DB.prepare(
     `SELECT l.id, l.product_id, l.status, l.max_devices, l.expires_at, l.feature_flags,
-            l.type, p.name as product_name
+            l.type, l.organization_id, p.name as product_name
      FROM licenses l
      INNER JOIN products p ON l.product_id = p.id
      WHERE l.key_hash = ?`
@@ -30,6 +30,7 @@ export async function activateDeviceHandler(c: Context) {
       expires_at: string | null;
       feature_flags: string | null;
       type: string;
+      organization_id: string;
       product_name: string;
     } | null;
 
@@ -60,24 +61,28 @@ export async function activateDeviceHandler(c: Context) {
     throw new AppError('FORBIDDEN', `Maximum device limit (${license.max_devices}) reached`, 403);
   }
 
-  const userId = c.get('userId') ?? crypto.randomUUID();
-
   let device = await c.env.DB.prepare(
-    `SELECT id FROM devices WHERE license_id = ? AND name = ? AND platform = ?`
+    `SELECT id, user_id FROM devices WHERE license_id = ? AND name = ? AND platform = ?`
   )
     .bind(license.id, device_name, platform)
-    .first() as { id: string } | null;
+    .first() as { id: string; user_id: string | null } | null;
 
   if (!device) {
     const deviceId = crypto.randomUUID();
     const now = new Date().toISOString();
+    const ownerUserId = await c.env.DB.prepare(
+      `SELECT user_id FROM org_members WHERE org_id = ? AND role IN ('owner', 'admin') LIMIT 1`
+    )
+      .bind(license.organization_id)
+      .first() as { user_id: string } | null;
+
     await c.env.DB.prepare(
       `INSERT INTO devices (id, license_id, user_id, name, platform, app_version, last_seen_at, activated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
-      .bind(deviceId, license.id, userId, device_name, platform, app_version ?? null, now, now)
+      .bind(deviceId, license.id, ownerUserId?.user_id ?? null, device_name, platform, app_version ?? null, now, now)
       .run();
-    device = { id: deviceId };
+    device = { id: deviceId, user_id: ownerUserId?.user_id ?? null };
   } else {
     const now = new Date().toISOString();
     await c.env.DB.prepare(
@@ -104,7 +109,15 @@ export async function activateDeviceHandler(c: Context) {
         license_id: license.id,
         product_name: license.product_name,
         license_type: license.type,
-        feature_flags: license.feature_flags ? JSON.parse(license.feature_flags) : null,
+        feature_flags: license.feature_flags
+          ? (() => {
+              try {
+                return JSON.parse(license.feature_flags!);
+              } catch {
+                return null;
+              }
+            })()
+          : null,
         expires_at: license.expires_at,
         activated_at: now,
       },

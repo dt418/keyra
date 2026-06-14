@@ -3,9 +3,9 @@ import { authMiddleware } from '../../middleware/auth';
 import { listActivationsHandler } from './list';
 import { activateDeviceHandler } from './activate';
 
-export const activationsRouter = new Hono();
+const activationsRouter = new Hono();
 
-activationsRouter.use('/*', authMiddleware);
-
-activationsRouter.get('/', listActivationsHandler);
+activationsRouter.get('/activations', authMiddleware, listActivationsHandler);
 activationsRouter.post('/activate', activateDeviceHandler);
+
+export { activationsRouter };
