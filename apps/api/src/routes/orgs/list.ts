@@ -34,9 +34,11 @@ export async function listOrgsHandler(c: Context) {
   const fetchLimit = limit + 1;
   params.push(fetchLimit);
 
-  const orgs = await c.env.DB.prepare(sql)
+  const result = await c.env.DB.prepare(sql)
     .bind(...params)
-    .all() as { id: string; name: string; slug: string; plan: string; created_at: string; updated_at: string }[];
+    .all<{ id: string; name: string; slug: string; plan: string; created_at: string; updated_at: string }>();
+
+  const orgs = result.results || [];
 
   let hasMore = false;
   let data = orgs;
