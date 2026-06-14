@@ -1,3 +1,6 @@
-export { cn } from './cn';
-export { formatRelativeTime, formatDate, formatDateTime, formatExpiresAt } from './date';
-export { formatLicenseKey } from './license';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
