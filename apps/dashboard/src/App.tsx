@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './lib/auth';
+import { Toaster } from './components/ui';
 import Root from './routes/root';
 import Login from './routes/login';
 import Register from './routes/register';
@@ -14,6 +15,7 @@ import Licenses from './routes/licenses';
 function App() {
   return (
     <AuthProvider>
+      <Toaster />
       <BrowserRouter>
         <Routes>
           <Route element={<Root />}>

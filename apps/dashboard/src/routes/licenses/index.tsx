@@ -4,6 +4,7 @@ import { licensesApi, productsApi, type LicenseType } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { Button, Input, Label } from '@/components/ui';
 import { Plus, Loader2, Copy, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/utils';
 
 const LICENSE_TYPES: { value: LicenseType; label: string }[] = [
@@ -57,6 +58,10 @@ export default function Licenses() {
       setCreatedLicenseKey(data.licenseKey);
       setIsCreating(false);
       setNewLicense({ productId: '', type: 'trial', maxDevices: 1, expiresAt: '' });
+      toast.success('License created successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Failed to create license');
     },
   });
 
@@ -66,11 +71,16 @@ export default function Licenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['licenses'] });
+      toast.success('License revoked');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Failed to revoke license');
     },
   });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
   };
 
   const getStatusBadge = (status: string) => {
@@ -90,8 +100,8 @@ export default function Licenses() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Licenses</h1>
-          <p className="text-muted-foreground">Create and manage license keys</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Licenses</h1>
+          <p className="text-sm text-muted-foreground">Create and manage license keys</p>
         </div>
         <Button onClick={() => setIsCreating(true)} disabled={!products?.length}>
           <Plus className="mr-2 h-4 w-4" />
@@ -197,7 +207,7 @@ export default function Licenses() {
               License Key Created
             </CardTitle>
             <CardDescription>
-              Copy this key now. You won&apos;t be able to see it again.
+              Copy this key now. You won't be able to see it again.
             </CardDescription>
           </CardHeader>
           <CardContent>

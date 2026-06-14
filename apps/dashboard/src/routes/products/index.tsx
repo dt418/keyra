@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label } from '@/components/ui';
 import { Plus, Loader2, Copy, Key as KeyIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/utils';
 
 export default function Products() {
@@ -28,6 +29,10 @@ export default function Products() {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       setIsCreating(false);
       setNewProduct({ name: '', description: '' });
+      toast.success('Product created successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Failed to create product');
     },
   });
 
@@ -38,19 +43,24 @@ export default function Products() {
     },
     onSuccess: (data) => {
       setShowApiKey(data.apiKey);
+      toast.success('API key generated');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Failed to get API key');
     },
   });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">Manage your products and API keys</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
+          <p className="text-sm text-muted-foreground">Manage your products and API keys</p>
         </div>
         <Button onClick={() => setIsCreating(true)}>
           <Plus className="mr-2 h-4 w-4" />
@@ -160,8 +170,13 @@ export default function Products() {
                     variant="outline"
                     size="sm"
                     onClick={() => getApiKeyMutation.mutate(product.id)}
+                    disabled={getApiKeyMutation.isPending}
                   >
-                    <KeyIcon className="mr-2 h-4 w-4" />
+                    {getApiKeyMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <KeyIcon className="mr-2 h-4 w-4" />
+                    )}
                     Get API Key
                   </Button>
                 </div>

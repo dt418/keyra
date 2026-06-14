@@ -2,7 +2,7 @@ import { Button, Input, Label, Card, CardHeader, CardTitle, CardDescription, Car
 import { useAuth } from '@/lib/auth';
 import { useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Register() {
   const { register } = useAuth();
@@ -11,20 +11,18 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      toast.error('Password must be at least 8 characters');
       return;
     }
 
@@ -32,9 +30,10 @@ export default function Register() {
 
     try {
       await register(email, password, name);
+      toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Registration failed');
+      toast.error(err.response?.data?.error || 'Registration failed');
     } finally {
       setIsLoading(false);
     }
@@ -49,13 +48,6 @@ export default function Register() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                {error}
-              </div>
-            )}
-
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
