@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui';
 import { Loader2, Monitor, Smartphone, Globe, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib';
 
 const getPlatformIcon = (platform: string) => {
   switch (platform.toLowerCase()) {

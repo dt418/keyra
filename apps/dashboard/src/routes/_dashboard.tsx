@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib';
 import { LayoutDashboard, Package, Key, LogOut, Users, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui';
 
