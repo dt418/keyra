@@ -12,3 +12,5 @@ coverage/
 *.log
 .cache/
 .rollup.cache/keyra.db
+.worktrees/
+.worktrees/

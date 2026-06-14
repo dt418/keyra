@@ -78,7 +78,15 @@ export async function verifyLicenseHandler(c: Context) {
       license_id: license.id,
       product_name: license.product_name,
       license_type: license.type,
-      feature_flags: license.feature_flags ? JSON.parse(license.feature_flags) : null,
+      feature_flags: license.feature_flags
+        ? ((() => {
+            try {
+              return JSON.parse(license.feature_flags);
+            } catch {
+              return null;
+            }
+          })())
+        : null,
       expires_at: license.expires_at,
     },
   });
