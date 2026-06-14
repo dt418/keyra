@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const createOrgSchema = z.object({
   name: z.string().min(1).max(100),
-  slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/),
+  slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/).optional(),
 });
 
 export const updateOrgSchema = z.object({
