@@ -1,0 +1,21 @@
+{
+  "name": "@keyra/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "keyra": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@keyra/sdk-js": "workspace:*",
+    "inquirer": "^9.2.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0"
+  }
+}
