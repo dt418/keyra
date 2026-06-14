@@ -4,7 +4,7 @@ import { productsApi } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label } from '@/components/ui';
 import { Plus, Loader2, Copy, Key as KeyIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatRelativeTime } from '@/lib';
+import { formatRelativeTime } from '@/lib/utils';
 
 export default function Products() {
   const queryClient = useQueryClient();

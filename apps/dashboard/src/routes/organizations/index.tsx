@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui';
 import { Input } from '@/components/ui';
 import { Plus, Loader2 } from 'lucide-react';
-import { formatDate } from '@/lib';
+import { formatDate } from '@/lib/utils';
 
 export default function Organizations() {
   const queryClient = useQueryClient();
