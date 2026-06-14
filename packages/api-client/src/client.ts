@@ -78,20 +78,20 @@ export const usersApi = {
 };
 
 export const orgsApi = {
-  list: () => api.get('/orgs'),
-  get: (id: string) => api.get(`/orgs/${id}`),
-  create: (data: { name: string }) => api.post('/orgs', data),
+  list: () => api.get('/organizations'),
+  get: (id: string) => api.get(`/organizations/${id}`),
+  create: (data: { name: string }) => api.post('/organizations', data),
   update: (id: string, data: { name?: string }) =>
-    api.patch(`/orgs/${id}`, data),
-  delete: (id: string) => api.delete(`/orgs/${id}`),
+    api.patch(`/organizations/${id}`, data),
+  delete: (id: string) => api.delete(`/organizations/${id}`),
   members: {
-    list: (orgId: string) => api.get(`/orgs/${orgId}/members`),
+    list: (orgId: string) => api.get(`/organizations/${orgId}/members`),
     invite: (orgId: string, data: { email: string; role: 'owner' | 'admin' | 'member' }) =>
-      api.post(`/orgs/${orgId}/members`, data),
+      api.post(`/organizations/${orgId}/members`, data),
     update: (orgId: string, userId: string, data: { role: 'owner' | 'admin' | 'member' }) =>
-      api.patch(`/orgs/${orgId}/members/${userId}`, data),
+      api.patch(`/organizations/${orgId}/members/${userId}`, data),
     remove: (orgId: string, userId: string) =>
-      api.delete(`/orgs/${orgId}/members/${userId}`),
+      api.delete(`/organizations/${orgId}/members/${userId}`),
   },
 };
 
