@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui';
 import { Input } from '@/components/ui';
 import { Plus, Loader2 } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 export default function Organizations() {
   const queryClient = useQueryClient();
@@ -95,7 +96,7 @@ export default function Organizations() {
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground">
-                  Created: {new Date(org.created_at).toLocaleDateString()}
+                  Created: {formatDate(org.created_at)}
                 </div>
               </CardContent>
             </Card>

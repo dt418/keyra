@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button, Input, Label } from '@/components/ui';
 import { Plus, Loader2, Copy, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime, formatExpiresAt } from '@/lib/utils';
 
 const LICENSE_TYPES: { value: LicenseType; label: string }[] = [
   { value: 'trial', label: 'Trial' },
@@ -240,7 +240,7 @@ export default function Licenses() {
                   </div>
                   <div className="text-sm text-muted-foreground">
                     ID: {license.id} • {license.maxDevices} device{license.maxDevices !== 1 ? 's' : ''}
-                    {license.expiresAt && ` • Expires: ${new Date(license.expiresAt).toLocaleDateString()}`}
+                    {license.expiresAt && ` • Expires: ${formatExpiresAt(license.expiresAt)}`}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Created {formatRelativeTime(license.created_at)}
