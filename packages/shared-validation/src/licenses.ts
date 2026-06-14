@@ -21,6 +21,10 @@ export const revokeLicenseSchema = z.object({
   reason: z.string().max(500).optional(),
 });
 
+export const transferLicenseSchema = z.object({
+  target_org_id: z.string().min(1),
+});
+
 export const listLicensesSchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
   cursor: z.string().optional(),

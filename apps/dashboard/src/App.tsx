@@ -11,6 +11,7 @@ import DashboardIndex from './routes/dashboard';
 import Organizations from './routes/organizations';
 import Products from './routes/products';
 import Licenses from './routes/licenses';
+import Devices from './routes/devices';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
               <Route path="/dashboard/organizations" element={<Organizations />} />
               <Route path="/dashboard/products" element={<Products />} />
               <Route path="/dashboard/licenses" element={<Licenses />} />
+              <Route path="/dashboard/devices" element={<Devices />} />
             </Route>
           </Route>
 

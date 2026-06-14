@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Package, Key, LogOut, Users } from 'lucide-react';
+import { LayoutDashboard, Package, Key, LogOut, Users, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui';
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { to: '/dashboard/organizations', icon: Users, label: 'Organizations' },
   { to: '/dashboard/products', icon: Package, label: 'Products' },
   { to: '/dashboard/licenses', icon: Key, label: 'Licenses' },
+  { to: '/dashboard/devices', icon: Monitor, label: 'Devices' },
 ];
 
 export default function DashboardLayout() {

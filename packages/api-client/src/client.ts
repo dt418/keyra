@@ -128,6 +128,9 @@ export const licensesApi = {
   revoke: (id: string, data?: { reason?: string }) =>
     api.post(`/licenses/${id}/revoke`, data),
   delete: (id: string) => api.delete(`/licenses/${id}`),
+  resetDevices: (id: string) => api.post(`/licenses/${id}/reset-devices`),
+  transfer: (id: string, data: { targetOrgId: string }) =>
+    api.post(`/licenses/${id}/transfer`, data),
 };
 
 export const activationsApi = {
@@ -143,4 +146,8 @@ export const verifyApi = {
     api.post('/verify/license', data),
   device: (data: { deviceToken: string }) =>
     api.post('/verify/device', data),
+};
+
+export const devicesApi = {
+  deactivate: (id: string) => api.delete(`/devices/${id}`),
 };

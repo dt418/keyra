@@ -6,6 +6,7 @@ import { productsRouter } from './routes/products/router';
 import { licensesRouter } from './routes/licenses/router';
 import { activationsRouter } from './routes/activations/router';
 import { verifyRouter } from './routes/verify/router';
+import { devicesRouter } from './routes/devices/router';
 
 export const router = new Hono()
   .route('/auth', authRouter)
@@ -14,4 +15,5 @@ export const router = new Hono()
   .route('/products', productsRouter)
   .route('/licenses', licensesRouter)
   .route('/activations', activationsRouter)
-  .route('/verify', verifyRouter);
+  .route('/verify', verifyRouter)
+  .route('/devices', devicesRouter);
