@@ -1,8 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Key, LogOut, Users, Package, Monitor, ChevronsUpDown, Plus, Settings, LifeBuoy, Check } from 'lucide-react';
+import { LayoutDashboard, Key, LogOut, Users, Package, Monitor, Settings, LifeBuoy } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
-import { Button, Avatar, AvatarFallback, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, Separator } from '@/components/ui';
+import { Button, Avatar, AvatarFallback, Separator } from '@/components/ui';
 import { ModeToggle } from '@/components/mode-toggle';
 
 const navItems = [
@@ -20,7 +20,7 @@ const secondaryNav = [
 ];
 
 export function AppSidebar() {
-  const { user, logout, currentOrg, orgs, switchOrg } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -37,40 +37,7 @@ export function AppSidebar() {
         <span className="font-semibold text-sm">Keyra</span>
       </div>
 
-      <div className="p-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button className="flex w-full items-center gap-2 rounded-md border border-border bg-card px-2 py-1.5 text-sm transition-colors hover:bg-accent" />
-            }
-          >
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-[10px] font-semibold text-primary">
-              {currentOrg?.name?.charAt(0).toUpperCase() || 'O'}
-            </div>
-            <span className="flex-1 truncate text-left font-medium">{currentOrg?.name || 'Select Org'}</span>
-            <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel>Organizations</DropdownMenuLabel>
-            {orgs?.map((org) => (
-              <DropdownMenuItem key={org.id} onClick={() => switchOrg(org.id)}>
-                <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-[10px] font-semibold text-primary mr-2">
-                  {org.name.charAt(0).toUpperCase()}
-                </div>
-                {org.name}
-                {currentOrg?.id === org.id && <Check className="ml-auto h-3.5 w-3.5" />}
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/dashboard/organizations')}>
-              <Plus className="mr-2 h-4 w-4" />
-              New organization
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto px-2 pb-2">
+      <nav className="flex-1 overflow-y-auto px-2 py-2">
         <ul className="space-y-0.5">
           {navItems.map((item) => (
             <li key={item.to}>
