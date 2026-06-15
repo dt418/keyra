@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { licensesApi, productsApi, type LicenseType } from '@keyra/api-client';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { Card, CardContent } from '@/components/ui';
 import { Button, Input, Label } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Loader2, Copy, Key, Search, X, Shield, Smartphone, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime, formatExpiresAt } from '@/lib/date';
@@ -193,105 +194,103 @@ export default function Licenses() {
         </Button>
       </div>
 
-      {isCreating && (
-        <Card className="animate-in fade-in slide-in-from-top-2 duration-200">
-          <CardHeader>
-            <CardTitle>Create License</CardTitle>
-            <CardDescription>Generate a new license key</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (newLicense.productId && newLicense.type) {
-                  createMutation.mutate({
-                    product_id: newLicense.productId,
-                    type: newLicense.type,
-                    max_devices: newLicense.maxDevices,
-                    expires_at: newLicense.expiresAt || undefined,
-                  });
-                }
-              }}
-              className="space-y-4"
-            >
+      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create License</DialogTitle>
+            <DialogDescription>Generate a new license key</DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (newLicense.productId && newLicense.type) {
+                createMutation.mutate({
+                  product_id: newLicense.productId,
+                  type: newLicense.type,
+                  max_devices: newLicense.maxDevices,
+                  expires_at: newLicense.expiresAt || undefined,
+                });
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <Label htmlFor="product">Product</Label>
+              <select
+                id="product"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={newLicense.productId}
+                onChange={(e) => setNewLicense({ ...newLicense, productId: e.target.value })}
+              >
+                <option value="">Select a product</option>
+                {products?.map((p: any) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label htmlFor="product">Product</Label>
+                <Label htmlFor="type">License Type</Label>
                 <select
-                  id="product"
+                  id="type"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={newLicense.productId}
-                  onChange={(e) => setNewLicense({ ...newLicense, productId: e.target.value })}
+                  value={newLicense.type}
+                  onChange={(e) => setNewLicense({ ...newLicense, type: e.target.value as LicenseType })}
                 >
-                  <option value="">Select a product</option>
-                  {products?.map((p: any) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
+                  {LICENSE_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
                     </option>
                   ))}
                 </select>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="type">License Type</Label>
-                  <select
-                    id="type"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={newLicense.type}
-                    onChange={(e) => setNewLicense({ ...newLicense, type: e.target.value as LicenseType })}
-                  >
-                    {LICENSE_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="maxDevices">Max Devices</Label>
-                  <Input
-                    id="maxDevices"
-                    type="number"
-                    min={1}
-                    value={newLicense.maxDevices}
-                    onChange={(e) => setNewLicense({ ...newLicense, maxDevices: parseInt(e.target.value) || 1 })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
               <div>
-                <Label htmlFor="expiresAt">Expires At (optional)</Label>
+                <Label htmlFor="maxDevices">Max Devices</Label>
                 <Input
-                  id="expiresAt"
-                  type="datetime-local"
-                  value={newLicense.expiresAt}
-                  onChange={(e) => setNewLicense({ ...newLicense, expiresAt: e.target.value })}
+                  id="maxDevices"
+                  type="number"
+                  min={1}
+                  value={newLicense.maxDevices}
+                  onChange={(e) => setNewLicense({ ...newLicense, maxDevices: parseInt(e.target.value) || 1 })}
                   className="w-full"
                 />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={createMutation.isPending || !newLicense.productId}>
-                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+            <div>
+              <Label htmlFor="expiresAt">Expires At (optional)</Label>
+              <Input
+                id="expiresAt"
+                type="datetime-local"
+                value={newLicense.expiresAt}
+                onChange={(e) => setNewLicense({ ...newLicense, expiresAt: e.target.value })}
+                className="w-full"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending || !newLicense.productId}>
+                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      {editingLicense && (
-        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-blue-500">
-          <CardHeader>
-            <CardTitle>Edit License</CardTitle>
-            <CardDescription>Update license settings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
+      <Dialog open={!!editingLicense} onOpenChange={(open) => !open && setEditingLicense(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit License</DialogTitle>
+            <DialogDescription>Update license settings</DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (editingLicense) {
                 updateMutation.mutate({
                   id: editingLicense.id,
                   data: {
@@ -300,109 +299,105 @@ export default function Licenses() {
                     expires_at: editForm.expiresAt || undefined,
                   },
                 });
-              }}
-              className="space-y-4"
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="edit-type">License Type</Label>
-                  <select
-                    id="edit-type"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={editForm.type}
-                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value as LicenseType })}
-                  >
-                    {LICENSE_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="edit-maxDevices">Max Devices</Label>
-                  <Input
-                    id="edit-maxDevices"
-                    type="number"
-                    min={1}
-                    value={editForm.maxDevices}
-                    onChange={(e) => setEditForm({ ...editForm, maxDevices: parseInt(e.target.value) || 1 })}
-                    className="w-full"
-                  />
-                </div>
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="edit-type">License Type</Label>
+                <select
+                  id="edit-type"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={editForm.type}
+                  onChange={(e) => setEditForm({ ...editForm, type: e.target.value as LicenseType })}
+                >
+                  {LICENSE_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
-                <Label htmlFor="edit-expiresAt">Expires At (optional)</Label>
+                <Label htmlFor="edit-maxDevices">Max Devices</Label>
                 <Input
-                  id="edit-expiresAt"
-                  type="datetime-local"
-                  value={editForm.expiresAt}
-                  onChange={(e) => setEditForm({ ...editForm, expiresAt: e.target.value })}
+                  id="edit-maxDevices"
+                  type="number"
+                  min={1}
+                  value={editForm.maxDevices}
+                  onChange={(e) => setEditForm({ ...editForm, maxDevices: parseInt(e.target.value) || 1 })}
                   className="w-full"
                 />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setEditingLicense(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {deleteConfirm && (
-        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-red-500">
-          <CardHeader>
-            <CardTitle className="text-red-600">Delete License</CardTitle>
-            <CardDescription>This action cannot be undone.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => deleteMutation.mutate(deleteConfirm)}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Delete
-              </Button>
-              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+            </div>
+            <div>
+              <Label htmlFor="edit-expiresAt">Expires At (optional)</Label>
+              <Input
+                id="edit-expiresAt"
+                type="datetime-local"
+                value={editForm.expiresAt}
+                onChange={(e) => setEditForm({ ...editForm, expiresAt: e.target.value })}
+                className="w-full"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditingLicense(null)}>
                 Cancel
               </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      {createdLicenseKey && (
-        <Card className="border-green-500 bg-green-50/50 dark:bg-green-950/20 animate-in fade-in slide-in-from-top-2 duration-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete License</DialogTitle>
+            <DialogDescription>This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!createdLicenseKey} onOpenChange={(open) => !open && setCreatedLicenseKey(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
               <Shield className="h-5 w-5" />
               License Key Created
-            </CardTitle>
-            <CardDescription>
-              Copy this key now. You won't be able to see it again.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Input value={createdLicenseKey} readOnly className="font-mono text-sm" />
-              <Button onClick={() => copyToClipboard(createdLicenseKey)} variant="default" size="icon">
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" onClick={() => setCreatedLicenseKey(null)}>
-                Done
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </DialogTitle>
+            <DialogDescription>Copy this key now. You won&apos;t be able to see it again.</DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Input value={createdLicenseKey || ''} readOnly className="font-mono text-sm" />
+            <Button onClick={() => createdLicenseKey && copyToClipboard(createdLicenseKey)} variant="default" size="icon">
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreatedLicenseKey(null)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {isLoading ? (
         <div className="flex justify-center py-12">

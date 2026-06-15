@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Loader2, Copy, Key as KeyIcon, Package, Search, X, Eye, EyeOff, Check, AlertCircle, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/date';
@@ -145,6 +146,8 @@ export default function Products() {
   const handlePrevPage = () => setCursor(null);
   const handleNextPage = () => { if (currentCursor) setCursor(currentCursor); };
 
+  const deleteProductName = products.find(p => p.id === deleteConfirm)?.name;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -158,146 +161,138 @@ export default function Products() {
         </Button>
       </div>
 
-      {isCreating && (
-        <Card className="animate-in fade-in slide-in-from-top-2 duration-200">
-          <CardHeader>
-            <CardTitle>Create Product</CardTitle>
-            <CardDescription>Add a new product to generate license keys</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (newProduct.name.trim()) {
-                  createMutation.mutate({
-                    name: newProduct.name.trim(),
-                    description: newProduct.description.trim() || undefined,
-                  });
-                }
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <Label htmlFor="name">Product Name</Label>
-                <Input
-                  id="name"
-                  placeholder="My Awesome App"
-                  value={newProduct.name}
-                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                  className="max-w-md"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description (optional)</Label>
-                <Input
-                  id="description"
-                  placeholder="Product description"
-                  value={newProduct.description}
-                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                  className="max-w-md"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={createMutation.isPending || !newProduct.name.trim()}>
-                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {editingProduct && (
-        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-blue-500">
-          <CardHeader>
-            <CardTitle>Edit Product</CardTitle>
-            <CardDescription>Update product information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (editForm.name.trim()) {
-                  updateMutation.mutate({
-                    id: editingProduct.id,
-                    data: {
-                      name: editForm.name.trim(),
-                      description: editForm.description.trim() || undefined,
-                    },
-                  });
-                }
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <Label htmlFor="edit-name">Product Name</Label>
-                <Input
-                  id="edit-name"
-                  placeholder="My Awesome App"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="max-w-md"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-description">Description (optional)</Label>
-                <Input
-                  id="edit-description"
-                  placeholder="Product description"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="max-w-md"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={updateMutation.isPending || !editForm.name.trim()}>
-                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setEditingProduct(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {deleteConfirm && (
-        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-red-500">
-          <CardHeader>
-            <CardTitle className="text-red-600">Delete Product</CardTitle>
-            <CardDescription>This action cannot be undone. All associated licenses will also be deleted.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => deleteMutation.mutate(deleteConfirm)}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Delete
-              </Button>
-              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Product</DialogTitle>
+            <DialogDescription>Add a new product to generate license keys</DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (newProduct.name.trim()) {
+                createMutation.mutate({
+                  name: newProduct.name.trim(),
+                  description: newProduct.description.trim() || undefined,
+                });
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <Label htmlFor="name">Product Name</Label>
+              <Input
+                id="name"
+                placeholder="My Awesome App"
+                value={newProduct.name}
+                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Description (optional)</Label>
+              <Input
+                id="description"
+                placeholder="Product description"
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
                 Cancel
               </Button>
+              <Button type="submit" disabled={createMutation.isPending || !newProduct.name.trim()}>
+                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>Update product information</DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (editingProduct && editForm.name.trim()) {
+                updateMutation.mutate({
+                  id: editingProduct.id,
+                  data: {
+                    name: editForm.name.trim(),
+                    description: editForm.description.trim() || undefined,
+                  },
+                });
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <Label htmlFor="edit-name">Product Name</Label>
+              <Input
+                id="edit-name"
+                placeholder="My Awesome App"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                autoFocus
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div>
+              <Label htmlFor="edit-description">Description (optional)</Label>
+              <Input
+                id="edit-description"
+                placeholder="Product description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditingProduct(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending || !editForm.name.trim()}>
+                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{deleteProductName}"? This action cannot be undone. All associated licenses will also be deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {isLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : filteredProducts && filteredProducts.length > 0 ? (
+      ) : filteredProducts.length > 0 ? (
         <>
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -458,31 +453,31 @@ export default function Products() {
             })}
           </div>
 
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {products.length > 0 && <>Showing {products.length} items{hasMore ? '+' : ''}</>}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePrevPage}
-                    disabled={!cursor || isFetching}
-                  >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNextPage}
-                    disabled={!hasMore || isFetching}
-                  >
-                    Next
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {products.length > 0 && <>Showing {products.length} items{hasMore ? '+' : ''}</>}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrevPage}
+                disabled={!cursor || isFetching}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={!hasMore || isFetching}
+              >
+                Next
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </>
       ) : (
         <Card className="border-dashed">

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { devicesApi, activationsApi } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { Button } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, Monitor, Smartphone, Globe, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/date';
@@ -31,8 +32,7 @@ export default function Devices() {
   const queryClient = useQueryClient();
   const [expandedLicenseId, setExpandedLicenseId] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [selectedDevice, setSelectedDevice] = useState<any>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string; platform: string } | null>(null);
 
   const { data: activationsResponse, isLoading, isFetching } = useQuery({
     queryKey: ['devices', cursor],
@@ -49,7 +49,6 @@ export default function Devices() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['devices'] });
       setDeleteConfirm(null);
-      setSelectedDevice(null);
       toast.success('Device deactivated');
     },
     onError: (err: any) => {
@@ -82,32 +81,30 @@ export default function Devices() {
         <p className="text-sm text-muted-foreground">Manage activated devices across your licenses</p>
       </div>
 
-      {deleteConfirm && selectedDevice && (
-        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-red-500">
-          <CardHeader>
-            <CardTitle className="text-red-600">Deactivate Device</CardTitle>
-            <CardDescription>
-              This will deactivate "{selectedDevice.name}" ({getPlatformLabel(selectedDevice.platform)}).
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Deactivate Device</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to deactivate "{deleteConfirm?.name}" ({deleteConfirm && getPlatformLabel(deleteConfirm.platform)})?
               The user will need to reactivate their license on this device.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => deactivateMutation.mutate(deleteConfirm)}
-                disabled={deactivateMutation.isPending}
-              >
-                {deactivateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Deactivate
-              </Button>
-              <Button variant="outline" onClick={() => { setDeleteConfirm(null); setSelectedDevice(null); }}>
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteConfirm && deactivateMutation.mutate(deleteConfirm.id)}
+              disabled={deactivateMutation.isPending}
+            >
+              {deactivateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Deactivate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {isLoading ? (
         <div className="flex justify-center py-8">
@@ -164,16 +161,14 @@ export default function Devices() {
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => { setSelectedDevice(device); setDeleteConfirm(device.id); }}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleteConfirm({ id: device.id, name: device.name, platform: device.platform })}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           ))}
                         </CardContent>
