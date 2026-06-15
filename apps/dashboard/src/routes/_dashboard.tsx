@@ -37,11 +37,11 @@ export default function DashboardLayout() {
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <div className="space-y-1">
-            {navItems.map((item) => (
+            {navItems.map((navItem) => (
               <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/dashboard'}
+                key={navItem.to}
+                to={navItem.to}
+                end={navItem.to === '/dashboard'}
                 className={({ isActive }) =>
                   cn(
                     'group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
@@ -54,8 +54,8 @@ export default function DashboardLayout() {
                 {({ isActive }) => (
                   <>
                     <span className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
+                      <navItem.icon className="h-4 w-4" />
+                      {navItem.label}
                     </span>
                     {isActive && <ChevronRight className="h-4 w-4 opacity-50" />}
                   </>
@@ -77,7 +77,7 @@ export default function DashboardLayout() {
               </div>
             </div>
           </div>
-          <Button variant="outline" className="w-full justify-start gap-2 text-muted-foreground" onClick={handleLogout}>
+          <Button variant="outline" className="w-full justify-start gap-2" onClick={handleLogout}>
             <LogOut className="h-4 w-4" />
             Sign out
           </Button>
