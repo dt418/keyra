@@ -76,7 +76,7 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.19.21)(jsdom@29.1.1(@noble/hashes@1.8.0))(lightningcss@1.32.0)
       wrangler:
-        specifier: ^3.95.0
+        specifier: ^3.114.17
         version: 3.114.17(@cloudflare/workers-types@4.20260613.1)
 
   apps/cli:

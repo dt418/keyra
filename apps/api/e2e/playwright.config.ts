@@ -8,11 +8,14 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  workers: isCI ? 1 : 1,
-  reporter: 'html',
+  workers: 1,
+  reporter: isCI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  timeout: 60 * 1000,
   use: {
     baseURL: 'http://localhost:8788',
     trace: 'on-first-retry',
+    actionTimeout: 10 * 1000,
+    navigationTimeout: 15 * 1000,
   },
   projects: [
     {
@@ -21,10 +24,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm --filter @keyra/api dev',
-    url: 'http://localhost:8788',
+    command: 'wrangler dev --port 8788',
+    cwd: '.',
+    url: 'http://localhost:8788/auth/login',
     reuseExistingServer: !isCI,
-    timeout: 120 * 1000,
+    timeout: 180 * 1000,
+    stdout: 'pipe',
+    stderr: 'pipe',
     env: {
       CLOUDFLARE_ACCOUNT_ID: 'test-account',
       CLOUDFLARE_API_TOKEN: 'test-token',
