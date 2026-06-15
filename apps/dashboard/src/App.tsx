@@ -16,6 +16,7 @@ import Devices from './routes/devices';
 import ApiKeys from './routes/api-keys';
 import Settings from './routes/settings';
 import Support from './routes/support';
+import Docs from './routes/docs';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
               <Route path="/dashboard/api-keys" element={<ApiKeys />} />
               <Route path="/dashboard/settings" element={<Settings />} />
               <Route path="/dashboard/support" element={<Support />} />
+              <Route path="/dashboard/docs" element={<Docs />} />
               </Route>
             </Route>
 

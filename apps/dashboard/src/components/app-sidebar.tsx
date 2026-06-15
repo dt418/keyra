@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Key, LogOut, Users, Package, Monitor, Settings, LifeBuoy } from 'lucide-react';
+import { LayoutDashboard, Key, LogOut, Users, Package, Monitor, Settings, LifeBuoy, Book } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { Button, Avatar, AvatarFallback, Separator } from '@/components/ui';
@@ -15,6 +15,7 @@ const navItems = [
 
 const secondaryNav = [
   { to: '/dashboard/api-keys', icon: Key, label: 'API Keys' },
+  { to: '/dashboard/docs', icon: Book, label: 'Documentation' },
   { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
   { to: '/dashboard/support', icon: LifeBuoy, label: 'Support' },
 ];
