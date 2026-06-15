@@ -1,0 +1,24 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "paths": [
+      "/home/thanh/.config/opencode/skills/cloudflare",
+      "/home/thanh/.config/opencode/skills/wrangler",
+      "/home/thanh/.config/opencode/skills/shadcn",
+      "/home/thanh/.config/opencode/skills/shadcn-best-practices",
+      "/home/thanh/.config/opencode/skills/react-best-practices",
+      "/home/thanh/.config/opencode/skills/playwright-dev",
+      "/home/thanh/.config/opencode/skills/github",
+      "/home/thanh/.config/opencode/skills/create-github-action-workflow-specification",
+      "/home/thanh/.config/opencode/skills/best-practices",
+      "/home/thanh/.config/opencode/skills/agent-browser",
+      "/home/thanh/.config/opencode/skills/ai-sdk"
+    ]
+  },
+  "mcp": {
+    "code-review-graph": {
+      "type": "stdio",
+      "command": ["uvx", "code-review-graph", "serve"]
+    }
+  }
+}
