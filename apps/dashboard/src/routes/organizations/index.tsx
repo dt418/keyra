@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { orgsApi } from '@keyra/api-client';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { Card, CardContent } from '@/components/ui';
 import { Button } from '@/components/ui';
 import { Input } from '@/components/ui';
+import { Label } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Loader2 } from 'lucide-react';
 import { formatDate } from '@/lib/date';
 
@@ -45,42 +47,43 @@ export default function Organizations() {
         </Button>
       </div>
 
-      {isCreating && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create Organization</CardTitle>
-            <CardDescription>Add a new organization to manage products and licenses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (newOrgName.trim()) {
-                  createMutation.mutate(newOrgName.trim());
-                }
-              }}
-              className="flex gap-4"
-            >
+      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Organization</DialogTitle>
+            <DialogDescription>Add a new organization to manage products and licenses</DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (newOrgName.trim()) {
+                createMutation.mutate(newOrgName.trim());
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <Label htmlFor="orgName">Organization Name</Label>
               <Input
-                placeholder="Organization name"
+                id="orgName"
+                placeholder="My Organization"
                 value={newOrgName}
                 onChange={(e) => setNewOrgName(e.target.value)}
-                className="max-w-md"
+                autoFocus
               />
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  'Create'
-                )}
-              </Button>
+            </div>
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
                 Cancel
               </Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+              <Button type="submit" disabled={createMutation.isPending || !newOrgName.trim()}>
+                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {isLoading ? (
         <div className="flex justify-center py-8">
@@ -90,12 +93,10 @@ export default function Organizations() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {data.map((org: any) => (
             <Card key={org.id}>
-              <CardHeader>
-                <CardTitle>{org.name}</CardTitle>
-                <CardDescription>ID: {org.id}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground">
+              <CardContent className="pt-6">
+                <div className="font-medium text-lg">{org.name}</div>
+                <div className="text-sm text-muted-foreground mt-1">ID: {org.id}</div>
+                <div className="text-xs text-muted-foreground mt-2">
                   Created: {formatDate(org.created_at)}
                 </div>
               </CardContent>
