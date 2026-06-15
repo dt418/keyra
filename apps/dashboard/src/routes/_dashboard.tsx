@@ -3,7 +3,7 @@ import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { LayoutDashboard, Package, Key, LogOut, Users, Monitor, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ModeToggle } from '@/components/mode-toggle';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
@@ -32,7 +32,7 @@ export default function DashboardLayout() {
             </div>
             Keyra
           </h1>
-          <ThemeToggle />
+          <ModeToggle />
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">

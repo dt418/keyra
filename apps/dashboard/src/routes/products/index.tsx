@@ -368,12 +368,12 @@ export default function Products() {
                       </div>
                       <div className="flex items-center gap-2">
                         {hasApiKey ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/20">
                             <Check className="h-3 w-3" />
                             API Key Set
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-500/20">
                             <AlertCircle className="h-3 w-3" />
                             No API Key
                           </span>

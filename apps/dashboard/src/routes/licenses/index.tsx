@@ -9,12 +9,12 @@ import { toast } from 'sonner';
 import { formatRelativeTime, formatExpiresAt } from '@/lib/date';
 
 const LICENSE_TYPES: { value: LicenseType; label: string; color: string }[] = [
-  { value: 'trial', label: 'Trial', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-  { value: 'free', label: 'Free', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
-  { value: 'personal', label: 'Personal', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  { value: 'professional', label: 'Professional', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
-  { value: 'business', label: 'Business', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
-  { value: 'enterprise', label: 'Enterprise', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+  { value: 'trial', label: 'Trial', color: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300 border border-violet-200 dark:border-violet-800' },
+  { value: 'free', label: 'Free', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700' },
+  { value: 'personal', label: 'Personal', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800' },
+  { value: 'professional', label: 'Professional', color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800' },
+  { value: 'business', label: 'Business', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800' },
+  { value: 'enterprise', label: 'Enterprise', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800' },
 ];
 
 const PAGE_SIZE = 20;
@@ -144,20 +144,20 @@ export default function Licenses() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">Active</span>;
+        return <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Active</span>;
       case 'revoked':
-        return <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400">Revoked</span>;
+        return <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800">Revoked</span>;
       case 'expired':
-        return <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">Expired</span>;
+        return <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">Expired</span>;
       default:
-        return <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-400">{status}</span>;
+        return <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">{status}</span>;
     }
   };
 
   const getTypeBadge = (type: string) => {
     const t = LICENSE_TYPES.find((lt) => lt.value === type);
     return (
-      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${t?.color || ''}`}>
+      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${t?.color || ''}`}>
         {t?.label || type}
       </span>
     );
