@@ -2,32 +2,61 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label } from '@/components/ui';
-import { Plus, Loader2, Copy, Key as KeyIcon, Package, Search, X } from 'lucide-react';
+import { Plus, Loader2, Copy, Key as KeyIcon, Package, Search, X, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/date';
+
+type ProductWithApiKey = {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  api_key_hash: string | null;
+};
 
 export default function Products() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', description: '' });
-  const [showApiKey, setShowApiKey] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, string>>({});
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const res = await productsApi.list();
-      return res.data.data;
+      const res = await productsApi.list({ limit: 100 });
+      return res.data.data as ProductWithApiKey[];
     },
   });
 
+  const { data: apiKeyStatuses } = useQuery({
+    queryKey: ['products-api-keys'],
+    queryFn: async () => {
+      if (!products) return {};
+      const statuses: Record<string, { hasApiKey: boolean }> = {};
+      await Promise.all(
+        products.map(async (p) => {
+          try {
+            const res = await productsApi.getApiKey(p.id);
+            statuses[p.id] = { hasApiKey: res.data.data.hasApiKey };
+          } catch {
+            statuses[p.id] = { hasApiKey: false };
+          }
+        })
+      );
+      return statuses;
+    },
+    enabled: !!products && products.length > 0,
+  });
+
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description?: string; orgId?: string }) => {
+    mutationFn: async (data: { name: string; description?: string }) => {
       const res = await productsApi.create(data);
       return res.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products-api-keys'] });
       setIsCreating(false);
       setNewProduct({ name: '', description: '' });
       toast.success('Product created successfully');
@@ -37,17 +66,18 @@ export default function Products() {
     },
   });
 
-  const getApiKeyMutation = useMutation({
+  const regenerateKeyMutation = useMutation({
     mutationFn: async (productId: string) => {
       const res = await productsApi.regenerateKey(productId);
       return res.data.data;
     },
     onSuccess: (data) => {
-      setShowApiKey(data.apiKey);
-      toast.success('API key generated');
+      setVisibleApiKeys((prev) => ({ ...prev, [data.productId]: data.apiKey }));
+      queryClient.invalidateQueries({ queryKey: ['products-api-keys'] });
+      toast.success('API key generated. Make sure to update your applications.');
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to get API key');
+      toast.error(err.response?.data?.error || 'Failed to regenerate API key');
     },
   });
 
@@ -56,7 +86,18 @@ export default function Products() {
     toast.success('Copied to clipboard');
   };
 
-  const filteredProducts = products?.filter((p: any) =>
+  const toggleApiKeyVisibility = (productId: string) => {
+    setVisibleApiKeys((prev) => {
+      if (prev[productId]) {
+        const next = { ...prev };
+        delete next[productId];
+        return next;
+      }
+      return prev;
+    });
+  };
+
+  const filteredProducts = products?.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -116,9 +157,7 @@ export default function Products() {
               </div>
               <div className="flex gap-2">
                 <Button type="submit" disabled={createMutation.isPending || !newProduct.name.trim()}>
-                  {createMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
+                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
@@ -126,31 +165,6 @@ export default function Products() {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {showApiKey && (
-        <Card className="border-green-500 bg-green-50/50 dark:bg-green-950/20 animate-in fade-in slide-in-from-top-2 duration-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
-              <KeyIcon className="h-5 w-5" />
-              API Key Created
-            </CardTitle>
-            <CardDescription>
-              Copy this key now. You won't be able to see it again.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Input value={showApiKey} readOnly className="font-mono text-sm" />
-              <Button onClick={() => copyToClipboard(showApiKey)} variant="default" size="icon">
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" onClick={() => setShowApiKey(null)}>
-                Done
-              </Button>
-            </div>
           </CardContent>
         </Card>
       )}
@@ -178,47 +192,126 @@ export default function Products() {
               </button>
             )}
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredProducts.map((product: any) => (
-              <Card key={product.id} className="group hover:border-primary/50 transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                        <Package className="h-5 w-5 text-primary" />
+          <div className="space-y-4">
+            {filteredProducts.map((product) => {
+              const apiKeyStatus = apiKeyStatuses?.[product.id];
+              const hasApiKey = apiKeyStatus?.hasApiKey ?? false;
+              const visibleKey = visibleApiKeys[product.id];
+              const isRegenerating = regenerateKeyMutation.isPending && regenerateKeyMutation.variables === product.id;
+
+              return (
+                <Card key={product.id} className="hover:border-primary/50 transition-colors">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <Package className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-base">{product.name}</CardTitle>
+                          <CardDescription className="line-clamp-1">
+                            {product.description || 'No description'}
+                          </CardDescription>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-base">{product.name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        {hasApiKey ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                            <Check className="h-3 w-3" />
+                            API Key Set
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                            <AlertCircle className="h-3 w-3" />
+                            No API Key
+                          </span>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  <CardDescription className="line-clamp-2">
-                    {product.description || 'No description'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Created {formatRelativeTime(product.created_at)}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => getApiKeyMutation.mutate(product.id)}
-                      disabled={getApiKeyMutation.isPending}
-                    >
-                      {getApiKeyMutation.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <KeyIcon className="mr-2 h-4 w-4" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Created {formatRelativeTime(product.created_at)}</span>
+                    </div>
+
+                    {visibleKey && (
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-muted-foreground">API Key</Label>
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              type="text"
+                              value={visibleKey}
+                              readOnly
+                              className="pr-20 font-mono text-sm"
+                            />
+                            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => toggleApiKeyVisibility(product.id)}
+                                title="Hide"
+                              >
+                                <EyeOff className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => copyToClipboard(visibleKey)}
+                                title="Copy"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      {hasApiKey && !visibleKey && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => regenerateKeyMutation.mutate(product.id)}
+                          disabled={regenerateKeyMutation.isPending}
+                        >
+                          {isRegenerating ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Eye className="mr-2 h-4 w-4" />
+                          )}
+                          Reveal Key
+                        </Button>
                       )}
-                      API Key
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      <Button
+                        variant={hasApiKey ? 'secondary' : 'default'}
+                        size="sm"
+                        className={hasApiKey && !visibleKey ? '' : 'flex-1'}
+                        onClick={() => regenerateKeyMutation.mutate(product.id)}
+                        disabled={regenerateKeyMutation.isPending}
+                      >
+                        {isRegenerating ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <KeyIcon className="mr-2 h-4 w-4" />
+                        )}
+                        {hasApiKey ? 'Regenerate Key' : 'Generate API Key'}
+                      </Button>
+                    </div>
+                    {hasApiKey && !visibleKey && (
+                      <p className="text-xs text-muted-foreground">
+                        Regenerating will invalidate your current key. Make sure to update your applications.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </>
       ) : (
