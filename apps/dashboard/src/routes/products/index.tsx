@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@keyra/api-client';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label, Skeleton } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Loader2, Copy, Key as KeyIcon, Package, Search, X, Eye, EyeOff, Check, AlertCircle, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,6 +16,32 @@ type ProductWithApiKey = {
 };
 
 const PAGE_SIZE = 20;
+
+function ProductCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-48" />
+            </div>
+          </div>
+          <Skeleton className="h-6 w-24 rounded-full" />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Skeleton className="h-3 w-24" />
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-8" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Products() {
   const queryClient = useQueryClient();
@@ -289,8 +315,15 @@ export default function Products() {
       </Dialog>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="space-y-4">
+          <div className="relative max-w-sm">
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
+          </div>
         </div>
       ) : filteredProducts.length > 0 ? (
         <>
@@ -311,7 +344,7 @@ export default function Products() {
               </button>
             )}
           </div>
-          <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredProducts.map((product) => {
               const apiKeyStatus = apiKeyStatuses?.[product.id];
               const hasApiKey = apiKeyStatus?.hasApiKey ?? false;

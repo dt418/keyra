@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './lib/auth';
+import { ThemeProvider } from './components/theme-provider';
 import { Toaster } from './components/ui';
 import Root from './routes/root';
 import Login from './routes/login';
@@ -15,32 +16,34 @@ import Devices from './routes/devices';
 
 function App() {
   return (
-    <AuthProvider>
-      <Toaster />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Root />}>
-            <Route element={<PublicRoute />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <Toaster />
+        <BrowserRouter>
+          <Routes>
+            <Route element={<Root />}>
+              <Route element={<PublicRoute />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+              </Route>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          </Route>
 
-          <Route element={<ProtectedRoute />}>
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<DashboardIndex />} />
-              <Route path="/dashboard/organizations" element={<Organizations />} />
-              <Route path="/dashboard/products" element={<Products />} />
-              <Route path="/dashboard/licenses" element={<Licenses />} />
-              <Route path="/dashboard/devices" element={<Devices />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<DashboardIndex />} />
+                <Route path="/dashboard/organizations" element={<Organizations />} />
+                <Route path="/dashboard/products" element={<Products />} />
+                <Route path="/dashboard/licenses" element={<Licenses />} />
+                <Route path="/dashboard/devices" element={<Devices />} />
+              </Route>
             </Route>
-          </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
