@@ -109,7 +109,7 @@ export const productsApi = {
 };
 
 export const licensesApi = {
-  list: (params?: { limit?: number; cursor?: string; productId?: string; orgId?: string }) =>
+  list: (params?: { limit?: number; cursor?: string; productId?: string; orgId?: string; status?: string }) =>
     api.get('/licenses', { params }),
   get: (id: string) => api.get(`/licenses/${id}`),
   create: (data: {
