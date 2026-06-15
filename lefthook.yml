@@ -1,0 +1,30 @@
+# Lefthook configuration for Keyra
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    typecheck:
+      glob: "*.{ts,tsx,js,jsx}"
+      run: pnpm typecheck
+
+    api-tests:
+      glob: "apps/api/src/**/*.{ts,tsx}"
+      run: pnpm --filter @keyra/api test -- --run
+
+    dashboard-tests:
+      glob: "apps/dashboard/src/**/*.{ts,tsx}"
+      run: pnpm --filter @keyra/dashboard test -- --run
+
+    format:
+      glob: "*.{ts,tsx,js,jsx,json,md,yml,yaml,css}"
+      run: npx prettier --write {staged_files}
+
+pre-push:
+  parallel: true
+  commands:
+    full-typecheck:
+      run: pnpm typecheck
+
+    build:
+      run: pnpm build
