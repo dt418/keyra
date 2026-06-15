@@ -3,13 +3,13 @@ import { authMiddleware } from '../auth';
 import { signAccessToken, signRefreshToken } from '../../lib/jwt';
 
 const TEST_SECRET = 'test-secret-key';
-const TEST_REFRESH_SECRET = 'test-refresh-secret-key';
 
 function createMockContext(overrides: {
   authHeader?: string;
   nextFn?: () => Promise<void>;
 } = {}) {
   const nextFn = overrides.nextFn ?? vi.fn().mockResolvedValue(undefined);
+  const jsonResponse = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
   const ctx = {
     req: {
       header: vi.fn((name: string) => {
@@ -19,8 +19,16 @@ function createMockContext(overrides: {
     },
     env: { JWT_SECRET: TEST_SECRET },
     set: vi.fn(),
+    json: vi.fn().mockImplementation((body: unknown, status?: number) => {
+      return jsonResponse(body, status);
+    }),
   } as unknown as Parameters<typeof authMiddleware>[0];
   return { ctx, nextFn };
+}
+
+async function readErrorResponse(result: Response) {
+  const body = await result.json() as { error: { code: string; message: string } };
+  return { code: body.error.code, message: body.error.message, status: result.status };
 }
 
 describe('authMiddleware', () => {
@@ -55,10 +63,13 @@ describe('authMiddleware', () => {
     expect(nextFn).toHaveBeenCalled();
   });
 
-  it('should throw UNAUTHORIZED when Authorization header missing', async () => {
+  it('should return 401 when Authorization header missing', async () => {
     const { ctx, nextFn } = createMockContext({});
 
-    await expect(authMiddleware(ctx, nextFn)).rejects.toMatchObject({
+    const result = (await authMiddleware(ctx, nextFn)) as Response;
+    const error = await readErrorResponse(result);
+
+    expect(error).toMatchObject({
       code: 'UNAUTHORIZED',
       message: 'Missing authorization header',
       status: 401,
@@ -66,10 +77,13 @@ describe('authMiddleware', () => {
     expect(nextFn).not.toHaveBeenCalled();
   });
 
-  it('should throw UNAUTHORIZED when Authorization header not Bearer format', async () => {
+  it('should return 401 when Authorization header not Bearer format', async () => {
     const { ctx, nextFn } = createMockContext({ authHeader: 'Basic sometoken' });
 
-    await expect(authMiddleware(ctx, nextFn)).rejects.toMatchObject({
+    const result = (await authMiddleware(ctx, nextFn)) as Response;
+    const error = await readErrorResponse(result);
+
+    expect(error).toMatchObject({
       code: 'UNAUTHORIZED',
       message: 'Missing authorization header',
       status: 401,
@@ -77,10 +91,13 @@ describe('authMiddleware', () => {
     expect(nextFn).not.toHaveBeenCalled();
   });
 
-  it('should throw UNAUTHORIZED when token is invalid', async () => {
+  it('should return 401 when token is invalid', async () => {
     const { ctx, nextFn } = createMockContext({ authHeader: 'Bearer invalid-token' });
 
-    await expect(authMiddleware(ctx, nextFn)).rejects.toMatchObject({
+    const result = (await authMiddleware(ctx, nextFn)) as Response;
+    const error = await readErrorResponse(result);
+
+    expect(error).toMatchObject({
       code: 'UNAUTHORIZED',
       message: 'Invalid or expired token',
       status: 401,
@@ -88,7 +105,7 @@ describe('authMiddleware', () => {
     expect(nextFn).not.toHaveBeenCalled();
   });
 
-  it('should throw UNAUTHORIZED when token is expired', async () => {
+  it('should return 401 when token is expired', async () => {
     const token = await signAccessToken(
       { sub: 'user-123', email: 'test@example.com' },
       TEST_SECRET,
@@ -96,7 +113,10 @@ describe('authMiddleware', () => {
     );
     const { ctx, nextFn } = createMockContext({ authHeader: `Bearer ${token}` });
 
-    await expect(authMiddleware(ctx, nextFn)).rejects.toMatchObject({
+    const result = (await authMiddleware(ctx, nextFn)) as Response;
+    const error = await readErrorResponse(result);
+
+    expect(error).toMatchObject({
       code: 'UNAUTHORIZED',
       message: 'Invalid or expired token',
       status: 401,
@@ -104,14 +124,17 @@ describe('authMiddleware', () => {
     expect(nextFn).not.toHaveBeenCalled();
   });
 
-  it('should throw UNAUTHORIZED when token type is not access', async () => {
+  it('should return 401 when token type is not access', async () => {
     const token = await signRefreshToken(
       { sub: 'user-123', email: 'test@example.com' },
-      TEST_SECRET // using access secret to isolate the type check
+      TEST_SECRET
     );
     const { ctx, nextFn } = createMockContext({ authHeader: `Bearer ${token}` });
 
-    await expect(authMiddleware(ctx, nextFn)).rejects.toMatchObject({
+    const result = (await authMiddleware(ctx, nextFn)) as Response;
+    const error = await readErrorResponse(result);
+
+    expect(error).toMatchObject({
       code: 'UNAUTHORIZED',
       message: 'Invalid token type',
       status: 401,
@@ -119,14 +142,17 @@ describe('authMiddleware', () => {
     expect(nextFn).not.toHaveBeenCalled();
   });
 
-  it('should throw UNAUTHORIZED when token signed with wrong secret', async () => {
+  it('should return 401 when token signed with wrong secret', async () => {
     const token = await signAccessToken(
       { sub: 'user-123', email: 'test@example.com' },
       'wrong-secret'
     );
     const { ctx, nextFn } = createMockContext({ authHeader: `Bearer ${token}` });
 
-    await expect(authMiddleware(ctx, nextFn)).rejects.toMatchObject({
+    const result = (await authMiddleware(ctx, nextFn)) as Response;
+    const error = await readErrorResponse(result);
+
+    expect(error).toMatchObject({
       code: 'UNAUTHORIZED',
       message: 'Invalid or expired token',
       status: 401,
