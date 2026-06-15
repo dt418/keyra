@@ -39,7 +39,7 @@ export default function Products() {
 
   const getApiKeyMutation = useMutation({
     mutationFn: async (productId: string) => {
-      const res = await productsApi.getApiKey(productId);
+      const res = await productsApi.regenerateKey(productId);
       return res.data.data;
     },
     onSuccess: (data) => {

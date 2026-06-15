@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { licensesApi, productsApi, type LicenseType } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { Button, Input, Label } from '@/components/ui';
-import { Plus, Loader2, Copy, AlertTriangle, Key, Search, X, Shield, Smartphone } from 'lucide-react';
+import { Plus, Loader2, Copy, Key, Search, X, Shield, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime, formatExpiresAt } from '@/lib/date';
 
@@ -47,17 +47,22 @@ export default function Licenses() {
 
   const createMutation = useMutation({
     mutationFn: async (data: {
-      productId: string;
+      product_id: string;
       type: LicenseType;
-      maxDevices?: number;
-      expiresAt?: string;
+      max_devices?: number;
+      expires_at?: string;
     }) => {
-      const res = await licensesApi.create(data);
+      const res = await licensesApi.create({
+        product_id: data.product_id,
+        type: data.type,
+        max_devices: data.max_devices,
+        expires_at: data.expires_at,
+      });
       return res.data.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['licenses'] });
-      setCreatedLicenseKey(data.licenseKey);
+      setCreatedLicenseKey(data.key);
       setIsCreating(false);
       setNewLicense({ productId: '', type: 'trial', maxDevices: 1, expiresAt: '' });
       toast.success('License created successfully');
@@ -140,10 +145,10 @@ export default function Licenses() {
                 e.preventDefault();
                 if (newLicense.productId && newLicense.type) {
                   createMutation.mutate({
-                    productId: newLicense.productId,
+                    product_id: newLicense.productId,
                     type: newLicense.type,
-                    maxDevices: newLicense.maxDevices,
-                    expiresAt: newLicense.expiresAt || undefined,
+                    max_devices: newLicense.maxDevices,
+                    expires_at: newLicense.expiresAt || undefined,
                   });
                 }
               }}

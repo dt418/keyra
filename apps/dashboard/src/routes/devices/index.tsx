@@ -79,8 +79,8 @@ export default function Devices() {
                   id: act.device_id,
                   name: act.device_name,
                   platform: act.device_platform,
-                  lastSeen: act.last_seen_at,
-                  activatedAt: act.activated_at,
+                  lastSeen: act.device_last_seen_at,
+                  activatedAt: act.created_at,
                 });
               }
             });

@@ -113,23 +113,23 @@ export const licensesApi = {
     api.get('/licenses', { params }),
   get: (id: string) => api.get(`/licenses/${id}`),
   create: (data: {
-    productId: string;
+    product_id: string;
     type: 'trial' | 'free' | 'personal' | 'professional' | 'business' | 'enterprise';
-    maxDevices?: number;
-    expiresAt?: string;
-    featureFlags?: Record<string, boolean>;
+    max_devices?: number;
+    expires_at?: string;
+    feature_flags?: Record<string, boolean>;
   }) => api.post('/licenses', data),
   update: (id: string, data: {
     type?: 'trial' | 'free' | 'personal' | 'professional' | 'business' | 'enterprise';
-    maxDevices?: number;
-    expiresAt?: string;
-    featureFlags?: Record<string, boolean>;
+    max_devices?: number;
+    expires_at?: string;
+    feature_flags?: Record<string, boolean>;
   }) => api.patch(`/licenses/${id}`, data),
   revoke: (id: string, data?: { reason?: string }) =>
     api.post(`/licenses/${id}/revoke`, data),
   delete: (id: string) => api.delete(`/licenses/${id}`),
   resetDevices: (id: string) => api.post(`/licenses/${id}/reset-devices`),
-  transfer: (id: string, data: { targetOrgId: string }) =>
+  transfer: (id: string, data: { target_org_id: string }) =>
     api.post(`/licenses/${id}/transfer`, data),
 };
 

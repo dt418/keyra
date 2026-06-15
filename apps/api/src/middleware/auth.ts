@@ -36,5 +36,5 @@ export async function authMiddleware(c: Context, next: Next) {
   c.set('userId', payload.sub);
   c.set('userEmail', payload.email as string);
   c.set('sessionId', (payload as { sessionId?: string }).sessionId);
-  await next();
+  return next();
 }
