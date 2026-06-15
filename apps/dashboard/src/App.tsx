@@ -13,6 +13,9 @@ import Organizations from './routes/organizations';
 import Products from './routes/products';
 import Licenses from './routes/licenses';
 import Devices from './routes/devices';
+import ApiKeys from './routes/api-keys';
+import Settings from './routes/settings';
+import Support from './routes/support';
 
 function App() {
   return (
@@ -31,11 +34,14 @@ function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<DashboardIndex />} />
-                <Route path="/dashboard/organizations" element={<Organizations />} />
-                <Route path="/dashboard/products" element={<Products />} />
-                <Route path="/dashboard/licenses" element={<Licenses />} />
-                <Route path="/dashboard/devices" element={<Devices />} />
+              <Route path="/dashboard" element={<DashboardIndex />} />
+              <Route path="/dashboard/organizations" element={<Organizations />} />
+              <Route path="/dashboard/products" element={<Products />} />
+              <Route path="/dashboard/licenses" element={<Licenses />} />
+              <Route path="/dashboard/devices" element={<Devices />} />
+              <Route path="/dashboard/api-keys" element={<ApiKeys />} />
+              <Route path="/dashboard/settings" element={<Settings />} />
+              <Route path="/dashboard/support" element={<Support />} />
               </Route>
             </Route>
 

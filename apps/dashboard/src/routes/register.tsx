@@ -1,8 +1,9 @@
-import { Button, Input, Label, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui';
+import { useState, useEffect } from 'react';
+import { Button, Input, Label } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { useNavigate, Link } from 'react-router-dom';
-import { useState } from 'react';
 import { toast } from 'sonner';
+import { Key, Loader2, ArrowRight, Shield, Zap, BarChart3 } from 'lucide-react';
 
 export default function Register() {
   const { register } = useAuth();
@@ -13,6 +14,10 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    document.title = 'Create account · Keyra';
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -20,14 +25,12 @@ export default function Register() {
       toast.error('Passwords do not match');
       return;
     }
-
     if (password.length < 8) {
       toast.error('Password must be at least 8 characters');
       return;
     }
 
     setIsLoading(true);
-
     try {
       await register(email, password, name);
       toast.success('Account created successfully!');
@@ -40,16 +43,57 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create account</CardTitle>
-          <CardDescription>Get started with Keyra</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="flex min-h-[100dvh] bg-background">
+      <div className="hidden lg:flex flex-1 relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-purple-500/10">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid-16" />
+        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <Key className="h-5 w-5" />
+            </div>
+            <span className="font-semibold text-lg">Keyra</span>
+          </div>
+          <div className="space-y-8 max-w-md">
+            <h1 className="text-4xl font-semibold tracking-tight">
+              Start managing licenses in minutes.
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              Join thousands of developers using Keyra to ship software with confidence.
+            </p>
+            <div className="space-y-3 pt-4">
+              {[
+                { icon: Zap, title: '5-Minute Setup', desc: 'Create your first product instantly' },
+                { icon: Shield, title: 'Bank-Grade Security', desc: 'AES-256 encryption, SOC2 ready' },
+                { icon: BarChart3, title: 'Built-in Analytics', desc: 'Track everything that matters' },
+              ].map((feature) => (
+                <div key={feature.title} className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background border border-border">
+                    <feature.icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm">{feature.title}</div>
+                    <div className="text-xs text-muted-foreground">{feature.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Free for personal use. No credit card required.
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-1 items-center justify-center p-6 lg:p-12">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="space-y-2 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight">Create your account</h2>
+            <p className="text-sm text-muted-foreground">Get started in seconds</p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Full name</Label>
               <Input
                 id="name"
                 type="text"
@@ -63,7 +107,7 @@ export default function Register() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Work email</Label>
               <Input
                 id="email"
                 type="email"
@@ -91,33 +135,41 @@ export default function Register() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Confirm password</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your password"
+                placeholder="Re-enter your password"
                 required
                 autoComplete="new-password"
                 disabled={isLoading}
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowRight className="mr-2 h-4 w-4" />
+              )}
               {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
+
+            <p className="text-xs text-muted-foreground text-center">
+              By creating an account, you agree to our Terms of Service and Privacy Policy.
+            </p>
           </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
+
+          <p className="text-sm text-muted-foreground text-center">
             Already have an account?{' '}
             <Link to="/login" className="font-medium text-primary hover:underline">
               Sign in
             </Link>
           </p>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
