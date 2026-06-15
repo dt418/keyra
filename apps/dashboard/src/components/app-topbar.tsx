@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { Bell, Search, ChevronRight } from 'lucide-react';
-import { Input, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 
 const routeLabels: Record<string, string> = {
   dashboard: 'Overview',
@@ -28,6 +29,16 @@ export function AppTopbar() {
   const { currentOrg } = useAuth();
   const location = useLocation();
   const breadcrumbs = getBreadcrumbs(location.pathname);
+  const [shortcut, setShortcut] = useState('Ctrl K');
+
+  useEffect(() => {
+    setShortcut(navigator.platform.toLowerCase().includes('mac') ? '⌘ K' : 'Ctrl K');
+  }, []);
+
+  const openCommandPalette = () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+  };
 
   return (
     <div className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
@@ -56,14 +67,16 @@ export function AppTopbar() {
       </nav>
 
       <div className="flex items-center gap-2 flex-shrink-0">
-        <div className="relative hidden md:block">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search... ⌘K"
-            className="h-8 w-56 pl-8 text-sm"
-            disabled
-          />
-        </div>
+        <button
+          onClick={openCommandPalette}
+          className="relative hidden md:flex h-8 w-56 items-center gap-2 rounded-md border border-border bg-muted/30 px-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <Search className="h-3.5 w-3.5" />
+          <span className="flex-1 text-left">Search...</span>
+          <kbd className="rounded border border-border bg-background px-1.5 text-[10px] font-mono">
+            {shortcut}
+          </kbd>
+        </button>
         <Button variant="ghost" size="icon" className="h-8 w-8" title="Notifications">
           <Bell className="h-4 w-4" />
         </Button>
