@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label } from '@/components/ui';
-import { Plus, Loader2, Copy, Key as KeyIcon, Package, Search, X, Eye, EyeOff, Check, AlertCircle, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Loader2, Copy, Key as KeyIcon, Package, Search, X, Eye, EyeOff, Check, AlertCircle, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/date';
 
@@ -14,6 +14,8 @@ type ProductWithApiKey = {
   api_key_hash: string | null;
 };
 
+const PAGE_SIZE = 20;
+
 export default function Products() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
@@ -23,19 +25,22 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState<ProductWithApiKey | null>(null);
   const [editForm, setEditForm] = useState({ name: '', description: '' });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [cursor, setCursor] = useState<string | null>(null);
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ['products'],
+  const { data: productsResponse, isLoading, isFetching } = useQuery({
+    queryKey: ['products', cursor],
     queryFn: async () => {
-      const res = await productsApi.list({ limit: 100 });
-      return res.data.data as ProductWithApiKey[];
+      const res = await productsApi.list({ limit: PAGE_SIZE, cursor: cursor || undefined });
+      return res.data;
     },
   });
+
+  const products: ProductWithApiKey[] = productsResponse?.data || [];
 
   const { data: apiKeyStatuses } = useQuery({
     queryKey: ['products-api-keys'],
     queryFn: async () => {
-      if (!products) return {};
+      if (!products.length) return {};
       const statuses: Record<string, { hasApiKey: boolean }> = {};
       await Promise.all(
         products.map(async (p) => {
@@ -49,7 +54,7 @@ export default function Products() {
       );
       return statuses;
     },
-    enabled: !!products && products.length > 0,
+    enabled: products.length > 0,
   });
 
   const createMutation = useMutation({
@@ -130,10 +135,15 @@ export default function Products() {
     });
   };
 
-  const filteredProducts = products?.filter((p) =>
+  const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const hasMore = productsResponse?.pagination?.has_more || false;
+  const currentCursor = productsResponse?.pagination?.cursor;
+  const handlePrevPage = () => setCursor(null);
+  const handleNextPage = () => { if (currentCursor) setCursor(currentCursor); };
 
   return (
     <div className="space-y-6">
@@ -447,6 +457,32 @@ export default function Products() {
               );
             })}
           </div>
+
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {products.length > 0 && <>Showing {products.length} items{hasMore ? '+' : ''}</>}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrevPage}
+                    disabled={!cursor || isFetching}
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={!hasMore || isFetching}
+                  >
+                    Next
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
         </>
       ) : (
         <Card className="border-dashed">

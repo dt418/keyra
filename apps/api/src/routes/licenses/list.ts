@@ -2,6 +2,21 @@ import type { Context } from 'hono';
 import { listLicensesSchema } from '@keyra/shared-validation';
 import { AppError } from '../../middleware/error';
 
+type LicenseRow = {
+  id: string;
+  product_id: string;
+  type: string;
+  status: string;
+  max_devices: number;
+  expires_at: string | null;
+  feature_flags: string | null;
+  created_at: string;
+  updated_at: string;
+  revoked_at: string | null;
+  revoked_reason: string | null;
+  product_name: string;
+};
+
 export async function listLicensesHandler(c: Context) {
   const userId = c.get('userId');
   if (!userId) {
@@ -54,29 +69,17 @@ export async function listLicensesHandler(c: Context) {
   sql += ` ORDER BY l.created_at DESC, l.id DESC LIMIT ?`;
   params.push(limit + 1);
 
-  const licenses = await c.env.DB.prepare(sql)
+  const result = await c.env.DB.prepare(sql)
     .bind(...params)
-    .all() as {
-      id: string;
-      product_id: string;
-      type: string;
-      status: string;
-      max_devices: number;
-      expires_at: string | null;
-      feature_flags: string | null;
-      created_at: string;
-      updated_at: string;
-      revoked_at: string | null;
-      revoked_reason: string | null;
-      product_name: string;
-    }[];
+    .all();
+  const licenses = (result as { results?: LicenseRow[] }).results || (result as LicenseRow[]) || [];
 
   let hasMore = false;
   let data = licenses;
 
-  if (licenses.length > limit) {
+  if (data.length > limit) {
     hasMore = true;
-    data = licenses.slice(0, limit);
+    data = data.slice(0, limit);
   }
 
   const last = data[data.length - 1];

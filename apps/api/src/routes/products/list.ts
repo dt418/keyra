@@ -2,6 +2,8 @@ import type { Context } from 'hono';
 import { listProductsSchema } from '@keyra/shared-validation';
 import { AppError } from '../../middleware/error';
 
+type ProductRow = { id: string; name: string; description: string | null; created_at: string; updated_at: string };
+
 export async function listProductsHandler(c: Context) {
   const userId = c.get('userId');
   if (!userId) {
@@ -41,16 +43,17 @@ export async function listProductsHandler(c: Context) {
   sql += ` ORDER BY created_at DESC, id DESC LIMIT ?`;
   params.push(limit + 1);
 
-  const products = await c.env.DB.prepare(sql)
+  const result = await c.env.DB.prepare(sql)
     .bind(...params)
-    .all() as { id: string; name: string; description: string | null; created_at: string; updated_at: string }[];
+    .all();
+  const products = (result as { results?: ProductRow[] }).results || (result as ProductRow[]) || [];
 
   let hasMore = false;
   let data = products;
 
-  if (products.length > limit) {
+  if (data.length > limit) {
     hasMore = true;
-    data = products.slice(0, limit);
+    data = data.slice(0, limit);
   }
 
   const last = data[data.length - 1];

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { licensesApi, productsApi, type LicenseType } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { Button, Input, Label } from '@/components/ui';
-import { Plus, Loader2, Copy, Key, Search, X, Shield, Smartphone, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Loader2, Copy, Key, Search, X, Shield, Smartphone, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime, formatExpiresAt } from '@/lib/date';
 
@@ -18,6 +18,17 @@ const LICENSE_TYPES: { value: LicenseType; label: string; color: string }[] = [
 
 const PAGE_SIZE = 20;
 
+type License = {
+  id: string;
+  product_id: string;
+  product_name: string;
+  type: string;
+  status: string;
+  max_devices: number;
+  expires_at: string | null;
+  created_at: string;
+};
+
 export default function Licenses() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
@@ -31,6 +42,9 @@ export default function Licenses() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [cursor, setCursor] = useState<string | null>(null);
+  const [editingLicense, setEditingLicense] = useState<License | null>(null);
+  const [editForm, setEditForm] = useState({ type: 'trial' as LicenseType, maxDevices: 1, expiresAt: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const { data: products } = useQuery({
     queryKey: ['products'],
@@ -79,6 +93,35 @@ export default function Licenses() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { type?: LicenseType; max_devices?: number; expires_at?: string } }) => {
+      const res = await licensesApi.update(id, data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['licenses'] });
+      setEditingLicense(null);
+      toast.success('License updated successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Failed to update license');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (licenseId: string) => {
+      await licensesApi.delete(licenseId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['licenses'] });
+      setDeleteConfirm(null);
+      toast.success('License deleted successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Failed to delete license');
+    },
+  });
+
   const revokeMutation = useMutation({
     mutationFn: async (licenseId: string) => {
       await licensesApi.revoke(licenseId, { reason: 'Revoked by admin' });
@@ -119,11 +162,11 @@ export default function Licenses() {
     );
   };
 
-  const licenses = licensesResponse?.data || [];
+  const licenses: License[] = licensesResponse?.data || [];
   const hasMore = licensesResponse?.pagination?.has_more || false;
   const currentCursor = licensesResponse?.pagination?.cursor;
 
-  const filteredLicenses = licenses.filter((l: any) => {
+  const filteredLicenses = licenses.filter((l) => {
     if (!searchQuery) return true;
     return (
       l.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -132,14 +175,9 @@ export default function Licenses() {
     );
   });
 
-  const handlePrevPage = () => {
-    setCursor(null);
-  };
-
+  const handlePrevPage = () => setCursor(null);
   const handleNextPage = () => {
-    if (currentCursor) {
-      setCursor(currentCursor);
-    }
+    if (currentCursor) setCursor(currentCursor);
   };
 
   return (
@@ -244,6 +282,103 @@ export default function Licenses() {
         </Card>
       )}
 
+      {editingLicense && (
+        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-blue-500">
+          <CardHeader>
+            <CardTitle>Edit License</CardTitle>
+            <CardDescription>Update license settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateMutation.mutate({
+                  id: editingLicense.id,
+                  data: {
+                    type: editForm.type,
+                    max_devices: editForm.maxDevices,
+                    expires_at: editForm.expiresAt || undefined,
+                  },
+                });
+              }}
+              className="space-y-4"
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="edit-type">License Type</Label>
+                  <select
+                    id="edit-type"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={editForm.type}
+                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value as LicenseType })}
+                  >
+                    {LICENSE_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-maxDevices">Max Devices</Label>
+                  <Input
+                    id="edit-maxDevices"
+                    type="number"
+                    min={1}
+                    value={editForm.maxDevices}
+                    onChange={(e) => setEditForm({ ...editForm, maxDevices: parseInt(e.target.value) || 1 })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="edit-expiresAt">Expires At (optional)</Label>
+                <Input
+                  id="edit-expiresAt"
+                  type="datetime-local"
+                  value={editForm.expiresAt}
+                  onChange={(e) => setEditForm({ ...editForm, expiresAt: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setEditingLicense(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {deleteConfirm && (
+        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-red-500">
+          <CardHeader>
+            <CardTitle className="text-red-600">Delete License</CardTitle>
+            <CardDescription>This action cannot be undone.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => deleteMutation.mutate(deleteConfirm)}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+              </Button>
+              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {createdLicenseKey && (
         <Card className="border-green-500 bg-green-50/50 dark:bg-green-950/20 animate-in fade-in slide-in-from-top-2 duration-200">
           <CardHeader>
@@ -314,7 +449,7 @@ export default function Licenses() {
           {filteredLicenses.length > 0 ? (
             <>
               <div className="space-y-3">
-                {filteredLicenses.map((license: any) => (
+                {filteredLicenses.map((license) => (
                   <Card key={license.id} className="hover:border-primary/50 transition-colors">
                     <CardContent className="flex items-center justify-between p-4 sm:p-6">
                       <div className="flex items-start gap-4">
@@ -339,6 +474,30 @@ export default function Licenses() {
                         </div>
                       </div>
                       <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditForm({
+                              type: license.type as LicenseType,
+                              maxDevices: license.max_devices,
+                              expiresAt: license.expires_at || '',
+                            });
+                            setEditingLicense(license);
+                          }}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteConfirm(license.id)}
+                          className="text-destructive hover:text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                         {license.status === 'active' && (
                           <Button
                             variant="outline"
@@ -358,9 +517,7 @@ export default function Licenses() {
 
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  {licenses.length > 0 && (
-                    <>Showing {licenses.length} items{hasMore ? '+' : ''}</>
-                  )}
+                  {licenses.length > 0 && <>Showing {licenses.length} items{hasMore ? '+' : ''}</>}
                 </p>
                 <div className="flex gap-2">
                   <Button

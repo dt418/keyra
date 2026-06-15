@@ -31,6 +31,8 @@ export default function Devices() {
   const queryClient = useQueryClient();
   const [expandedLicenseId, setExpandedLicenseId] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [selectedDevice, setSelectedDevice] = useState<any>(null);
 
   const { data: activationsResponse, isLoading, isFetching } = useQuery({
     queryKey: ['devices', cursor],
@@ -46,6 +48,8 @@ export default function Devices() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['devices'] });
+      setDeleteConfirm(null);
+      setSelectedDevice(null);
       toast.success('Device deactivated');
     },
     onError: (err: any) => {
@@ -77,6 +81,33 @@ export default function Devices() {
         <h1 className="text-2xl font-semibold tracking-tight">Devices</h1>
         <p className="text-sm text-muted-foreground">Manage activated devices across your licenses</p>
       </div>
+
+      {deleteConfirm && selectedDevice && (
+        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-red-500">
+          <CardHeader>
+            <CardTitle className="text-red-600">Deactivate Device</CardTitle>
+            <CardDescription>
+              This will deactivate "{selectedDevice.name}" ({getPlatformLabel(selectedDevice.platform)}).
+              The user will need to reactivate their license on this device.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => deactivateMutation.mutate(deleteConfirm)}
+                disabled={deactivateMutation.isPending}
+              >
+                {deactivateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Deactivate
+              </Button>
+              <Button variant="outline" onClick={() => { setDeleteConfirm(null); setSelectedDevice(null); }}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-8">
@@ -133,15 +164,16 @@ export default function Devices() {
                                   </div>
                                 </div>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => deactivateMutation.mutate(device.id)}
-                                disabled={deactivateMutation.isPending}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => { setSelectedDevice(device); setDeleteConfirm(device.id); }}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </CardContent>
