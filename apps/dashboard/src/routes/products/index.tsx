@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@keyra/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label } from '@/components/ui';
-import { Plus, Loader2, Copy, Key as KeyIcon, Package, Search, X, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
+import { Plus, Loader2, Copy, Key as KeyIcon, Package, Search, X, Eye, EyeOff, Check, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/date';
 
@@ -20,6 +20,9 @@ export default function Products() {
   const [newProduct, setNewProduct] = useState({ name: '', description: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, string>>({});
+  const [editingProduct, setEditingProduct] = useState<ProductWithApiKey | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', description: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products'],
@@ -63,6 +66,36 @@ export default function Products() {
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.error || 'Failed to create product');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { name: string; description?: string } }) => {
+      const res = await productsApi.update(id, data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setEditingProduct(null);
+      toast.success('Product updated successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Failed to update product');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      await productsApi.delete(productId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products-api-keys'] });
+      setDeleteConfirm(null);
+      toast.success('Product deleted successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Failed to delete product');
     },
   });
 
@@ -165,6 +198,87 @@ export default function Products() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {editingProduct && (
+        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-blue-500">
+          <CardHeader>
+            <CardTitle>Edit Product</CardTitle>
+            <CardDescription>Update product information</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (editForm.name.trim()) {
+                  updateMutation.mutate({
+                    id: editingProduct.id,
+                    data: {
+                      name: editForm.name.trim(),
+                      description: editForm.description.trim() || undefined,
+                    },
+                  });
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <Label htmlFor="edit-name">Product Name</Label>
+                <Input
+                  id="edit-name"
+                  placeholder="My Awesome App"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="max-w-md"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-description">Description (optional)</Label>
+                <Input
+                  id="edit-description"
+                  placeholder="Product description"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="max-w-md"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={updateMutation.isPending || !editForm.name.trim()}>
+                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setEditingProduct(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {deleteConfirm && (
+        <Card className="animate-in fade-in slide-in-from-top-2 duration-200 border-red-500">
+          <CardHeader>
+            <CardTitle className="text-red-600">Delete Product</CardTitle>
+            <CardDescription>This action cannot be undone. All associated licenses will also be deleted.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => deleteMutation.mutate(deleteConfirm)}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+              </Button>
+              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+                Cancel
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -301,6 +415,26 @@ export default function Products() {
                           <KeyIcon className="mr-2 h-4 w-4" />
                         )}
                         {hasApiKey ? 'Regenerate Key' : 'Generate API Key'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditForm({ name: product.name, description: product.description || '' });
+                          setEditingProduct(product);
+                        }}
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteConfirm(product.id)}
+                        className="text-destructive hover:text-destructive"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                     {hasApiKey && !visibleKey && (
