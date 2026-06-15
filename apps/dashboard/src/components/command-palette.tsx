@@ -121,18 +121,44 @@ export function CommandPalette() {
         if (item) item.onSelect();
       }
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    document.addEventListener('keydown', handleKey, true);
+    return () => document.removeEventListener('keydown', handleKey, true);
   }, [open, flatList, selectedIndex]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-xl gap-0 overflow-hidden p-0 top-[15%] translate-y-0">
+      <DialogContent
+        className="max-w-xl gap-0 overflow-hidden p-0 top-[15%] translate-y-0"
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            e.stopPropagation();
+            setSelectedIndex((i) => Math.min(i + 1, flatList.length - 1));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            e.stopPropagation();
+            setSelectedIndex((i) => Math.max(i - 1, 0));
+          }
+        }}
+      >
         <div className="flex items-center border-b border-border px-3">
           <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedIndex((i) => Math.min(i + 1, flatList.length - 1));
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedIndex((i) => Math.max(i - 1, 0));
+              } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const item = flatList[selectedIndex];
+                if (item) item.onSelect();
+              }
+            }}
             placeholder="Type a command or search..."
             className="h-12 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
             autoFocus
