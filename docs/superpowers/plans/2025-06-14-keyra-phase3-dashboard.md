@@ -8,6 +8,20 @@
 
 **Tech Stack:** Vite, React 18, React Router, TailwindCSS, shadcn/ui, React Query
 
+**Status:** ✅ **Completed** — Implemented in main branch. All 9 pages, CRUD with dialogs, pagination, command palette, dark mode, 32 unit tests passing.
+
+**Implementation diff from plan:**
+
+- **Routing:** Plan used `_auth.tsx`; actual uses `_public.tsx` + `_protected.tsx` for clearer separation
+- **Styling:** Plan used Tailwind v3 inline classes; actual uses Tailwind v4 with CSS variables in `:root`/`.dark`
+- **shadcn:** Plan didn't specify; actual uses base-ui primitives with `render` prop (not `asChild`)
+- **Layout:** Plan had 3 nav items; actual has 5 primary + 4 secondary, plus app topbar with breadcrumbs
+- **Pages added beyond plan:** Devices, API Keys, Documentation, Settings, Support
+- **Dialogs:** All create/edit/delete use shadcn Dialog + ConfirmDialog
+- **Table:** TanStack Table added for Licenses/Devices
+- **Theme:** Dark mode with shadcn pattern using `keyra-ui-theme` localStorage key
+- **Command palette:** Ctrl+K with navigation, theme switch, sign out
+
 ---
 
 ## File Structure

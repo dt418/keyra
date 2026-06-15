@@ -13,6 +13,36 @@ coverage/
 .cache/
 .rollup.cache/keyra.db
 .worktrees/
-.worktrees/
 playwright-report/
 playwright-report/**
+
+# Local SQLite databases (dev only)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+keyra.db
+
+# OS
+Thumbs.db
+.DS_Store
+*.swp
+
+# Editor
+.vscode/
+.idea/
+*.iml
+
+# Test artifacts
+.playwright/
+test-results/
+playwright/.cache/
+
+# Cache
+.cache/
+.fallow/cache.bin
+
+# Logs
+*.log
+logs/
+*.tsbuildinfo

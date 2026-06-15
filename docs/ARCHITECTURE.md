@@ -2,7 +2,9 @@
 
 ## Overview
 
-Keyra is a cloud-native licensing platform deployed on Cloudflare Workers with D1 (SQLite) for persistence and KV for high-speed token storage.
+Keyra is a cloud-native licensing platform deployed on Cloudflare Workers with D1
+(SQLite) for persistence and KV for high-speed token storage. Includes an
+admin dashboard SPA built with React 18, Vite, Tailwind v4, and shadcn/ui.
 
 ## Tech Stack
 
@@ -15,12 +17,16 @@ Keyra is a cloud-native licensing platform deployed on Cloudflare Workers with D
 | Auth | JWT + bcrypt + OAuth |
 | Monorepo | Turborepo + pnpm |
 | Language | TypeScript |
+| Frontend | React 18, Vite, Tailwind v4, shadcn/ui (base-ui) |
+| Data | TanStack Query, TanStack Table |
+| Forms | React Hook Form (planned) + Zod |
+| Testing | Vitest, Playwright |
 
 ## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Cloudflare Workers                     │
+│                     Cloudflare Workers                       │
 │  ┌─────────┐    ┌─────────┐    ┌─────────┐              │
 │  │  Auth   │───▶│  Rate   │───▶│ Handler │              │
 │  │Middleware│    │  Limit  │    │         │              │
@@ -32,7 +38,19 @@ Keyra is a cloud-native licensing platform deployed on Cloudflare Workers with D
 │                    │     D1      │         │    KV    │    │
 │                    │  (SQLite)  │         │ (Tokens) │    │
 │                    └─────────────┘         └─────────┘     │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │              Workers Assets (Dashboard SPA)          │  │
+│  │  React 18 + Vite + Tailwind v4 + shadcn/ui          │  │
+│  └─────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ HTTPS
+                              │
+                       ┌──────┴──────┐
+                       │   Browser  │
+                       │  Dashboard │
+                       └─────────────┘
 ```
 
 ## Project Structure
@@ -40,53 +58,102 @@ Keyra is a cloud-native licensing platform deployed on Cloudflare Workers with D
 ```
 keyra/
 ├── apps/
-│   └── api/                    # Cloudflare Workers API
+│   ├── api/                    # Cloudflare Workers API
+│   │   ├── e2e/                # Playwright E2E tests
+│   │   │   ├── auth.spec.ts
+│   │   │   ├── orgs.spec.ts
+│   │   │   ├── products.spec.ts
+│   │   │   ├── products-e2e.spec.ts
+│   │   │   ├── licenses-e2e.spec.ts
+│   │   │   └── full-flow.spec.ts
+│   │   └── src/
+│   │       ├── index.ts         # Entry point
+│   │       ├── router.ts        # Route aggregation
+│   │       ├── openapi.ts       # OpenAPI spec
+│   │       ├── middleware/     # Auth, rate limiting, error
+│   │       │   ├── auth.ts
+│   │       │   ├── error.ts
+│   │       │   └── rateLimit.ts
+│   │       ├── lib/             # Utilities
+│   │       │   ├── jwt.ts       # JWT sign/verify
+│   │       │   ├── password.ts  # bcrypt hashing
+│   │       │   └── audit.ts     # Audit logging
+│   │       └── routes/
+│   │           ├── auth/         # Auth endpoints (register, login, oauth, etc)
+│   │           ├── orgs/         # Organization endpoints
+│   │           ├── users/        # User endpoints
+│   │           ├── products/     # Product endpoints
+│   │           ├── licenses/     # License endpoints
+│   │           ├── activations/  # Activation endpoints
+│   │           └── devices/      # Device endpoints
+│   └── dashboard/              # React 18 SPA (Vite)
+│       ├── vite.config.ts
+│       ├── tsconfig.json
 │       └── src/
-│           ├── index.ts         # Entry point
-│           ├── router.ts        # Route aggregation
-│           ├── middleware/     # Auth, rate limiting, error
-│           │   ├── auth.ts
-│           │   ├── error.ts
-│           │   └── rateLimit.ts
-│           ├── lib/            # Utilities
-│           │   ├── jwt.ts      # JWT sign/verify
-│           │   ├── password.ts # bcrypt hashing
-│           │   └── audit.ts    # Audit logging
-│           └── routes/
-│               ├── auth/        # Auth endpoints
-│               │   ├── register.ts
-│               │   ├── login.ts
-│               │   ├── logout.ts
-│               │   ├── refresh.ts
-│               │   └── oauth.ts
-│               ├── orgs/       # Organization endpoints
-│               │   ├── list.ts
-│               │   ├── create.ts
-│               │   ├── get.ts
-│               │   ├── update.ts
-│               │   └── delete.ts
-│               └── users/      # User endpoints
-│                   └── me.ts
+│           ├── main.tsx         # Entry
+│           ├── App.tsx          # Routes
+│           ├── routes/           # Page components
+│           │   ├── _dashboard.tsx    # Protected layout (sidebar + topbar)
+│           │   ├── _public.tsx       # Public layout (redirect)
+│           │   ├── _protected.tsx    # Auth guard
+│           │   ├── root.tsx
+│           │   ├── dashboard.tsx     # Overview (KPIs, activity)
+│           │   ├── login.tsx
+│           │   ├── register.tsx
+│           │   ├── organizations/
+│           │   ├── products/
+│           │   ├── licenses/
+│           │   ├── devices/
+│           │   ├── api-keys.tsx
+│           │   ├── docs.tsx
+│           │   ├── settings.tsx
+│           │   └── support.tsx
+│           ├── components/
+│           │   ├── ui/               # shadcn primitives
+│           │   │   ├── button.tsx
+│           │   │   ├── card.tsx
+│           │   │   ├── dialog.tsx
+│           │   │   ├── dropdown-menu.tsx
+│           │   │   ├── input.tsx
+│           │   │   ├── label.tsx
+│           │   │   ├── select.tsx
+│           │   │   ├── separator.tsx
+│           │   │   ├── sheet.tsx
+│           │   │   ├── skeleton.tsx
+│           │   │   ├── tabs.tsx
+│           │   │   ├── tooltip.tsx
+│           │   │   ├── popover.tsx
+│           │   │   ├── command.tsx
+│           │   │   ├── confirm-dialog.tsx
+│           │   │   ├── data-table.tsx
+│           │   │   ├── empty-state.tsx
+│           │   │   ├── page-header.tsx
+│           │   │   ├── search-toolbar.tsx
+│           │   │   ├── stat-card.tsx
+│           │   │   └── status-badge.tsx
+│           │   ├── app-sidebar.tsx    # 240px nav
+│           │   ├── app-topbar.tsx     # Breadcrumbs + search
+│           │   ├── command-palette.tsx # Ctrl+K
+│           │   ├── mode-toggle.tsx
+│           │   └── theme-provider.tsx
+│           ├── lib/                # auth, date, utils
+│           ├── test/               # vitest setup
+│           └── styles/             # globals.css
 ├── packages/
-│   ├── shared-types/          # TypeScript interfaces
-│   │   ├── user.ts
-│   │   ├── organization.ts
-│   │   └── api.ts
-│   └── shared-validation/     # Zod schemas
-│       ├── auth.ts
-│       └── orgs.ts
-├── database/
-│   ├── client.ts              # Migration runner
-│   └── migrations/
-│       ├── 0001_users.sql
-│       ├── 0002_organizations.sql
-│       ├── 0003_org_members.sql
-│       ├── 0004_sessions.sql
-│       ├── 0005_session_cleanup.sql
-│       └── 0006_audit_logs.sql
-└── docs/
-    ├── ARCHITECTURE.md
-    └── API_SPEC.md
+│   ├── api-client/             # Axios client for dashboard
+│   ├── sdk-js/                 # Verification SDK
+│   ├── shared-types/           # TypeScript types
+│   └── shared-validation/      # Zod schemas
+├── database/migrations/         # D1 schema (10 migrations)
+├── infrastructure/cloudflare/   # IaC
+├── .agents/skills/             # AI agent skills
+├── docs/                        # API_SPEC, ARCHITECTURE, plans, specs
+├── .github/workflows/           # CI pipeline
+├── AGENTS.md                    # Universal agent guidance
+├── CLAUDE.md                    # Claude Code compatibility
+├── DESIGN.md                    # Design system
+├── SKILLS.md                    # Skills documentation
+└── README.md
 ```
 
 ## Security Features
@@ -101,6 +168,12 @@ keyra/
 5. Refresh → verify refresh token, revoke old, issue new
 6. Logout → mark session revoked in DB
 ```
+
+### Auth Middleware Behavior
+
+> **Important:** `authMiddleware` **returns a Response** (e.g. `c.json({error}, 401)`)
+> rather than throwing. Tests must read the Response with `await result.json()`
+> instead of `.rejects.toMatchObject()`.
 
 ### Token Security
 
@@ -133,7 +206,7 @@ Client Request
 Rate Limit (KV)
     │
     ▼
-Auth Middleware (JWT)
+Auth Middleware (JWT) - returns Response on failure
     │
     ▼
 Input Validation (Zod)
@@ -148,10 +221,13 @@ Business Logic
     └──▶ Audit Log (D1)
     │
     ▼
-Response Format
+Response Format: { data: ... } or { error: { code, message } }
 ```
 
 ## Database Schema
+
+10 migrations tracking full schema: users, organizations, org_members,
+sessions, products, licenses, devices, activations, audit_logs.
 
 ### Users
 
@@ -205,11 +281,43 @@ Response Format
 | metadata | TEXT | JSON context |
 | created_at | TEXT | ISO timestamp |
 
+## Dashboard Architecture
+
+### Layout
+
+```
+┌──────┬───────────────────────────────────┐
+│      │  Topbar (breadcrumbs, search)    │
+│ Side ├───────────────────────────────────┤
+│ bar  │                                   │
+│ 240  │  Page Content                    │
+│ px   │  (max-w-7xl or full)            │
+└──────┴───────────────────────────────────┘
+```
+
+### State Management
+
+- **Server state:** TanStack Query (cache, refetch, invalidation)
+- **Auth state:** React Context (`useAuth()`)
+- **Theme state:** React Context (`useTheme()`) with localStorage persistence
+- **Local UI state:** useState
+
+### Component Patterns
+
+- **Pages:** Use `PageHeader` + `SearchToolbar`/`DataTable` + `EmptyState`
+- **Dialogs:** Use shadcn `Dialog` for create/edit, `ConfirmDialog` for delete
+- **Loading:** Use `Skeleton` matches, never spinners
+- **Empty:** Always show `EmptyState` with primary CTA
+- **Errors:** Toast via `sonner`
+
 ## Response Format
 
 ```typescript
 // Success
 { data: { ... } }
+
+// List
+{ data: T[], pagination: { cursor: string | null, has_more: boolean } }
 
 // Error
 { error: { code: string, message: string, details?: [...] } }
@@ -226,3 +334,29 @@ Response Format
 | CONFLICT | 409 | Resource already exists |
 | RATE_LIMITED | 429 | Too many requests |
 | INTERNAL_ERROR | 500 | Server error |
+
+## CI Pipeline
+
+GitHub Actions runs:
+
+1. `lint & typecheck` — all packages
+2. `test-api` — 91 unit tests
+3. `test-dashboard` — 32 unit tests
+4. `build` — turbo build (depends on tests)
+5. `e2e` — Playwright (depends on build)
+
+Pinned to pnpm 10, Node 22.
+
+## API Response Convention
+
+> **All API responses use snake_case** even when the shared-types definitions
+> use camelCase. The UI accesses fields like `product_id`, `max_devices`,
+> `created_at`, `expires_at` directly without transformation.
+
+## Theme System
+
+- **Light mode:** CSS variables in `:root` block
+- **Dark mode:** Same variables re-defined in `.dark` block
+- **Tailwind v4:** `@theme inline` re-binds utility classes to variables
+- **Storage:** `localStorage` key `keyra-ui-theme` (values: light/dark/system)
+- **Application:** Inline script in `index.html` sets class before React mounts

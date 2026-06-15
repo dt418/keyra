@@ -1,8 +1,9 @@
 # Keyra MVP Design Specification
 
 **Date:** 2025-06-13
+**Last updated:** 2026-06-15
 **Status:** Approved
-**Version:** 1.0
+**Version:** 1.1 (Dashboard MVP added)
 
 ---
 
@@ -402,3 +403,36 @@ Every architectural change must update relevant documentation.
 - Multi-language SDKs beyond JS/Rust
 - Self-hosted deployment tooling
 - Permanent offline license cache
+
+---
+
+## 15. Implementation Status (Updated 2026-06-15)
+
+### Phase 1: Foundation ✅
+- All planned routes and handlers implemented
+- JWT + bcrypt + OAuth fully functional
+- D1 schema (10 migrations) deployed
+
+### Phase 2: License Core ✅
+- Products, Licenses, Activations, Devices
+- Cursor-based pagination
+- Zod validation on all endpoints
+- 91 unit tests passing
+
+### Phase 3: Dashboard MVP ✅
+Implemented in `apps/dashboard/` with these deltas from the plan:
+
+- **Routing:** Uses `_public.tsx` (auth redirect) and `_protected.tsx` (auth guard) instead of `_auth.tsx`
+- **Styling:** Tailwind v4 with CSS variables in `:root`/`.dark` (replaces v3 inline config)
+- **shadcn primitives:** base-ui instead of radix-ui. Use `render` prop, NOT `asChild`
+- **Components:** 20+ reusable components: StatusBadge, EmptyState, StatCard, PageHeader, ConfirmDialog, SearchToolbar, DataTable, AppSidebar, AppTopbar, CommandPalette
+- **Pages:** 9 pages (Overview, Organizations, Products, Licenses, Devices, API Keys, Documentation, Settings, Support)
+- **Dialogs:** Create/Edit/Delete all use shadcn Dialog + ConfirmDialog
+- **Tables:** TanStack Table for Licenses + Devices (sort, filter, pagination, column visibility)
+- **Theme:** Dark mode with shadcn pattern, storage key `keyra-ui-theme`
+- **Command palette:** Ctrl+K / Cmd+K for navigation, theme switch, sign out
+- **Tests:** 32 unit tests + 5 E2E test files
+- **CI:** GitHub Actions with typecheck, tests, build, e2e (5 jobs)
+
+### Future Phases
+- Subscriptions, billing, signed payloads, offline cache remain out of scope per the original spec

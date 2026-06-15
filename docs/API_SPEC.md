@@ -2,13 +2,18 @@
 
 Base URL: `https://keyra-api.danhthanh418.workers.dev/api/v1`
 
-## Response Format
+> **Note:** All API responses use **snake_case** field names even when shared
+> types use camelCase. The UI accesses fields like `product_id`,
+> `max_devices`, `created_at`, etc. directly.
 
-All responses follow this structure:
+## Response Format
 
 ```json
 // Success
 { "data": { ... } }
+
+// List with pagination
+{ "data": [...], "pagination": { "cursor": "next_page_cursor", "has_more": true } }
 
 // Error
 { "error": { "code": "ERROR_CODE", "message": "Human readable message", "details"?: [...] } }
@@ -18,307 +23,106 @@ All responses follow this structure:
 
 Protected endpoints require `Authorization: Bearer <access_token>` header.
 
+> **Auth middleware behavior:** Returns Response (e.g. `c.json({error}, 401)`),
+> does not throw. Tests must read with `await result.json()`.
+
 ## Endpoints
 
 ### Auth
 
-#### POST /auth/register
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/auth/register` | Email registration | - |
+| POST | `/auth/login` | Email login | - |
+| POST | `/auth/oauth/:provider/initiate` | Start OAuth flow | - |
+| POST | `/auth/oauth/:provider/callback` | Complete OAuth | - |
+| POST | `/auth/logout` | Logout | ✓ |
+| POST | `/auth/refresh` | Refresh access token | - |
 
-Register a new user account.
+### Users
 
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "securePassword123",
-  "name": "John Doe"
-}
-```
-
-**Response (201):**
-```json
-{
-  "data": {
-    "user": { "id": "uuid", "email": "user@example.com", "name": "John Doe" },
-    "access_token": "jwt...",
-    "refresh_token": "token..."
-  }
-}
-```
-
----
-
-#### POST /auth/login
-
-Authenticate with email and password.
-
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "securePassword123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "data": {
-    "user": { "id": "uuid", "email": "user@example.com", "name": "John Doe" },
-    "access_token": "jwt...",
-    "refresh_token": "token..."
-  }
-}
-```
-
----
-
-#### POST /auth/logout
-
-Invalidate refresh token.
-
-**Headers:**
-```
-Authorization: Bearer <access_token>
-```
-
-**Response (200):**
-```json
-{ "data": { "success": true } }
-```
-
----
-
-#### POST /auth/refresh
-
-Exchange refresh token for new access token.
-
-**Request:**
-```json
-{
-  "refresh_token": "token..."
-}
-```
-
-**Response (200):**
-```json
-{
-  "data": {
-    "access_token": "jwt...",
-    "refresh_token": "token..."
-  }
-}
-```
-
----
-
-#### POST /auth/oauth/:provider/initiate
-
-Start OAuth flow.
-
-**Parameters:**
-- `provider` — `github` or `google`
-
-**Response (200):**
-```json
-{
-  "data": {
-    "url": "https://github.com/login/oauth/authorize?..."
-  }
-}
-```
-
----
-
-#### POST /auth/oauth/:provider/callback
-
-Complete OAuth flow.
-
-**Parameters:**
-- `provider` — `github` or `google`
-
-**Request:**
-```json
-{
-  "code": "oauth_code",
-  "state": "csrf_token"
-}
-```
-
-**Response (200):**
-```json
-{
-  "data": {
-    "user": { "id": "uuid", "email": "user@example.com", "name": "John Doe" },
-    "access_token": "jwt...",
-    "refresh_token": "token..."
-  }
-}
-```
-
----
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/users/me` | Get current user | ✓ |
+| PATCH | `/users/me` | Update profile | ✓ |
 
 ### Organizations
 
-#### GET /organizations
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/organizations` | List user's organizations | ✓ |
+| POST | `/organizations` | Create organization | ✓ |
+| GET | `/organizations/:id` | Get details | ✓ |
+| PATCH | `/organizations/:id` | Update | ✓ (admin/owner) |
+| DELETE | `/organizations/:id` | Delete | ✓ (owner) |
+| GET | `/organizations/:id/members` | List members | ✓ |
+| POST | `/organizations/:id/members` | Invite member | ✓ |
+| PATCH | `/organizations/:id/members/:userId` | Update role | ✓ |
+| DELETE | `/organizations/:id/members/:userId` | Remove member | ✓ |
 
-List user's organizations. **Auth required.**
+### Products
 
-**Headers:**
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/products` | List products | ✓ |
+| POST | `/products` | Create product | ✓ |
+| GET | `/products/:id` | Get details | ✓ |
+| PATCH | `/products/:id` | Update | ✓ |
+| DELETE | `/products/:id` | Delete | ✓ |
+| GET | `/products/:id/api-key` | Check API key status | ✓ |
+| POST | `/products/:id/regenerate-key` | Generate new API key | ✓ |
+
+### Licenses
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/licenses` | List licenses | ✓ |
+| POST | `/licenses` | Create license | ✓ |
+| GET | `/licenses/:id` | Get details | ✓ |
+| PATCH | `/licenses/:id` | Update license | ✓ |
+| DELETE | `/licenses/:id` | Delete license | ✓ |
+| POST | `/licenses/:id/revoke` | Revoke license | ✓ |
+| POST | `/licenses/:id/reset-devices` | Reset device activations | ✓ |
+| POST | `/licenses/:id/transfer` | Transfer to other org | ✓ |
+
+**License types:** `trial`, `free`, `personal`, `professional`, `business`, `enterprise`
+
+**License statuses:** `active`, `revoked`, `expired`
+
+### Activations & Devices
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/activations` | List device activations | ✓ |
+| GET | `/activations/:id` | Get activation | ✓ |
+| DELETE | `/activations/:id` | Remove activation | ✓ |
+| GET | `/licenses/:id/activations` | Activations for a license | ✓ |
+| POST | `/activate` | Activate device with license key | API key |
+| POST | `/verify` | Verify a license key | API key |
+| DELETE | `/devices/:deviceToken` | Deactivate a device | API key |
+
+## Pagination
+
+All list endpoints support cursor-based pagination:
+
 ```
-Authorization: Bearer <access_token>
+GET /licenses?limit=20&cursor=<opaque>
 ```
 
-**Query Parameters:**
-- `limit` — Max results (default: 20, max: 100)
-- `cursor` — Pagination cursor (optional)
-
-**Response (200):**
+**Response:**
 ```json
 {
-  "data": [
-    { "id": "uuid", "name": "Acme Corp", "slug": "acme", "plan": "free", "role": "owner", "created_at": "2024-01-01T00:00:00Z" }
-  ],
+  "data": [...],
   "pagination": {
-    "cursor": "next_page_cursor",
+    "cursor": "next_page_token_or_null",
     "has_more": true
   }
 }
 ```
 
----
-
-#### POST /organizations
-
-Create organization. **Auth required.**
-
-**Headers:**
-```
-Authorization: Bearer <access_token>
-```
-
-**Request:**
-```json
-{
-  "name": "Acme Corp",
-  "slug": "acme"
-}
-```
-
-**Response (201):**
-```json
-{
-  "data": {
-    "id": "uuid",
-    "name": "Acme Corp",
-    "slug": "acme",
-    "plan": "free",
-    "created_at": "2024-01-01T00:00:00Z"
-  }
-}
-```
-
----
-
-#### GET /organizations/:id
-
-Get organization details. **Auth required.**
-
-**Headers:**
-```
-Authorization: Bearer <access_token>
-```
-
-**Response (200):**
-```json
-{
-  "data": {
-    "id": "uuid",
-    "name": "Acme Corp",
-    "slug": "acme",
-    "plan": "free",
-    "created_at": "2024-01-01T00:00:00Z"
-  }
-}
-```
-
----
-
-#### PATCH /organizations/:id
-
-Update organization. **Auth required. Admin/Owner only.**
-
-**Headers:**
-```
-Authorization: Bearer <access_token>
-```
-
-**Request:**
-```json
-{
-  "name": "New Name",
-  "settings": {}
-}
-```
-
-**Response (200):**
-```json
-{
-  "data": {
-    "id": "uuid",
-    "name": "New Name",
-    "slug": "acme",
-    "plan": "free",
-    "created_at": "2024-01-01T00:00:00Z",
-    "updated_at": "2024-01-02T00:00:00Z"
-  }
-}
-```
-
----
-
-#### DELETE /organizations/:id
-
-Delete organization. **Auth required. Owner only.**
-
-**Headers:**
-```
-Authorization: Bearer <access_token>
-```
-
-**Response (200):**
-```json
-{ "data": { "success": true } }
-```
-
----
-
-### Users
-
-#### GET /users/me
-
-Get current user profile. **Auth required.**
-
-**Headers:**
-```
-Authorization: Bearer <access_token>
-```
-
-**Response (200):**
-```json
-{
-  "data": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "name": "John Doe",
-    "avatar_url": "https://...",
-    "email_verified": true,
-    "created_at": "2024-01-01T00:00:00Z"
-  }
-}
-```
-
----
+- `limit` default 20, max 100
+- `cursor` opaque token from previous response
+- `has_more` indicates if more results exist
 
 ## Error Codes
 
@@ -329,6 +133,11 @@ Authorization: Bearer <access_token>
 | `NOT_FOUND` | 404 | Resource not found |
 | `VALIDATION_ERROR` | 400 | Invalid request data |
 | `CONFLICT` | 409 | Resource already exists |
+| `INVALID_PROVIDER` | 400 | OAuth provider not supported |
+| `INVALID_STATE` | 400 | OAuth state validation failed |
+| `TOKEN_EXCHANGE_FAILED` | 502 | OAuth token exchange failed |
+| `USERINFO_FAILED` | 502 | OAuth userinfo request failed |
+| `EMAIL_NOT_PROVIDED` | 400 | OAuth provider did not provide email |
 | `RATE_LIMITED` | 429 | Too many requests |
 | `INTERNAL_ERROR` | 500 | Server error |
 
