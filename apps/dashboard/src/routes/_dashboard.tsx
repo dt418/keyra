@@ -8,7 +8,7 @@ export default function DashboardLayout() {
       <div className="flex h-[100dvh] bg-background">
         <AppSidebar />
         <main className="flex-1 overflow-auto">
-          <div className="mx-auto w-full max-w-7xl px-6 py-6">
+          <div className="w-full px-6 py-6">
             <Outlet />
           </div>
         </main>
