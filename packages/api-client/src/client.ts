@@ -78,7 +78,8 @@ export const usersApi = {
 };
 
 export const orgsApi = {
-  list: () => api.get('/organizations'),
+  list: (params?: { limit?: number; cursor?: string }) =>
+    api.get('/organizations', { params }),
   get: (id: string) => api.get(`/organizations/${id}`),
   create: (data: { name: string }) => api.post('/organizations', data),
   update: (id: string, data: { name?: string }) =>
