@@ -12,7 +12,10 @@ export default defineConfig({
   reporter: isCI ? [['list'], ['html', { open: 'never' }]] : 'list',
   timeout: 60 * 1000,
   use: {
-    baseURL: 'http://localhost:8788',
+    baseURL: 'http://localhost:8788/api/v1',
+    extraHTTPHeaders: {
+      'Content-Type': 'application/json',
+    },
     trace: 'on-first-retry',
     actionTimeout: 10 * 1000,
     navigationTimeout: 15 * 1000,
@@ -26,7 +29,7 @@ export default defineConfig({
   webServer: {
     command: 'wrangler dev --port 8788',
     cwd: '.',
-    url: 'http://localhost:8788/auth/login',
+    url: 'http://localhost:8788/health',
     reuseExistingServer: !isCI,
     timeout: 180 * 1000,
     stdout: 'pipe',
