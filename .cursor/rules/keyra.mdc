@@ -1,0 +1,67 @@
+# Project Overview
+
+You are working on **Keyra**, a cloud-native license management platform. The
+project is a pnpm + Turborepo monorepo with:
+
+- `apps/api` — Hono backend on Cloudflare Workers
+- `apps/dashboard` — React 18 admin UI with Vite, Tailwind v4, shadcn/ui
+- `packages/api-client`, `packages/sdk-js`, `packages/shared-types`, `packages/shared-validation`
+- `database/` — D1 schema and migrations
+
+## Tech Stack
+
+React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui (base-ui), Radix UI, Lucide, React Router, TanStack Query, TanStack Table, React Hook Form, Zod, Sonner, Framer Motion.
+
+## Project Structure
+
+```
+apps/api/         # Hono API
+apps/dashboard/   # React UI
+packages/         # Shared libs
+database/         # D1 migrations
+infrastructure/   # IaC
+docs/             # API spec, architecture
+.github/          # CI workflows
+```
+
+## Code Style
+
+- TypeScript strict mode
+- No comments unless asked
+- 2-space indentation
+- Single quotes, no semicolons
+- Tailwind v4 utility classes
+
+## Critical Rules
+
+1. **API responses use snake_case.** Don't rename fields in UI.
+2. **Never add files at project root** — use `apps/`, `packages/`, or `database/`.
+3. **shadcn components use base-ui** — `render` prop, not `asChild`. Trigger/Button need `forwardRef`.
+4. **CSS variables in `:root` and `.dark` only** — not `@theme`.
+5. **Use `Skeleton` for loading** — no spinners for page content.
+6. **Every list page needs `EmptyState`** with icon + title + CTA.
+7. **API error handling:** `AppError` from `@/middleware/error` with `code`, `message`, `status`.
+8. **Auth middleware returns Response, does not throw.** Tests must read `await result.json()`.
+9. **Theme storage key: `keyra-ui-theme`**. Values: light/dark/system.
+10. **In UI code, the API returns snake_case** (`product_id`, `max_devices`, etc.) not camelCase.
+
+## Commands
+
+```bash
+pnpm install
+pnpm dev:api           # Start API on :8788
+pnpm --filter @keyra/dashboard dev  # Dashboard on :5174
+pnpm typecheck
+pnpm test             # All unit tests
+pnpm --filter @keyra/api test:e2e
+pnpm build
+```
+
+## Don'ts
+
+- Don't add files at project root
+- Don't add `@theme` colors (use `:root`/`.dark`)
+- Don't use `asChild` (use `render` prop)
+- Don't use spinners for page loading
+- Don't forget `forwardRef` on Button
+- Don't skip invalidating queries after mutations
