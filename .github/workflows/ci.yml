@@ -77,6 +77,17 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - name: Create .dev.vars for e2e
+        working-directory: apps/api
+        run: |
+          cat > .dev.vars << EOF
+          CLOUDFLARE_ACCOUNT_ID=test-account
+          CLOUDFLARE_API_TOKEN=test-token
+          JWT_SECRET=ci-test-jwt-secret-key-must-be-at-least-32-bytes-long-for-hs256
+          JWT_REFRESH_SECRET=ci-test-jwt-refresh-secret-key-must-be-at-least-32-bytes-long
+          ENVIRONMENT=test
+          DISABLE_RATE_LIMIT=1
+          EOF
       - run: pnpm --filter @keyra/api test:e2e:setup
       - run: pnpm --filter @keyra/api test:e2e
         env:
