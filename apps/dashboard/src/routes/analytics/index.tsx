@@ -181,9 +181,6 @@ export default function Analytics() {
     },
   });
 
-  const isLoading =
-    overviewLoading || byTypeLoading || timeSeriesLoading || topProductsLoading;
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -193,7 +190,7 @@ export default function Analytics() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading || !overview ? (
+        {overviewLoading || !overview ? (
           [...Array(4)].map((_, i) => (
             <Card key={i} className="p-5">
               <Skeleton className="h-4 w-24" />

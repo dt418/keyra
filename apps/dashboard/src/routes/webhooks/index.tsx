@@ -130,6 +130,7 @@ export default function Webhooks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      queryClient.invalidateQueries({ queryKey: ["webhook-deliveries"] });
     },
     onError: (err: unknown) =>
       toast.error(errorMessage(err, "Failed to update webhook")),
@@ -145,6 +146,7 @@ export default function Webhooks() {
       };
     },
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
       queryClient.invalidateQueries({ queryKey: ["webhook-deliveries"] });
       if (data.success) {
         toast.success(`Test sent successfully (${data.response_code})`);
