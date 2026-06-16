@@ -3,11 +3,11 @@ import { cors } from 'hono/cors';
 import { swaggerUI } from '@hono/swagger-ui';
 import { router } from './router';
 import { openApiSpec } from './openapi';
-import { errorMiddleware } from './middleware/error';
+import { errorHandler } from './middleware/error';
 
 const app = new Hono();
 
-app.use('*', errorMiddleware);
+app.onError(errorHandler);
 
 app.use(
   '*',

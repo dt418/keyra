@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import { registerSchema } from '@keyra/shared-validation';
 import { hashPassword } from '../../lib/password';
 import { signAccessToken, signRefreshToken } from '../../lib/jwt';
+import { storeRefreshToken } from '../../lib/sessions';
 import { AppError } from '../../middleware/error';
 import { logAuditEvent, extractRequestInfo } from '../../lib/audit';
 
@@ -9,26 +10,6 @@ interface RegisterBody {
   email: string;
   password: string;
   name: string;
-}
-
-async function storeRefreshToken(
-  c: Context,
-  userId: string,
-  refreshToken: string,
-  userAgent?: string,
-  ipAddress?: string
-): Promise<void> {
-  const sessionId = crypto.randomUUID();
-  const now = new Date().toISOString();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const tokenHash = await hashPassword(refreshToken);
-
-  await c.env.DB.prepare(
-    `INSERT INTO sessions (id, user_id, refresh_token_hash, user_agent, ip_address, expires_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  )
-    .bind(sessionId, userId, tokenHash, userAgent ?? null, ipAddress ?? null, expiresAt, now)
-    .run();
 }
 
 export async function registerHandler(c: Context) {
@@ -47,7 +28,7 @@ export async function registerHandler(c: Context) {
     .first();
 
   if (existing) {
-      throw new AppError('CONFLICT', 'User already exists', 409);
+    throw new AppError('CONFLICT', 'User already exists', 409);
   }
 
   const hashedPassword = await hashPassword(password);
@@ -71,9 +52,15 @@ export async function registerHandler(c: Context) {
     c.env.JWT_REFRESH_SECRET
   );
 
-  await storeRefreshToken(c, userId, refreshToken);
-
   const requestInfo = extractRequestInfo(c);
+  await storeRefreshToken(c, {
+    userId,
+    refreshToken,
+    sessionId,
+    userAgent: requestInfo.userAgent,
+    ipAddress: requestInfo.ipAddress,
+  });
+
   logAuditEvent(c, {
     action: 'user.register',
     userId,
@@ -84,11 +71,14 @@ export async function registerHandler(c: Context) {
     metadata: { email: email.toLowerCase() },
   });
 
-  return c.json({
-    data: {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      user: { id: userId, email: email.toLowerCase(), name },
+  return c.json(
+    {
+      data: {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        user: { id: userId, email: email.toLowerCase(), name },
+      },
     },
-  });
+    201
+  );
 }

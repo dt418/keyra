@@ -283,7 +283,7 @@ Auth state managed in `lib/auth.tsx` via React Context. `useAuth()` provides
 
 - **Unit tests:** Vitest + Testing Library (`pnpm --filter @keyra/dashboard test`)
 - **E2E tests:** Playwright (`pnpm --filter @keyra/api test:e2e`)
-- **Test counts:** 32 unit tests, 5 E2E test files
+- **Test counts:** 40 unit tests, 5 E2E test files
 
 ## CI Pipeline
 

@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-table';
 import { ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, ChevronUp, Settings2 } from 'lucide-react';
 import { Button, Input, DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];

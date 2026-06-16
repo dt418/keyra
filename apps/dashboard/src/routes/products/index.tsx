@@ -5,6 +5,7 @@ import { Card, Button, Input, Label, PageHeader, Skeleton, StatusBadge, EmptySta
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Loader2, Copy, Key as KeyIcon, Package, Pencil, Trash2, Eye, EyeOff, AlertCircle, Search, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { errorMessage } from '@/lib/error-message';
 import { formatRelativeTime } from '@/lib/date';
 
 const PAGE_SIZE = 20;
@@ -91,8 +92,8 @@ export default function Products() {
       setNewProduct({ name: '', description: '' });
       toast.success('Product created');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to create product');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to create product'));
     },
   });
 
@@ -106,8 +107,8 @@ export default function Products() {
       setEditingProduct(null);
       toast.success('Product updated');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to update product');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to update product'));
     },
   });
 
@@ -121,8 +122,8 @@ export default function Products() {
       setDeleteConfirm(null);
       toast.success('Product deleted');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to delete product');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to delete product'));
     },
   });
 
@@ -136,8 +137,8 @@ export default function Products() {
       queryClient.invalidateQueries({ queryKey: ['products-api-keys'] });
       toast.success('API key generated. Make sure to update your applications.');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to regenerate API key');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to regenerate API key'));
     },
   });
 

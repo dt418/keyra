@@ -72,7 +72,7 @@ pnpm --filter @keyra/dashboard dev   # → http://localhost:5174
 
 # Run all tests
 pnpm test
-pnpm --filter @keyra/dashboard test  # 32 unit tests
+pnpm --filter @keyra/dashboard test  # 40 unit tests
 pnpm --filter @keyra/api test         # 91 unit tests
 pnpm --filter @keyra/api test:e2e     # Playwright
 

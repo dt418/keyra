@@ -4,6 +4,7 @@ import { devicesApi, activationsApi } from '@keyra/api-client';
 import { Button, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog, DataTable } from '@/components/ui';
 import { Monitor, Smartphone, Globe, Trash2, Activity, Apple, MonitorSmartphone } from 'lucide-react';
 import { toast } from 'sonner';
+import { errorMessage } from '@/lib/error-message';
 import { formatRelativeTime } from '@/lib/date';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -87,8 +88,8 @@ export default function Devices() {
       setDeleteConfirm(null);
       toast.success('Device deactivated');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to deactivate device');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to deactivate device'));
     },
   });
 

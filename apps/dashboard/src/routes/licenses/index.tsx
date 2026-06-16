@@ -5,6 +5,7 @@ import { Button, Input, Label, PageHeader, Skeleton, StatusBadge, EmptyState, Co
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Loader2, Copy, Key, Pencil, Trash2, ShieldOff, Shield, Search, Copy as CopyIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { errorMessage } from '@/lib/error-message';
 import { formatRelativeTime } from '@/lib/date';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -93,8 +94,8 @@ export default function Licenses() {
       setNewLicense({ productId: '', type: 'trial', maxDevices: 1, expiresAt: '' });
       toast.success('License created');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to create license');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to create license'));
     },
   });
 
@@ -108,8 +109,8 @@ export default function Licenses() {
       setEditingLicense(null);
       toast.success('License updated');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to update license');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to update license'));
     },
   });
 
@@ -122,8 +123,8 @@ export default function Licenses() {
       setDeleteConfirm(null);
       toast.success('License deleted');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to delete license');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to delete license'));
     },
   });
 
@@ -135,8 +136,8 @@ export default function Licenses() {
       queryClient.invalidateQueries({ queryKey: ['licenses'] });
       toast.success('License revoked');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to revoke license');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to revoke license'));
     },
   });
 

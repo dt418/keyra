@@ -9,6 +9,10 @@ interface RateLimitOptions {
 
 export function rateLimit(options: RateLimitOptions) {
   return async (c: Context, next: Next) => {
+    if (c.env.DISABLE_RATE_LIMIT) {
+      return next();
+    }
+
     const ip = c.req.header('CF-Connecting-IP') ?? 'unknown';
     const key = `${RATE_LIMIT_PREFIX}${ip}`;
     const kv = c.env.SESSIONS;

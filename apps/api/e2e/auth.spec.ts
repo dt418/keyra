@@ -9,7 +9,7 @@ test.describe('Auth Flow', () => {
   let refreshToken: string;
 
   test('register new user returns access_token', async ({ request }) => {
-    const response = await request.post('/auth/register', {
+    const response = await request.post('auth/register', {
       data: {
         email: testEmail,
         password: testPassword,
@@ -28,7 +28,7 @@ test.describe('Auth Flow', () => {
   });
 
   test('login with valid credentials returns access_token', async ({ request }) => {
-    const response = await request.post('/auth/login', {
+    const response = await request.post('auth/login', {
       data: {
         email: testEmail,
         password: testPassword,
@@ -43,7 +43,7 @@ test.describe('Auth Flow', () => {
   });
 
   test('login with invalid credentials returns 401', async ({ request }) => {
-    const response = await request.post('/auth/login', {
+    const response = await request.post('auth/login', {
       data: {
         email: testEmail,
         password: 'wrongpassword',
@@ -54,7 +54,7 @@ test.describe('Auth Flow', () => {
   });
 
   test('logout invalidates session', async ({ request }) => {
-    const loginResponse = await request.post('/auth/login', {
+    const loginResponse = await request.post('auth/login', {
       data: {
         email: testEmail,
         password: testPassword,
@@ -63,14 +63,14 @@ test.describe('Auth Flow', () => {
     const loginBody = await loginResponse.json();
     const token = loginBody.data.access_token;
 
-    const logoutResponse = await request.post('/auth/logout', {
+    const logoutResponse = await request.post('auth/logout', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
     expect(logoutResponse.ok()).toBe(true);
 
-    const meResponse = await request.get('/users/me', {
+    const meResponse = await request.get('users/me', {
       headers: {
         Authorization: `Bearer ${token}`,
       },

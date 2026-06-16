@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Key, LogOut, Users, Package, Monitor, Settings, LifeBuoy, Book } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 import { Button, Avatar, AvatarFallback, Separator } from '@/components/ui';
 import { ModeToggle } from '@/components/mode-toggle';
 

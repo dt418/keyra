@@ -15,7 +15,7 @@ All notable changes will be documented in this file.
   - EmptyState with icon + title + description + CTA on every page
   - 9 pages: Overview, Organizations, Products, Licenses, Devices, API Keys, Documentation, Settings, Support
 - **Auth Pages** — Split-pane layout with gradient hero, feature highlights
-- **Test Coverage** — 32 unit tests (dashboard) + 91 unit tests (API) + 5 E2E test files
+- **Test Coverage** — 40 unit tests (dashboard) + 91 unit tests (API) + 5 E2E test files
 - **Pagination** — Cursor-based pagination on Products, Organizations, Licenses, Devices
 - **CRUD Dialogs** — Edit and delete dialogs for all entities, ConfirmDialog component for destructive actions
 - **Documentation Pages** — SDK integration guide (install, configure, use) + API reference table

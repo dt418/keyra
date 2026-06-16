@@ -1,42 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createErrorMiddleware, AppError } from '../error';
+import { errorHandler, AppError } from '../error';
 
-const errorMiddleware = createErrorMiddleware();
-
-function createMockContext(nextFn: () => Promise<void> = vi.fn()) {
-  const ctx = {
+function createMockContext() {
+  return {
     json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
-  } as unknown as Parameters<typeof errorMiddleware>[0];
-  return { ctx, nextFn };
+  } as unknown as Parameters<typeof errorHandler>[1];
 }
 
-describe('errorMiddleware', () => {
+describe('errorHandler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('successful requests', () => {
-    it('should pass through when next() succeeds', async () => {
-      const nextFn = vi.fn().mockResolvedValue(undefined);
-      const { ctx, nextFn: next } = createMockContext(nextFn);
-
-      await errorMiddleware(ctx, next);
-
-      expect(nextFn).toHaveBeenCalled();
-      expect(ctx.json).not.toHaveBeenCalled();
-    });
-  });
-
   describe('AppError handling', () => {
-    it('should return 401 for UNAUTHORIZED error', async () => {
-      const nextFn = vi.fn().mockRejectedValue(
-        new AppError('UNAUTHORIZED', 'User not authenticated', 401)
-      );
-      const { ctx, nextFn: next } = createMockContext(nextFn);
+    it('should return 401 for UNAUTHORIZED error', () => {
+      const err = new AppError('UNAUTHORIZED', 'User not authenticated', 401);
+      const c = createMockContext();
 
-      await errorMiddleware(ctx, next);
+      errorHandler(err, c);
 
-      expect(ctx.json).toHaveBeenCalledWith(
+      expect(c.json).toHaveBeenCalledWith(
         {
           error: {
             code: 'UNAUTHORIZED',
@@ -48,15 +31,13 @@ describe('errorMiddleware', () => {
       );
     });
 
-    it('should return 403 for FORBIDDEN error', async () => {
-      const nextFn = vi.fn().mockRejectedValue(
-        new AppError('FORBIDDEN', 'Access denied', 403)
-      );
-      const { ctx, nextFn: next } = createMockContext(nextFn);
+    it('should return 403 for FORBIDDEN error', () => {
+      const err = new AppError('FORBIDDEN', 'Access denied', 403);
+      const c = createMockContext();
 
-      await errorMiddleware(ctx, next);
+      errorHandler(err, c);
 
-      expect(ctx.json).toHaveBeenCalledWith(
+      expect(c.json).toHaveBeenCalledWith(
         {
           error: {
             code: 'FORBIDDEN',
@@ -68,15 +49,13 @@ describe('errorMiddleware', () => {
       );
     });
 
-    it('should return 404 for NOT_FOUND error', async () => {
-      const nextFn = vi.fn().mockRejectedValue(
-        new AppError('NOT_FOUND', 'Resource not found', 404)
-      );
-      const { ctx, nextFn: next } = createMockContext(nextFn);
+    it('should return 404 for NOT_FOUND error', () => {
+      const err = new AppError('NOT_FOUND', 'Resource not found', 404);
+      const c = createMockContext();
 
-      await errorMiddleware(ctx, next);
+      errorHandler(err, c);
 
-      expect(ctx.json).toHaveBeenCalledWith(
+      expect(c.json).toHaveBeenCalledWith(
         {
           error: {
             code: 'NOT_FOUND',
@@ -88,19 +67,17 @@ describe('errorMiddleware', () => {
       );
     });
 
-    it('should return 400 for VALIDATION_ERROR with details', async () => {
+    it('should return 400 for VALIDATION_ERROR with details', () => {
       const details = [
         { field: 'email', message: 'Invalid email format' },
         { field: 'password', message: 'Too short' },
       ];
-      const nextFn = vi.fn().mockRejectedValue(
-        new AppError('VALIDATION_ERROR', 'Validation failed', 400, details)
-      );
-      const { ctx, nextFn: next } = createMockContext(nextFn);
+      const err = new AppError('VALIDATION_ERROR', 'Validation failed', 400, details);
+      const c = createMockContext();
 
-      await errorMiddleware(ctx, next);
+      errorHandler(err, c);
 
-      expect(ctx.json).toHaveBeenCalledWith(
+      expect(c.json).toHaveBeenCalledWith(
         {
           error: {
             code: 'VALIDATION_ERROR',
@@ -112,15 +89,13 @@ describe('errorMiddleware', () => {
       );
     });
 
-    it('should return 409 for CONFLICT error', async () => {
-      const nextFn = vi.fn().mockRejectedValue(
-        new AppError('CONFLICT', 'Resource already exists', 409)
-      );
-      const { ctx, nextFn: next } = createMockContext(nextFn);
+    it('should return 409 for CONFLICT error', () => {
+      const err = new AppError('CONFLICT', 'Resource already exists', 409);
+      const c = createMockContext();
 
-      await errorMiddleware(ctx, next);
+      errorHandler(err, c);
 
-      expect(ctx.json).toHaveBeenCalledWith(
+      expect(c.json).toHaveBeenCalledWith(
         {
           error: {
             code: 'CONFLICT',
@@ -132,15 +107,13 @@ describe('errorMiddleware', () => {
       );
     });
 
-    it('should return 500 for INTERNAL_ERROR with default status', async () => {
-      const nextFn = vi.fn().mockRejectedValue(
-        new AppError('SOME_ERROR', 'Something went wrong')
-      );
-      const { ctx, nextFn: next } = createMockContext(nextFn);
+    it('should return 500 for AppError without explicit status', () => {
+      const err = new AppError('SOME_ERROR', 'Something went wrong');
+      const c = createMockContext();
 
-      await errorMiddleware(ctx, next);
+      errorHandler(err, c);
 
-      expect(ctx.json).toHaveBeenCalledWith(
+      expect(c.json).toHaveBeenCalledWith(
         {
           error: {
             code: 'SOME_ERROR',
@@ -148,7 +121,7 @@ describe('errorMiddleware', () => {
             details: undefined,
           },
         },
-        400
+        500
       );
     });
   });
@@ -162,13 +135,11 @@ describe('errorMiddleware', () => {
       });
       const result = schema.safeParse({ email: 'invalid', age: -1 });
       const zodError = new ZodError(result.error!.issues);
+      const c = createMockContext();
 
-      const nextFn = vi.fn().mockRejectedValue(zodError);
-      const { ctx, nextFn: next } = createMockContext(nextFn);
+      errorHandler(zodError, c);
 
-      await errorMiddleware(ctx, next);
-
-      expect(ctx.json).toHaveBeenCalledWith(
+      expect(c.json).toHaveBeenCalledWith(
         {
           error: {
             code: 'VALIDATION_ERROR',
@@ -185,15 +156,15 @@ describe('errorMiddleware', () => {
   });
 
   describe('unhandled errors', () => {
-    it('should return 500 for unknown errors', async () => {
+    it('should return 500 for unknown errors', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const nextFn = vi.fn().mockRejectedValue(new Error('Database connection failed'));
-      const { ctx, nextFn: next } = createMockContext(nextFn);
+      const err = new Error('Database connection failed');
+      const c = createMockContext();
 
-      await errorMiddleware(ctx, next);
+      errorHandler(err, c);
 
-      expect(consoleSpy).toHaveBeenCalledWith('Unhandled error:', expect.any(Error));
-      expect(ctx.json).toHaveBeenCalledWith(
+      expect(consoleSpy).toHaveBeenCalledWith('Unhandled error:', err);
+      expect(c.json).toHaveBeenCalledWith(
         {
           error: {
             code: 'INTERNAL_ERROR',
@@ -205,15 +176,14 @@ describe('errorMiddleware', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should return 500 for non-Error throwables', async () => {
+    it('should return 500 for non-Error throwables', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const nextFn = vi.fn().mockRejectedValue('string error');
-      const { ctx, nextFn: next } = createMockContext(nextFn);
+      const c = createMockContext();
 
-      await errorMiddleware(ctx, next);
+      errorHandler('string error', c);
 
       expect(consoleSpy).toHaveBeenCalledWith('Unhandled error:', 'string error');
-      expect(ctx.json).toHaveBeenCalledWith(
+      expect(c.json).toHaveBeenCalledWith(
         {
           error: {
             code: 'INTERNAL_ERROR',

@@ -4,6 +4,7 @@ import { productsApi } from '@keyra/api-client';
 import { Card, Button, PageHeader, Skeleton, StatusBadge, EmptyState } from '@/components/ui';
 import { Key, Copy, EyeOff, AlertCircle, Package, CheckCircle2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { errorMessage } from '@/lib/error-message';
 import { formatRelativeTime } from '@/lib/date';
 import { Link } from 'react-router-dom';
 
@@ -52,8 +53,8 @@ export default function ApiKeys() {
       const res = await productsApi.regenerateKey(productId);
       setVisibleKeys((prev) => ({ ...prev, [productId]: res.data.data.apiKey }));
       toast.success('API key regenerated');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to regenerate');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Failed to regenerate'));
     } finally {
       setRegenerating((prev) => ({ ...prev, [productId]: false }));
     }

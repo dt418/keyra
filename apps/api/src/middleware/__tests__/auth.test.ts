@@ -4,12 +4,26 @@ import { signAccessToken, signRefreshToken } from '../../lib/jwt';
 
 const TEST_SECRET = 'test-secret-key';
 
+function createKVMock(value: string | null = null) {
+  return {
+    get: vi.fn().mockResolvedValue(value),
+    put: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
 function createMockContext(overrides: {
   authHeader?: string;
   nextFn?: () => Promise<void>;
+  includeKV?: boolean;
+  kvValue?: string | null;
 } = {}) {
   const nextFn = overrides.nextFn ?? vi.fn().mockResolvedValue(undefined);
   const jsonResponse = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+  const env: Record<string, unknown> = { JWT_SECRET: TEST_SECRET };
+  if (overrides.includeKV !== false) {
+    env.SESSIONS = createKVMock(overrides.kvValue ?? null);
+  }
   const ctx = {
     req: {
       header: vi.fn((name: string) => {
@@ -17,7 +31,7 @@ function createMockContext(overrides: {
         return undefined;
       }),
     },
-    env: { JWT_SECRET: TEST_SECRET },
+    env,
     set: vi.fn(),
     json: vi.fn().mockImplementation((body: unknown, status?: number) => {
       return jsonResponse(body, status);
@@ -63,8 +77,26 @@ describe('authMiddleware', () => {
     expect(nextFn).toHaveBeenCalled();
   });
 
+  it('should return 401 when session is revoked', async () => {
+    const token = await signAccessToken(
+      { sub: 'user-123', email: 'test@example.com', sessionId: 'revoked-session' },
+      TEST_SECRET
+    );
+    const { ctx, nextFn } = createMockContext({ authHeader: `Bearer ${token}`, kvValue: 'revoked' });
+
+    const result = (await authMiddleware(ctx, nextFn)) as Response;
+    const error = await readErrorResponse(result);
+
+    expect(error).toMatchObject({
+      code: 'UNAUTHORIZED',
+      message: 'Session has been revoked',
+      status: 401,
+    });
+    expect(nextFn).not.toHaveBeenCalled();
+  });
+
   it('should return 401 when Authorization header missing', async () => {
-    const { ctx, nextFn } = createMockContext({});
+    const { ctx, nextFn } = createMockContext({ includeKV: false });
 
     const result = (await authMiddleware(ctx, nextFn)) as Response;
     const error = await readErrorResponse(result);
@@ -136,7 +168,7 @@ describe('authMiddleware', () => {
 
     expect(error).toMatchObject({
       code: 'UNAUTHORIZED',
-      message: 'Invalid token type',
+      message: 'Expected access token',
       status: 401,
     });
     expect(nextFn).not.toHaveBeenCalled();

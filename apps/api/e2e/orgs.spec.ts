@@ -11,7 +11,7 @@ test.describe('Organizations CRUD', () => {
   let orgId: string;
 
   test.beforeAll(async ({ request }) => {
-    const regResponse = await request.post('/auth/register', {
+    const regResponse = await request.post('auth/register', {
       data: {
         email: testEmail,
         password: testPassword,
@@ -23,7 +23,7 @@ test.describe('Organizations CRUD', () => {
   });
 
   test('create organization returns org', async ({ request }) => {
-    const response = await request.post('/organizations', {
+    const response = await request.post('organizations', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -44,7 +44,7 @@ test.describe('Organizations CRUD', () => {
   });
 
   test('list organizations includes created org', async ({ request }) => {
-    const response = await request.get('/organizations', {
+    const response = await request.get('organizations', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -57,7 +57,7 @@ test.describe('Organizations CRUD', () => {
   });
 
   test('get organization returns org details', async ({ request }) => {
-    const response = await request.get(`/organizations/${orgId}`, {
+    const response = await request.get(`organizations/${orgId}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -72,7 +72,7 @@ test.describe('Organizations CRUD', () => {
 
   test('update organization returns updated org', async ({ request }) => {
     const newName = `Updated Org ${Date.now()}`;
-    const response = await request.patch(`/organizations/${orgId}`, {
+    const response = await request.patch(`organizations/${orgId}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -88,7 +88,7 @@ test.describe('Organizations CRUD', () => {
   });
 
   test('delete organization returns success', async ({ request }) => {
-    const response = await request.delete(`/organizations/${orgId}`, {
+    const response = await request.delete(`organizations/${orgId}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },

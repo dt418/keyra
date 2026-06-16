@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Plus, Loader2, Users, Pencil, Trash2, Search, Building2 } from 'lucide-react';
 import { formatDate } from '@/lib/date';
 import { useAuth } from '@/lib/auth';
+import { errorMessage } from '@/lib/error-message';
 import { toast } from 'sonner';
 
 const PAGE_SIZE = 20;
@@ -77,8 +78,8 @@ export default function Organizations() {
       setNewOrgName('');
       toast.success('Organization created');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to create organization');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to create organization'));
     },
   });
 
@@ -93,8 +94,8 @@ export default function Organizations() {
       setEditingOrg(null);
       toast.success('Organization updated');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to update organization');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to update organization'));
     },
   });
 
@@ -108,8 +109,8 @@ export default function Organizations() {
       setDeleteConfirm(null);
       toast.success('Organization deleted');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to delete organization');
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, 'Failed to delete organization'));
     },
   });
 

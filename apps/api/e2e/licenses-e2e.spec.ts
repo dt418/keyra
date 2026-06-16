@@ -6,54 +6,81 @@ const testName = 'License E2E User';
 
 let accessToken: string;
 let productId: string;
+const createdLicenseIds: string[] = [];
 
 async function registerAndLogin(request: APIRequestContext) {
-  await request.post('/auth/register', {
+  await request.post('auth/register', {
     data: { email: testEmail, password: testPassword, name: testName },
   });
-  const res = await request.post('/auth/login', {
+  const res = await request.post('auth/login', {
     data: { email: testEmail, password: testPassword },
   });
   return (await res.json()).data.access_token as string;
 }
 
-async function createProduct(request: APIRequestContext) {
-  const res = await request.post('/products', {
-    headers: { Authorization: `Bearer ${accessToken}` },
+async function createOrg(request: APIRequestContext, token: string) {
+  const res = await request.post('organizations', {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { name: 'E2E Licenses Org' },
+  });
+  expect(res.status()).toBe(201);
+}
+
+async function createProduct(request: APIRequestContext, token: string) {
+  const res = await request.post('products', {
+    headers: { Authorization: `Bearer ${token}` },
     data: { name: 'License Test Product' },
   });
   return (await res.json()).data.id as string;
 }
 
+async function createLicense(
+  request: APIRequestContext,
+  token: string,
+  productId: string,
+  data: { type: string; max_devices: number }
+) {
+  const res = await request.post('licenses', {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { product_id: productId, type: data.type, max_devices: data.max_devices },
+  });
+  expect(res.status()).toBe(201);
+  const body = await res.json();
+  createdLicenseIds.push(body.data.id);
+  return body.data;
+}
+
 test.describe('Licenses CRUD', () => {
   test.beforeEach(async ({ request }) => {
     accessToken = await registerAndLogin(request);
-    productId = await createProduct(request);
+    await createOrg(request, accessToken);
+    productId = await createProduct(request, accessToken);
+    createdLicenseIds.length = 0;
   });
 
   test.afterEach(async ({ request }) => {
-    await request.delete(`/products/${productId}`, {
+    for (const id of createdLicenseIds) {
+      await request.delete(`licenses/${id}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    }
+    await request.delete(`products/${productId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   });
 
   test('create, list, and revoke license', async ({ request }) => {
-    const createRes = await request.post('/licenses', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      data: { product_id: productId, type: 'trial', max_devices: 3 },
-    });
-    expect(createRes.status()).toBe(201);
-    const created = await createRes.json();
-    expect(created.data.status).toBe('active');
-    expect(created.data.key).toBeDefined();
+    const created = await createLicense(request, accessToken, productId, { type: 'trial', max_devices: 3 });
+    expect(created.status).toBe('active');
+    expect(created.key).toBeDefined();
 
-    const revokeRes = await request.post(`/licenses/${created.data.id}/revoke`, {
+    const revokeRes = await request.post(`licenses/${created.id}/revoke`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       data: { reason: 'Test revoke' },
     });
     expect(revokeRes.ok()).toBe(true);
 
-    const verifyRes = await request.get(`/licenses/${created.data.id}`, {
+    const verifyRes = await request.get(`licenses/${created.id}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const verifyBody = await verifyRes.json();
@@ -61,27 +88,20 @@ test.describe('Licenses CRUD', () => {
   });
 
   test('filter licenses by status', async ({ request }) => {
-    await request.post('/licenses', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      data: { product_id: productId, type: 'personal', max_devices: 1 },
-    });
+    await createLicense(request, accessToken, productId, { type: 'personal', max_devices: 1 });
 
-    const activeRes = await request.get('/licenses?status=active', {
+    const activeRes = await request.get('licenses?status=active', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     expect(activeRes.ok()).toBe(true);
     const activeList = await activeRes.json();
-    expect(activeList.data.every((l: any) => l.status === 'active')).toBe(true);
+    expect(activeList.data.every((l: { status: string }) => l.status === 'active')).toBe(true);
   });
 
   test('update license', async ({ request }) => {
-    const createRes = await request.post('/licenses', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      data: { product_id: productId, type: 'trial', max_devices: 1 },
-    });
-    const created = await createRes.json();
+    const created = await createLicense(request, accessToken, productId, { type: 'trial', max_devices: 1 });
 
-    const updateRes = await request.patch(`/licenses/${created.data.id}`, {
+    const updateRes = await request.patch(`licenses/${created.id}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       data: { max_devices: 5, type: 'professional' },
     });

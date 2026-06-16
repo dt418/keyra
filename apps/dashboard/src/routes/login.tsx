@@ -3,6 +3,7 @@ import { Button, Input, Label } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { errorMessage } from '@/lib/error-message';
 import { Key, Loader2, ArrowRight, Shield, Zap, BarChart3 } from 'lucide-react';
 
 export default function Login() {
@@ -23,8 +24,8 @@ export default function Login() {
       await login(email, password);
       toast.success('Welcome back!');
       navigate('/dashboard');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Login failed');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Login failed'));
     } finally {
       setIsLoading(false);
     }

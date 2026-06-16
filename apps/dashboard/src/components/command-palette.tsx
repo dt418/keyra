@@ -4,7 +4,7 @@ import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/lib/auth';
 import { Dialog, DialogContent, Input } from '@/components/ui';
 import { LayoutDashboard, Users, Package, Key, Monitor, Settings, Book, LifeBuoy, Sun, Moon, LogOut, Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Overview' },

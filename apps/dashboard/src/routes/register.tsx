@@ -3,6 +3,7 @@ import { Button, Input, Label } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { errorMessage } from '@/lib/error-message';
 import { Key, Loader2, ArrowRight, Shield, Zap, BarChart3 } from 'lucide-react';
 
 export default function Register() {
@@ -35,8 +36,8 @@ export default function Register() {
       await register(email, password, name);
       toast.success('Account created successfully!');
       navigate('/dashboard');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Registration failed');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Registration failed'));
     } finally {
       setIsLoading(false);
     }

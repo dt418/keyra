@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { Card } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 
 export interface StatCardProps {
   title: string;

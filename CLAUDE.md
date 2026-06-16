@@ -32,7 +32,7 @@ pnpm install
 pnpm dev:api            # → http://localhost:8788
 pnpm --filter @keyra/dashboard dev  # → http://localhost:5174
 pnpm typecheck
-pnpm test              # 32 dashboard + 91 API unit tests
+pnpm test              # 40 dashboard + 91 API unit tests
 pnpm --filter @keyra/api test:e2e   # Playwright E2E
 pnpm build
 ```

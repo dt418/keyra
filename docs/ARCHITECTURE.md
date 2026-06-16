@@ -341,7 +341,7 @@ GitHub Actions runs:
 
 1. `lint & typecheck` — all packages
 2. `test-api` — 91 unit tests
-3. `test-dashboard` — 32 unit tests
+3. `test-dashboard` — 40 unit tests
 4. `build` — turbo build (depends on tests)
 5. `e2e` — Playwright (depends on build)
 

@@ -10,13 +10,13 @@ test.describe('Products Flow', () => {
   let productId: string;
 
   test.beforeAll(async ({ request }) => {
-    const reg = await request.post('/auth/register', {
+    const reg = await request.post('auth/register', {
       data: { email: testEmail, password: testPassword, name: testName },
     });
     const body = await reg.json();
     accessToken = body.data.access_token;
 
-    const org = await request.post('/organizations', {
+    const org = await request.post('organizations', {
       headers: { Authorization: `Bearer ${accessToken}` },
       data: { name: 'Test Org' },
     });
@@ -24,7 +24,7 @@ test.describe('Products Flow', () => {
   });
 
   test('create product returns product with api_key', async ({ request }) => {
-    const response = await request.post('/products', {
+    const response = await request.post('products', {
       headers: { Authorization: `Bearer ${accessToken}` },
       data: { name: productName, description: 'A test product' },
     });
@@ -40,7 +40,7 @@ test.describe('Products Flow', () => {
   });
 
   test('list products includes created product', async ({ request }) => {
-    const response = await request.get('/products', {
+    const response = await request.get('products', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
@@ -51,7 +51,7 @@ test.describe('Products Flow', () => {
   });
 
   test('get product by ID returns product', async ({ request }) => {
-    const response = await request.get(`/products/${productId}`, {
+    const response = await request.get(`products/${productId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
@@ -62,7 +62,7 @@ test.describe('Products Flow', () => {
 
   test('update product returns updated', async ({ request }) => {
     const newName = `Updated ${Date.now()}`;
-    const response = await request.patch(`/products/${productId}`, {
+    const response = await request.patch(`products/${productId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       data: { name: newName },
     });
@@ -73,17 +73,17 @@ test.describe('Products Flow', () => {
   });
 
   test('get product API key returns key', async ({ request }) => {
-    const response = await request.get(`/products/${productId}/api-key`, {
+    const response = await request.get(`products/${productId}/api-key`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     expect(response.ok()).toBe(true);
     const body = await response.json();
-    expect(body.data).toHaveProperty('apiKey');
+    expect(body.data).toHaveProperty('hasApiKey');
   });
 
   test('delete product returns success', async ({ request }) => {
-    const response = await request.delete(`/products/${productId}`, {
+    const response = await request.delete(`products/${productId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 

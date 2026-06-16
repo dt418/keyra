@@ -5,14 +5,14 @@ const isCI = process.env.CI === 'true';
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
-  fullyParallel: true,
+  fullyParallel: !isCI,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  workers: 1,
+  workers: isCI ? 2 : 1,
   reporter: isCI ? [['list'], ['html', { open: 'never' }]] : 'list',
   timeout: 60 * 1000,
   use: {
-    baseURL: 'http://localhost:8788/api/v1',
+    baseURL: 'http://localhost:8788/api/v1/',
     extraHTTPHeaders: {
       'Content-Type': 'application/json',
     },
@@ -37,6 +37,7 @@ export default defineConfig({
     env: {
       CLOUDFLARE_ACCOUNT_ID: 'test-account',
       CLOUDFLARE_API_TOKEN: 'test-token',
+      DISABLE_RATE_LIMIT: '1',
     },
   },
 });

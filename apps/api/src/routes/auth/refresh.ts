@@ -1,8 +1,8 @@
 import type { Context } from 'hono';
 import { refreshSchema } from '@keyra/shared-validation';
 import { verifyToken, signAccessToken, signRefreshToken } from '../../lib/jwt';
+import { revokeSession, storeRefreshToken } from '../../lib/sessions';
 import { AppError } from '../../middleware/error';
-import { hashPassword } from '../../lib/password';
 
 export async function refreshHandler(c: Context) {
   const body = await c.req.json();
@@ -39,19 +39,14 @@ export async function refreshHandler(c: Context) {
   ]);
 
   if (payload.jti) {
-    await c.env.DB.prepare('UPDATE sessions SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL')
-      .bind(new Date().toISOString(), payload.jti)
-      .run();
+    await revokeSession(c, payload.jti);
   }
-  const now = new Date().toISOString();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const tokenHash = await hashPassword(newRefreshToken);
-  await c.env.DB.prepare(
-    `INSERT INTO sessions (id, user_id, refresh_token_hash, expires_at, created_at)
-     VALUES (?, ?, ?, ?, ?)`
-  )
-    .bind(newSessionId, user.id, tokenHash, expiresAt, now)
-    .run();
+
+  await storeRefreshToken(c, {
+    userId: user.id,
+    refreshToken: newRefreshToken,
+    sessionId: newSessionId,
+  });
 
   return c.json({
     data: {
