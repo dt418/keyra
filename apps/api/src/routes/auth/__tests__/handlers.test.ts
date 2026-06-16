@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerHandler } from '../register';
 import { loginHandler } from '../login';
 import { refreshHandler } from '../refresh';
-import { signAccessToken, signRefreshToken } from '../../../lib/jwt';
+import { signRefreshToken } from '../../../lib/jwt';
 
 const TEST_SECRET = 'test-secret-key';
 const TEST_REFRESH_SECRET = 'test-refresh-secret-key';

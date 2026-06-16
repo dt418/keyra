@@ -1,5 +1,4 @@
 import type { Context } from 'hono';
-import { AppError } from '../../middleware/error';
 import { hashApiKey } from '../../lib/password';
 
 export async function getApiKeyHandler(c: Context) {

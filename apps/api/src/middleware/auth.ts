@@ -1,7 +1,6 @@
 import type { Context, Next } from 'hono';
 import { verifyToken } from '../lib/jwt';
 import { SESSION_KV_PREFIX } from '../lib/sessions';
-import { AppError } from './error';
 
 export interface AuthVariables {
   userId: string;

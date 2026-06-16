@@ -54,7 +54,6 @@ export async function transferLicenseHandler(c: Context) {
 
   const now = new Date().toISOString();
 
-  const transferredId = crypto.randomUUID();
   await c.env.DB.prepare(
     `UPDATE licenses SET status = 'transferred', transferred_at = ?, updated_at = ? WHERE id = ?`
   )
