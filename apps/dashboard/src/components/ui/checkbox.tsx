@@ -1,81 +1,26 @@
-"use client"
+import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 
-import * as React from "react"
-import { CheckIcon, MinusIcon } from "lucide-react"
-import { cn } from "@/lib/cn"
+import { cn } from "@/lib/cn";
+import { CheckIcon } from "lucide-react";
 
-type CheckboxProps = Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "type" | "checked" | "defaultChecked" | "onChange"
-> & {
-  checked?: boolean | "indeterminate"
-  defaultChecked?: boolean | "indeterminate"
-  onCheckedChange?: (checked: boolean | "indeterminate") => void
+function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
+  return (
+    <CheckboxPrimitive.Root
+      data-slot="checkbox"
+      className={cn(
+        "peer relative flex size-4 shrink-0 items-center justify-center rounded-[5px] border border-transparent bg-input/90 transition-shadow outline-none group-has-disabled/field:opacity-50 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary",
+        className,
+      )}
+      {...props}
+    >
+      <CheckboxPrimitive.Indicator
+        data-slot="checkbox-indicator"
+        className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
+      >
+        <CheckIcon />
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
+  );
 }
 
-const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, checked, defaultChecked, onCheckedChange, disabled, ...props }, ref) => {
-    const inputRef = React.useRef<HTMLInputElement>(null)
-    React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement)
-
-    const isIndeterminate =
-      checked === "indeterminate" || defaultChecked === "indeterminate"
-
-    React.useEffect(() => {
-      if (inputRef.current) {
-        inputRef.current.indeterminate = isIndeterminate
-      }
-    }, [isIndeterminate])
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const next: boolean | "indeterminate" = e.target.checked
-        ? true
-        : isIndeterminate
-          ? "indeterminate"
-          : false
-      onCheckedChange?.(next)
-    }
-
-    const normalizedChecked =
-      checked === "indeterminate" ? false : checked
-    const normalizedDefault =
-      defaultChecked === "indeterminate" ? false : defaultChecked
-
-    return (
-      <span className="relative inline-flex items-center justify-center">
-        <input
-          {...props}
-          ref={inputRef}
-          type="checkbox"
-          checked={normalizedChecked}
-          defaultChecked={normalizedDefault}
-          onChange={handleChange}
-          disabled={disabled}
-          aria-invalid={props["aria-invalid"]}
-          className={cn(
-            "peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-[4px] border border-input shadow-sm transition-colors",
-            "checked:bg-primary checked:border-primary checked:text-primary-foreground",
-            "indeterminate:bg-primary indeterminate:border-primary indeterminate:text-primary-foreground",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            "aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/30",
-            className
-          )}
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 hidden items-center justify-center text-current peer-checked:flex peer-indeterminate:flex"
-        >
-          {isIndeterminate ? (
-            <MinusIcon className="h-3 w-3" />
-          ) : (
-            <CheckIcon className="h-3 w-3" />
-          )}
-        </span>
-      </span>
-    )
-  }
-)
-Checkbox.displayName = "Checkbox"
-
-export { Checkbox }
+export { Checkbox };
