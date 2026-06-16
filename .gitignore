@@ -3,6 +3,11 @@ dist/
 .turbo/
 .wrangler/
 .dev.vars
+
+# Sessions & temporary state
+.agents/
+.cursor/
+session-handoff.md
 .env
 .env.local
 .env.*.local
@@ -40,7 +45,7 @@ playwright/.cache/
 
 # Cache
 .cache/
-.fallow/cache.bin
+.fallow/
 
 # Logs
 *.log
