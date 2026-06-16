@@ -36,8 +36,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          shortenv: prod
-          preview: false
+          environment: production
+          command: deploy --env production
 
   deploy-preview:
     name: Deploy Preview
@@ -64,5 +64,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          shortenv: preview
-          preview: true
+          environment: preview
+          command: deploy --env preview
