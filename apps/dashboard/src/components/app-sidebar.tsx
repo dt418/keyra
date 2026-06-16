@@ -1,23 +1,39 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Key, LogOut, Users, Package, Monitor, Settings, LifeBuoy, Book } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
-import { cn } from '@/lib/cn';
-import { Button, Avatar, AvatarFallback, Separator } from '@/components/ui';
-import { ModeToggle } from '@/components/mode-toggle';
+import { NavLink, useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Key,
+  LogOut,
+  Users,
+  Package,
+  Monitor,
+  Settings,
+  LifeBuoy,
+  Book,
+  FileText,
+  Webhook,
+  BarChart3,
+} from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { cn } from "@/lib/cn";
+import { Button, Avatar, AvatarFallback, Separator } from "@/components/ui";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-  { to: '/dashboard/organizations', icon: Users, label: 'Organizations' },
-  { to: '/dashboard/products', icon: Package, label: 'Products' },
-  { to: '/dashboard/licenses', icon: Key, label: 'Licenses' },
-  { to: '/dashboard/devices', icon: Monitor, label: 'Devices' },
+  { to: "/dashboard", icon: LayoutDashboard, label: "Overview" },
+  { to: "/dashboard/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/dashboard/organizations", icon: Users, label: "Organizations" },
+  { to: "/dashboard/products", icon: Package, label: "Products" },
+  { to: "/dashboard/licenses", icon: Key, label: "Licenses" },
+  { to: "/dashboard/devices", icon: Monitor, label: "Devices" },
 ];
 
 const secondaryNav = [
-  { to: '/dashboard/api-keys', icon: Key, label: 'API Keys' },
-  { to: '/dashboard/docs', icon: Book, label: 'Documentation' },
-  { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
-  { to: '/dashboard/support', icon: LifeBuoy, label: 'Support' },
+  { to: "/dashboard/audit-logs", icon: FileText, label: "Audit Logs" },
+  { to: "/dashboard/webhooks", icon: Webhook, label: "Webhooks" },
+  { to: "/dashboard/api-keys", icon: Key, label: "API Keys" },
+  { to: "/dashboard/docs", icon: Book, label: "Documentation" },
+  { to: "/dashboard/settings", icon: Settings, label: "Settings" },
+  { to: "/dashboard/support", icon: LifeBuoy, label: "Support" },
 ];
 
 export function AppSidebar() {
@@ -26,7 +42,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
@@ -44,13 +60,13 @@ export function AppSidebar() {
             <li key={item.to}>
               <NavLink
                 to={item.to}
-                end={item.to === '/dashboard'}
+                end={item.to === "/dashboard"}
                 className={({ isActive }) =>
                   cn(
-                    'group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
+                    "group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
                     isActive
-                      ? 'bg-secondary text-secondary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                      ? "bg-secondary text-secondary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )
                 }
               >
@@ -70,10 +86,10 @@ export function AppSidebar() {
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
+                    "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
                     isActive
-                      ? 'bg-secondary text-secondary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                      ? "bg-secondary text-secondary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )
                 }
               >
@@ -90,12 +106,16 @@ export function AppSidebar() {
           <div className="flex items-center gap-2 min-w-0">
             <Avatar className="h-7 w-7">
               <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
+                {user?.name?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-medium leading-tight">{user?.name}</div>
-              <div className="truncate text-[10px] text-muted-foreground leading-tight">{user?.email}</div>
+              <div className="truncate text-xs font-medium leading-tight">
+                {user?.name}
+              </div>
+              <div className="truncate text-[10px] text-muted-foreground leading-tight">
+                {user?.email}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-0.5">

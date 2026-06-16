@@ -1,39 +1,48 @@
-import type { Context } from 'hono';
-import { AppError } from '../../middleware/error';
+import type { Context } from "hono";
+import { AppError } from "../../middleware/error";
+import { dispatchWebhookEvent } from "../../lib/webhooks";
 
 export async function deactivateDeviceHandler(c: Context) {
-  const userId = c.get('userId');
+  const userId = c.get("userId");
   if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
 
   const { id } = c.req.param();
 
-  const member = await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`
+  const member = (await c.env.DB.prepare(
+    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
   )
     .bind(userId)
-    .first() as { org_id: string } | null;
+    .first()) as { org_id: string } | null;
 
   if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
 
-  const device = await c.env.DB.prepare(
+  const device = (await c.env.DB.prepare(
     `SELECT d.id, d.license_id, l.organization_id 
      FROM devices d
      INNER JOIN licenses l ON d.license_id = l.id
-     WHERE d.id = ?`
+     WHERE d.id = ?`,
   )
     .bind(id)
-    .first() as { id: string; license_id: string; organization_id: string } | null;
+    .first()) as {
+    id: string;
+    license_id: string;
+    organization_id: string;
+  } | null;
 
   if (!device) {
-    throw new AppError('NOT_FOUND', 'Device not found', 404);
+    throw new AppError("NOT_FOUND", "Device not found", 404);
   }
 
   if (device.organization_id !== member.org_id) {
-    throw new AppError('FORBIDDEN', 'You do not have access to this device', 403);
+    throw new AppError(
+      "FORBIDDEN",
+      "You do not have access to this device",
+      403,
+    );
   }
 
   await c.env.DB.prepare(`DELETE FROM activations WHERE device_id = ?`)
@@ -45,13 +54,22 @@ export async function deactivateDeviceHandler(c: Context) {
     .run();
 
   if (result.meta?.changes === 0) {
-    throw new AppError('NOT_FOUND', 'Device not found or already deactivated', 404);
+    throw new AppError(
+      "NOT_FOUND",
+      "Device not found or already deactivated",
+      404,
+    );
   }
+
+  dispatchWebhookEvent(c, member.org_id, "device.deactivated", {
+    device_id: id,
+    license_id: device.license_id,
+  });
 
   return c.json({
     data: {
       id,
-      status: 'deactivated',
+      status: "deactivated",
     },
   });
 }
