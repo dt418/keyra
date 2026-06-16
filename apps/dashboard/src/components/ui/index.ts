@@ -33,3 +33,4 @@ export {
   DropdownMenuShortcut,
 } from './dropdown-menu';
 export { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut } from './command';
+export { CheckboxField, DateField, MultiCheckboxField, NumberField, SelectField, TextField, TextareaField } from './form';
