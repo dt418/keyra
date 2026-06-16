@@ -197,6 +197,7 @@ test('my flow', async ({ request }) => {
 - Commits use conventional prefixes: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `ci:`
 - PRs are squashed or rebased
 - CI must pass (typecheck, tests, build, e2e)
+- **Auto-ship at phase end:** when a phase's work is complete and all gates are green, commit and push to main automatically. Do not ask for confirmation. Use `scripts/ship-phase.sh "<message>"` (runs all gates → commit → push) or run gates then `git commit` + `git push` inline.
 
 ## Common Pitfalls
 
