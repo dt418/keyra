@@ -1,0 +1,151 @@
+{
+  "schema": "feature-list.schema.json",
+  "project": "keyra",
+  "lastUpdated": "2026-06-16",
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Monorepo Bootstrap",
+      "description": "pnpm + Turborepo workspace with apps/api, apps/dashboard, and 4 shared packages installing and building cleanly",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "pnpm install --frozen-lockfile succeeds; pnpm typecheck, pnpm test, pnpm build all green as of v1.0.0-alpha"
+    },
+    {
+      "id": "feat-002",
+      "name": "Auth (JWT + OAuth)",
+      "description": "Email/password auth with bcrypt, JWT access (15m) + refresh (7d) tokens, Google + GitHub OAuth, session cleanup, audit logging",
+      "dependencies": ["feat-001"],
+      "status": "done",
+      "evidence": "apps/api/src/routes/auth/ — 91 unit tests pass; GitHub Actions e2e auth flow green"
+    },
+    {
+      "id": "feat-003",
+      "name": "Organizations + RBAC",
+      "description": "Multi-tenant orgs with owner/admin/member roles, cursor-based pagination, member management",
+      "dependencies": ["feat-002"],
+      "status": "done",
+      "evidence": "apps/api/src/routes/organizations/ + dashboard Organizations page; pagination + role checks in middleware"
+    },
+    {
+      "id": "feat-004",
+      "name": "Products CRUD",
+      "description": "Product catalog with tier (trial/free/paid), max_devices, expires_at; cursor pagination, edit/delete dialogs",
+      "dependencies": ["feat-001"],
+      "status": "done",
+      "evidence": "apps/api/src/routes/products/ + dashboard Products page; ConfirmDialog for destructive actions"
+    },
+    {
+      "id": "feat-005",
+      "name": "Licenses CRUD",
+      "description": "License issuance tied to product+org+user, status (active/expired/revoked), activation tracking",
+      "dependencies": ["feat-003", "feat-004"],
+      "status": "done",
+      "evidence": "apps/api/src/routes/licenses/ + dashboard Licenses page with SearchToolbar + DataTable"
+    },
+    {
+      "id": "feat-006",
+      "name": "Device Activation",
+      "description": "UUID-based device registration, hardware fingerprint capture, max_devices enforcement, deactivation flow",
+      "dependencies": ["feat-005"],
+      "status": "done",
+      "evidence": "apps/api/src/routes/devices/ + dashboard Devices page; SDK exposes activate() / deactivate() / verify()"
+    },
+    {
+      "id": "feat-007",
+      "name": "API Keys",
+      "description": "Per-organization API key issuance, hashing at rest, last-used tracking, revocation",
+      "dependencies": ["feat-003"],
+      "status": "done",
+      "evidence": "apps/api/src/routes/api-keys/ + dashboard API Keys page"
+    },
+    {
+      "id": "feat-008",
+      "name": "Audit Log",
+      "description": "Append-only audit trail for all auth/org/license mutations; queryable by org with cursor pagination",
+      "dependencies": ["feat-002"],
+      "status": "done",
+      "evidence": "apps/api/src/lib/audit.ts + database/migrations/ audit tables"
+    },
+    {
+      "id": "feat-009",
+      "name": "Rate Limiting",
+      "description": "Per-endpoint rate limits backed by Cloudflare KV, sliding window, 429 responses with Retry-After",
+      "dependencies": ["feat-001"],
+      "status": "done",
+      "evidence": "apps/api/src/middleware/rateLimit.ts; covered in unit tests"
+    },
+    {
+      "id": "feat-010",
+      "name": "Design System",
+      "description": "Tokenized design system documented in DESIGN.md: CSS variables in :root/.dark, Tailwind v4 @theme inline re-bind, 20+ reusable components (StatusBadge, EmptyState, StatCard, PageHeader, ConfirmDialog, SearchToolbar, DataTable)",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "DESIGN.md 10.4K; apps/dashboard/src/components/ui/ contains all primitives; 40 dashboard unit tests"
+    },
+    {
+      "id": "feat-011",
+      "name": "Dashboard UI (9 pages)",
+      "description": "Overview, Organizations, Products, Licenses, Devices, API Keys, Documentation, Settings, Support — each with PageHeader, SearchToolbar, Skeleton loading, EmptyState",
+      "dependencies": ["feat-010"],
+      "status": "done",
+      "evidence": "apps/dashboard/src/routes/ — 9 page modules; sidebar + topbar + command palette wired in App.tsx"
+    },
+    {
+      "id": "feat-012",
+      "name": "Command Palette (Cmd+K)",
+      "description": "Global navigation + theme toggle + sign-out; base-ui Dialog; arrow keys handled on input onKeyDown (base-ui Dialog traps events)",
+      "dependencies": ["feat-011"],
+      "status": "done",
+      "evidence": "apps/dashboard/src/components/command-palette.tsx; fixed in CHANGELOG Unreleased"
+    },
+    {
+      "id": "feat-013",
+      "name": "SDK JS Package",
+      "description": "Standalone verification SDK for customer apps: install, configure with public key, activate/verify/deactivate license + device",
+      "dependencies": ["feat-006"],
+      "status": "done",
+      "evidence": "packages/sdk-js/ — published as @keyra/sdk; Integration guide on dashboard Documentation page"
+    },
+    {
+      "id": "feat-014",
+      "name": "CI Pipeline",
+      "description": "5-job GitHub Actions workflow: typecheck, api unit, dashboard unit, build, e2e; auto-deploys api to Cloudflare Workers on main",
+      "dependencies": ["feat-001"],
+      "status": "done",
+      "evidence": ".github/workflows/ci.yml green; pnpm pinned to 10, Node 22"
+    },
+    {
+      "id": "feat-015",
+      "name": "E2E Test Suite (Playwright)",
+      "description": "End-to-end coverage of auth, orgs, products, licenses, devices — runs against local wrangler with auto-migrated D1",
+      "dependencies": ["feat-002", "feat-005", "feat-006"],
+      "status": "done",
+      "evidence": "apps/api/e2e/ — 5 test files; auto-migration in scripts/ship-phase.sh"
+    },
+    {
+      "id": "feat-016",
+      "name": "Agent Harness",
+      "description": "Production harness: AGENTS.md, CLAUDE.md, feature_list.json, progress.md, session-handoff.md, init.sh, scripts/ship-phase.sh, skills-lock.json",
+      "dependencies": ["feat-001"],
+      "status": "in-progress",
+      "evidence": "AGENTS.md, CLAUDE.md, ship-phase.sh, init.sh present; feature_list/progress/handoff pending first session run"
+    },
+    {
+      "id": "feat-017",
+      "name": "React Hook Form Integration",
+      "description": "Replace direct useState form state across dashboard forms with RHF + zodResolver; align with shared-validation schemas",
+      "dependencies": ["feat-011"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-018",
+      "name": "SDK npm Publish",
+      "description": "GitHub Actions workflow to publish @keyra/sdk to npm on tagged release; provenance attestations; changelog generation from conventional commits",
+      "dependencies": ["feat-013"],
+      "status": "not-started",
+      "evidence": ""
+    }
+  ]
+}

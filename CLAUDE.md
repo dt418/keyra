@@ -28,6 +28,8 @@
 ## Commands
 
 ```bash
+./init.sh quick          # install + typecheck + lint + unit tests (~30s)
+./init.sh full           # quick + build + e2e (auto-migrates local D1)
 pnpm install
 pnpm dev:api            # → http://localhost:8788
 pnpm --filter @keyra/dashboard dev  # → http://localhost:5174
@@ -37,10 +39,21 @@ pnpm --filter @keyra/api test:e2e   # Playwright E2E
 pnpm build
 ```
 
+## Harness
+
+- `AGENTS.md` — full agent guidance (canonical)
+- `feature_list.json` — feature state (18 features); pick ONE in-progress or not-started
+- `progress.md` — session log; update at end of every session
+- `session-handoff.md` — multi-session handoff template
+- `init.sh` — verification bootstrap; run before claiming any feature done
+- `scripts/ship-phase.sh` — end-of-phase: gates → commit → push
+
 ## Key Files
 
 - `DESIGN.md` — design system, tokens, layout, components
 - `AGENTS.md` — full agent guidance
+- `init.sh` — harness verification bootstrap (use `./init.sh quick` per feature, `full` per phase)
+- `feature_list.json` — machine-readable feature state and dependencies
 - `.cursor/rules/keyra.mdc` — Cursor rules
 - `apps/dashboard/src/App.tsx` — routes
 - `apps/dashboard/src/lib/auth.tsx` — auth context

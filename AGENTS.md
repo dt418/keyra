@@ -113,7 +113,7 @@ pnpm lint
 ```typescript
 // Handler signature
 export async function createHandler(c: Context) {
-  const userId = c.get('userId'); // from authMiddleware
+  const userId = c.get("userId"); // from authMiddleware
   const body = await c.req.json();
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) throw parsed.error;
