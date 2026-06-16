@@ -1,20 +1,25 @@
-import { useForm, type UseFormProps, type UseFormReturn } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import type { z } from 'zod';
+import {
+  useForm,
+  type UseFormProps,
+  type UseFormReturn,
+} from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
 
 export type UseZodFormOptions<TSchema extends z.ZodTypeAny> = Omit<
   UseFormProps<z.infer<TSchema>>,
-  'resolver'
+  "resolver"
 > & {
   schema: TSchema;
 };
 
 export function useZodForm<TSchema extends z.ZodTypeAny>(
-  options: UseZodFormOptions<TSchema>
+  options: UseZodFormOptions<TSchema>,
 ): { form: UseFormReturn<z.infer<TSchema>> } {
   const { schema, ...rest } = options;
   const form = useForm<z.infer<TSchema>>({
     ...rest,
+    mode: "onBlur",
     resolver: zodResolver(schema),
   });
   return { form };
