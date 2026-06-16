@@ -1,8 +1,9 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
-const testEmail = `e2e-prod-${Date.now()}@example.com`;
+const testEmail = `e2e-prod-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
 const testPassword = 'TestPassword123!';
 const testName = 'E2E Test User';
+const testOrgName = `E2E Products Org ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 let accessToken: string;
 
@@ -20,13 +21,13 @@ async function registerAndLogin(request: APIRequestContext) {
 async function createOrg(request: APIRequestContext, token: string) {
   const res = await request.post('organizations', {
     headers: { Authorization: `Bearer ${token}` },
-    data: { name: 'E2E Products Org' },
+    data: { name: testOrgName },
   });
   expect(res.status()).toBe(201);
 }
 
 test.describe('Products CRUD', () => {
-  test.beforeEach(async ({ request }) => {
+  test.beforeAll(async ({ request }) => {
     accessToken = await registerAndLogin(request);
     await createOrg(request, accessToken);
   });
