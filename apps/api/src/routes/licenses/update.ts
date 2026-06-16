@@ -1,23 +1,24 @@
-import type { Context } from 'hono';
-import { updateLicenseSchema } from '@keyra/shared-validation';
-import { AppError } from '../../middleware/error';
+import type { Context } from "hono";
+import { updateLicenseSchema } from "@keyra/shared-validation";
+import { AppError } from "../../middleware/error";
+import { dispatchWebhookEvent } from "../../lib/webhooks";
 
 export async function updateLicenseHandler(c: Context) {
-  const userId = c.get('userId');
+  const userId = c.get("userId");
   if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
 
   const { id } = c.req.param();
 
-  const member = await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`
+  const member = (await c.env.DB.prepare(
+    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
   )
     .bind(userId)
-    .first() as { org_id: string } | null;
+    .first()) as { org_id: string } | null;
 
   if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
 
   const body = await c.req.json();
@@ -30,19 +31,19 @@ export async function updateLicenseHandler(c: Context) {
   const params: unknown[] = [];
 
   if (parsed.data.type !== undefined) {
-    updates.push('type = ?');
+    updates.push("type = ?");
     params.push(parsed.data.type);
   }
   if (parsed.data.max_devices !== undefined) {
-    updates.push('max_devices = ?');
+    updates.push("max_devices = ?");
     params.push(parsed.data.max_devices);
   }
   if (parsed.data.expires_at !== undefined) {
-    updates.push('expires_at = ?');
+    updates.push("expires_at = ?");
     params.push(parsed.data.expires_at);
   }
   if (parsed.data.feature_flags !== undefined) {
-    updates.push('feature_flags = ?');
+    updates.push("feature_flags = ?");
     params.push(JSON.stringify(parsed.data.feature_flags));
   }
 
@@ -53,33 +54,42 @@ export async function updateLicenseHandler(c: Context) {
               p.name as product_name
        FROM licenses l
        INNER JOIN products p ON l.product_id = p.id
-       WHERE l.id = ? AND l.organization_id = ?`
+       WHERE l.id = ? AND l.organization_id = ?`,
     )
       .bind(id, member.org_id)
       .first();
 
     if (!license) {
-      throw new AppError('NOT_FOUND', 'License not found', 404);
+      throw new AppError("NOT_FOUND", "License not found", 404);
     }
 
     return c.json({ data: license });
   }
 
   const now = new Date().toISOString();
-  updates.push('updated_at = ?');
+  updates.push("updated_at = ?");
   params.push(now);
   params.push(id);
   params.push(member.org_id);
 
   const result = await c.env.DB.prepare(
-    `UPDATE licenses SET ${updates.join(', ')} WHERE id = ? AND organization_id = ?`
+    `UPDATE licenses SET ${updates.join(", ")} WHERE id = ? AND organization_id = ?`,
   )
     .bind(...params)
     .run();
 
   if (result.meta?.changes === 0) {
-    throw new AppError('NOT_FOUND', 'License not found', 404);
+    throw new AppError("NOT_FOUND", "License not found", 404);
   }
+
+  dispatchWebhookEvent(c, member.org_id, "license.updated", {
+    license_id: id,
+    changes: {
+      type: parsed.data.type,
+      max_devices: parsed.data.max_devices,
+      expires_at: parsed.data.expires_at,
+    },
+  });
 
   const license = await c.env.DB.prepare(
     `SELECT l.id, l.product_id, l.type, l.status, l.max_devices, l.expires_at,
@@ -87,7 +97,7 @@ export async function updateLicenseHandler(c: Context) {
             p.name as product_name
      FROM licenses l
      INNER JOIN products p ON l.product_id = p.id
-     WHERE l.id = ? AND l.organization_id = ?`
+     WHERE l.id = ? AND l.organization_id = ?`,
   )
     .bind(id, member.org_id)
     .first();

@@ -1,12 +1,13 @@
-import type { Context } from 'hono';
-import { createLicenseSchema } from '@keyra/shared-validation';
-import { AppError } from '../../middleware/error';
-import { hashApiKey } from '../../lib/password';
+import type { Context } from "hono";
+import { createLicenseSchema } from "@keyra/shared-validation";
+import { AppError } from "../../middleware/error";
+import { hashApiKey } from "../../lib/password";
+import { dispatchWebhookEvent } from "../../lib/webhooks";
 
 export async function createLicenseHandler(c: Context) {
-  const userId = c.get('userId');
+  const userId = c.get("userId");
   if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
 
   const body = await c.req.json();
@@ -15,26 +16,27 @@ export async function createLicenseHandler(c: Context) {
     throw parsed.error;
   }
 
-  const { product_id, type, max_devices, expires_at, feature_flags } = parsed.data;
+  const { product_id, type, max_devices, expires_at, feature_flags } =
+    parsed.data;
 
-  const member = await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`
+  const member = (await c.env.DB.prepare(
+    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
   )
     .bind(userId)
-    .first() as { org_id: string } | null;
+    .first()) as { org_id: string } | null;
 
   if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
 
-  const product = await c.env.DB.prepare(
-    `SELECT id FROM products WHERE id = ? AND organization_id = ?`
+  const product = (await c.env.DB.prepare(
+    `SELECT id FROM products WHERE id = ? AND organization_id = ?`,
   )
     .bind(product_id, member.org_id)
-    .first() as { id: string } | null;
+    .first()) as { id: string } | null;
 
   if (!product) {
-    throw new AppError('NOT_FOUND', 'Product not found', 404);
+    throw new AppError("NOT_FOUND", "Product not found", 404);
   }
 
   const licenseId = crypto.randomUUID();
@@ -44,7 +46,7 @@ export async function createLicenseHandler(c: Context) {
 
   await c.env.DB.prepare(
     `INSERT INTO licenses (id, product_id, organization_id, key_hash, type, status, max_devices, expires_at, feature_flags, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
   )
     .bind(
       licenseId,
@@ -56,9 +58,17 @@ export async function createLicenseHandler(c: Context) {
       expires_at ?? null,
       feature_flags ? JSON.stringify(feature_flags) : null,
       now,
-      now
+      now,
     )
     .run();
+
+  dispatchWebhookEvent(c, member.org_id, "license.created", {
+    license_id: licenseId,
+    product_id,
+    type,
+    max_devices: max_devices ?? 1,
+    expires_at: expires_at ?? null,
+  });
 
   return c.json(
     {
@@ -67,26 +77,26 @@ export async function createLicenseHandler(c: Context) {
         product_id,
         key: licenseKey,
         type,
-        status: 'active',
+        status: "active",
         max_devices: max_devices ?? 1,
         expires_at: expires_at ?? null,
         feature_flags: feature_flags ?? null,
         created_at: now,
       },
     },
-    201
+    201,
   );
 }
 
 function generateLicenseKey(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const segments = [];
   for (let s = 0; s < 4; s++) {
-    let segment = '';
+    let segment = "";
     for (let i = 0; i < 5; i++) {
       segment += chars[Math.floor(Math.random() * chars.length)];
     }
     segments.push(segment);
   }
-  return segments.join('-');
+  return segments.join("-");
 }

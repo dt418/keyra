@@ -1,7 +1,8 @@
-import type { Context } from 'hono';
-import { activateDeviceSchema } from '@keyra/shared-validation';
-import { AppError } from '../../middleware/error';
-import { hashApiKey } from '../../lib/password';
+import type { Context } from "hono";
+import { activateDeviceSchema } from "@keyra/shared-validation";
+import { AppError } from "../../middleware/error";
+import { hashApiKey } from "../../lib/password";
+import { dispatchWebhookEvent } from "../../lib/webhooks";
 
 export async function activateDeviceHandler(c: Context) {
   const body = await c.req.json();
@@ -10,83 +11,97 @@ export async function activateDeviceHandler(c: Context) {
     throw parsed.error;
   }
 
-  const { license_key, device_name, platform, app_version, metadata } = parsed.data;
+  const { license_key, device_name, platform, app_version, metadata } =
+    parsed.data;
 
   const keyHash = await hashApiKey(license_key);
 
-  const license = await c.env.DB.prepare(
+  const license = (await c.env.DB.prepare(
     `SELECT l.id, l.product_id, l.status, l.max_devices, l.expires_at, l.feature_flags,
             l.type, l.organization_id, p.name as product_name
      FROM licenses l
      INNER JOIN products p ON l.product_id = p.id
-     WHERE l.key_hash = ?`
+     WHERE l.key_hash = ?`,
   )
     .bind(keyHash)
-    .first() as {
-      id: string;
-      product_id: string;
-      status: string;
-      max_devices: number;
-      expires_at: string | null;
-      feature_flags: string | null;
-      type: string;
-      organization_id: string;
-      product_name: string;
-    } | null;
+    .first()) as {
+    id: string;
+    product_id: string;
+    status: string;
+    max_devices: number;
+    expires_at: string | null;
+    feature_flags: string | null;
+    type: string;
+    organization_id: string;
+    product_name: string;
+  } | null;
 
   if (!license) {
-    throw new AppError('NOT_FOUND', 'Invalid license key', 404);
+    throw new AppError("NOT_FOUND", "Invalid license key", 404);
   }
 
-  if (license.status !== 'active') {
-    throw new AppError('FORBIDDEN', `License is ${license.status}`, 403);
+  if (license.status !== "active") {
+    throw new AppError("FORBIDDEN", `License is ${license.status}`, 403);
   }
 
   if (license.expires_at && new Date(license.expires_at) < new Date()) {
     await c.env.DB.prepare(
-      `UPDATE licenses SET status = 'expired', updated_at = ? WHERE id = ?`
+      `UPDATE licenses SET status = 'expired', updated_at = ? WHERE id = ?`,
     )
       .bind(new Date().toISOString(), license.id)
       .run();
-    throw new AppError('FORBIDDEN', 'License has expired', 403);
+    throw new AppError("FORBIDDEN", "License has expired", 403);
   }
 
-  const deviceCount = await c.env.DB.prepare(
-    `SELECT COUNT(*) as count FROM devices WHERE license_id = ?`
+  const deviceCount = (await c.env.DB.prepare(
+    `SELECT COUNT(*) as count FROM devices WHERE license_id = ?`,
   )
     .bind(license.id)
-    .first() as { count: number } | null;
+    .first()) as { count: number } | null;
 
   if (deviceCount && deviceCount.count >= license.max_devices) {
-    throw new AppError('FORBIDDEN', `Maximum device limit (${license.max_devices}) reached`, 403);
+    throw new AppError(
+      "FORBIDDEN",
+      `Maximum device limit (${license.max_devices}) reached`,
+      403,
+    );
   }
 
-  let device = await c.env.DB.prepare(
-    `SELECT id, user_id FROM devices WHERE license_id = ? AND name = ? AND platform = ?`
+  let device = (await c.env.DB.prepare(
+    `SELECT id, user_id FROM devices WHERE license_id = ? AND name = ? AND platform = ?`,
   )
     .bind(license.id, device_name, platform)
-    .first() as { id: string; user_id: string | null } | null;
+    .first()) as { id: string; user_id: string | null } | null;
 
   if (!device) {
     const deviceId = crypto.randomUUID();
     const now = new Date().toISOString();
-    const ownerUserId = await c.env.DB.prepare(
-      `SELECT user_id FROM org_members WHERE org_id = ? AND role IN ('owner', 'admin') LIMIT 1`
+    const ownerUserId = (await c.env.DB.prepare(
+      `SELECT user_id FROM org_members WHERE org_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
     )
       .bind(license.organization_id)
-      .first() as { user_id: string } | null;
+      .first()) as { user_id: string } | null;
 
     await c.env.DB.prepare(
       `INSERT INTO devices (id, license_id, user_id, name, platform, app_version, last_seen_at, activated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-      .bind(deviceId, license.id, ownerUserId?.user_id ?? null, device_name, platform, app_version ?? null, now, now)
+      .bind(
+        deviceId,
+        license.id,
+        ownerUserId?.user_id ?? null,
+        device_name,
+        platform,
+        app_version ?? null,
+        now,
+        now,
+      )
       .run();
     device = { id: deviceId, user_id: ownerUserId?.user_id ?? null };
   } else {
     const now = new Date().toISOString();
     await c.env.DB.prepare(
-      `UPDATE devices SET last_seen_at = ?, app_version = ? WHERE id = ?`
+      `UPDATE devices SET last_seen_at = ?, app_version = ? WHERE id = ?`,
     )
       .bind(now, app_version ?? null, device.id)
       .run();
@@ -96,10 +111,25 @@ export async function activateDeviceHandler(c: Context) {
   const now = new Date().toISOString();
   await c.env.DB.prepare(
     `INSERT INTO activations (id, license_id, device_id, created_at, metadata)
-     VALUES (?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?)`,
   )
-    .bind(activationId, license.id, device.id, now, metadata ? JSON.stringify(metadata) : null)
+    .bind(
+      activationId,
+      license.id,
+      device.id,
+      now,
+      metadata ? JSON.stringify(metadata) : null,
+    )
     .run();
+
+  dispatchWebhookEvent(c, license.organization_id, "device.activated", {
+    activation_id: activationId,
+    device_id: device.id,
+    license_id: license.id,
+    product_id: license.product_id,
+    device_name: device_name,
+    platform,
+  });
 
   return c.json(
     {
@@ -122,6 +152,6 @@ export async function activateDeviceHandler(c: Context) {
         activated_at: now,
       },
     },
-    201
+    201,
   );
 }
