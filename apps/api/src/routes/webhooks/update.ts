@@ -1,7 +1,6 @@
 import type { Context } from "hono";
 import { AppError } from "../../middleware/error";
 import { updateWebhookSchema } from "@keyra/shared-validation";
-import { WEBHOOK_EVENTS } from "../../lib/webhooks";
 
 export async function updateWebhookHandler(c: Context) {
   const userId = c.get("userId");
@@ -25,19 +24,6 @@ export async function updateWebhookHandler(c: Context) {
   const parsed = updateWebhookSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;
-  }
-
-  if (parsed.data.events) {
-    const invalidEvents = parsed.data.events.filter(
-      (e) => !WEBHOOK_EVENTS.includes(e as (typeof WEBHOOK_EVENTS)[number]),
-    );
-    if (invalidEvents.length > 0) {
-      throw new AppError(
-        "BAD_REQUEST",
-        `Unknown event types: ${invalidEvents.join(", ")}`,
-        400,
-      );
-    }
   }
 
   const updates: string[] = [];
