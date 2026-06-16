@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@keyra/api-client';
 import { Card, Button, Input, Label, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, TextField, useZodForm } from '@/components/ui/form';
+import { editProductFormSchema, editProductDefaults } from '@keyra/shared-validation';
 import { Plus, Loader2, Copy, Key as KeyIcon, Package, Pencil, Trash2, Eye, EyeOff, AlertCircle, Search, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { errorMessage } from '@/lib/error-message';
@@ -46,9 +48,21 @@ export default function Products() {
   const [search, setSearch] = useState('');
   const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, string>>({});
   const [editingProduct, setEditingProduct] = useState<ProductWithStatus | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', description: '' });
+  const editForm = useZodForm({
+    schema: editProductFormSchema,
+    defaultValues: editProductDefaults,
+  });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (editingProduct) {
+      editForm.form.reset({
+        name: editingProduct.name,
+        description: editingProduct.description || '',
+      });
+    }
+  }, [editingProduct, editForm.form]);
 
   const { data: productsResponse, isLoading, isFetching } = useQuery({
     queryKey: ['products', cursor],
@@ -280,7 +294,6 @@ export default function Products() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => {
-                          setEditForm({ name: product.name, description: product.description || '' });
                           setEditingProduct(product);
                         }}
                       >
@@ -377,51 +390,72 @@ export default function Products() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
+      <Dialog
+        open={!!editingProduct}
+        onOpenChange={(open) => {
+          if (!open) {
+            editForm.form.reset(editProductDefaults);
+            setEditingProduct(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
             <DialogDescription>Update product information</DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (editingProduct && editForm.name.trim()) {
+          <Form {...editForm.form}>
+            <form
+              id="edit-product-form"
+              onSubmit={editForm.form.handleSubmit((values) => {
+                if (!editingProduct) return;
                 updateMutation.mutate({
                   id: editingProduct.id,
-                  data: { name: editForm.name.trim(), description: editForm.description.trim() || undefined },
+                  data: {
+                    name: values.name.trim(),
+                    description: values.description?.trim() || undefined,
+                  },
                 });
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <Label htmlFor="edit-name">Product Name</Label>
-              <Input
-                id="edit-name"
-                placeholder="My Awesome App"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                autoFocus
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={editForm.form.control}
+                name="name"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Product Name</FormLabel>
+                    <FormControl>
+                      <TextField name="name" placeholder="My Awesome App" autoFocus />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div>
-              <Label htmlFor="edit-description">Description (optional)</Label>
-              <Input
-                id="edit-description"
-                placeholder="Product description"
-                value={editForm.description}
-                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              <FormField
+                control={editForm.form.control}
+                name="description"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Description (optional)</FormLabel>
+                    <FormControl>
+                      <TextField name="description" placeholder="Product description" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditingProduct(null)}>Cancel</Button>
-              <Button type="submit" disabled={updateMutation.isPending || !editForm.name.trim()}>
-                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </form>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditingProduct(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
