@@ -17,15 +17,16 @@
 
 ## Verification Evidence
 
-| Check | Command | Result | Notes |
-|---|---|---|---|
-| Init script exists | `ls -l init.sh` | pending | chmod 755 needed |
-| Feature list parses | `node -e "JSON.parse(require('fs').readFileSync('feature_list.json','utf8'))"` | pending | run after write |
-| Schema conformance | (manual) feature ids match `^feat-\d+$`, status in enum | pending | all 18 conform |
-| Typecheck | `pnpm typecheck` | pending | via `./init.sh quick` |
-| Lint | `pnpm lint` | pending | via `./init.sh quick` |
-| Unit tests | `pnpm test` | pending | via `./init.sh quick` |
-| E2E | `pnpm --filter @keyra/api test:e2e` | skipped this session | only via `./init.sh full` |
+| Check               | Command                                                                        | Result               | Notes                                                                |
+| ------------------- | ------------------------------------------------------------------------------ | -------------------- | -------------------------------------------------------------------- |
+| Init script exists  | `ls -l init.sh`                                                                | PASS                 | chmod 755                                                            |
+| Feature list parses | `node -e "JSON.parse(require('fs').readFileSync('feature_list.json','utf8'))"` | PASS                 | 18 features                                                          |
+| Schema conformance  | (manual) feature ids match `^feat-\d+$`, status in enum                        | PASS                 | all 18 conform                                                       |
+| Typecheck           | `pnpm typecheck`                                                               | PASS                 | via `./init.sh quick`                                                |
+| Lint                | `pnpm lint`                                                                    | PASS                 | via `./init.sh quick`                                                |
+| Unit tests          | `pnpm test`                                                                    | PASS                 | 91 API + 41 dashboard + 9 sdk-js = 141/141                           |
+| E2E                 | `pnpm --filter @keyra/api test:e2e`                                            | skipped this session | only via `./init.sh full`; deferred to next phase                    |
+| Commit + push       | `scripts/ship-phase.sh "chore: add agent harness artifacts"`                   | PASS                 | commit `0273af9` on main; CI green (typecheck + unit + build all OK) |
 
 ## Files Changed
 

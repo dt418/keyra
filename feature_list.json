@@ -128,8 +128,8 @@
       "name": "Agent Harness",
       "description": "Production harness: AGENTS.md, CLAUDE.md, feature_list.json, progress.md, session-handoff.md, init.sh, scripts/ship-phase.sh, skills-lock.json",
       "dependencies": ["feat-001"],
-      "status": "in-progress",
-      "evidence": "AGENTS.md, CLAUDE.md, ship-phase.sh, init.sh present; feature_list/progress/handoff pending first session run"
+      "status": "done",
+      "evidence": "AGENTS.md, CLAUDE.md, ship-phase.sh, init.sh, feature_list.json, feature-list.schema.json, progress.md, session-handoff.md all present and committed (0273af9); ./init.sh quick green (9/9 tasks, 141/141 unit tests); CLAUDE.md references the harness in Commands and Key Files sections; CI green"
     },
     {
       "id": "feat-017",

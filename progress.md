@@ -12,21 +12,24 @@
 ### What's Done
 
 - [x] Audited existing harness: AGENTS.md (8.1K), CLAUDE.md (2.7K), scripts/ship-phase.sh, DESIGN.md (10.4K), 7 skills in `.agents/skills/`
-- [x] Scaffolded `init.sh` (quick + full modes, pnpm-aware, auto-migrates D1 for e2e)
+- [x] Scaffolded `init.sh` (quick + full modes, pnpm-aware, `export CI=1` to avoid vitest watch-mode hang, auto-migrates D1 for e2e)
 - [x] Created `feature_list.json` with 18 features seeded from CHANGELOG + README — statuses reflect v1.0.0-alpha + Unreleased
 - [x] Created `progress.md` (this file)
 - [x] Created `session-handoff.md` for multi-session continuity
+- [x] Linked new harness into CLAUDE.md "Commands" + "Harness" + "Key Files" sections
+- [x] `./init.sh quick` passes (9/9 turbo tasks, 141/141 unit tests: 91 API + 41 dashboard + 9 sdk-js)
+- [x] feat-016 marked `done` in `feature_list.json` with evidence
+- [x] Committed and pushed: `0273af9 chore: add agent harness artifacts` on main
 
 ### What's In Progress
 
-- [ ] feat-016 — Agent Harness: complete by pointing CLAUDE.md at new harness files and running `./init.sh quick` end-to-end
+- (none — feat-016 complete)
 
 ### What's Next
 
-1. Run `./init.sh quick` to verify the harness itself passes its own gates
-2. Update CLAUDE.md to reference `init.sh` and `feature_list.json` (add to "Commands" + "Key Files")
-3. Commit + push via `scripts/ship-phase.sh "chore: add agent harness artifacts"`
-4. Begin feat-017 (React Hook Form migration) — pick one form first, do not refactor all 9 pages at once
+1. Pick **one** form (recommend: Edit Product dialog) for feat-017 (RHF migration) — do not refactor all 9 pages simultaneously
+2. Run `./init.sh quick` before and after the change
+3. Update `feature_list.json` evidence + `progress.md` when done
 
 ## Blockers / Risks
 
