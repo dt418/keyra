@@ -72,7 +72,7 @@ export async function listDeliveriesHandler(c: Context) {
   const rows = (await c.env.DB.prepare(
     `SELECT id, webhook_config_id, event_type, payload, status, response_code, response_body, attempts, last_attempt_at, created_at
      FROM webhook_deliveries
-     WHERE webhook_config_id = ?
+     WHERE webhook_config_id = ? AND is_test = 0
      ORDER BY created_at DESC
      LIMIT ? OFFSET ?`,
   )

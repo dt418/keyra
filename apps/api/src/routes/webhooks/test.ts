@@ -77,8 +77,8 @@ export async function testWebhookHandler(c: Context) {
   }
 
   await c.env.DB.prepare(
-    `INSERT INTO webhook_deliveries (id, webhook_config_id, event_type, payload, status, response_code, response_body, attempts, last_attempt_at, created_at)
-     VALUES (?, ?, 'webhook.test', ?, ?, ?, ?, 1, ?, ?)`,
+    `INSERT INTO webhook_deliveries (id, webhook_config_id, event_type, payload, status, response_code, response_body, attempts, is_test, last_attempt_at, created_at)
+     VALUES (?, ?, 'webhook.test', ?, ?, ?, ?, 1, 1, ?, ?)`,
   )
     .bind(
       deliveryId,
