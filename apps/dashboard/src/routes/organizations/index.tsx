@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { orgsApi } from '@keyra/api-client';
-import { Card, Button, Input, Label, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog } from '@/components/ui';
+import { Card, Button, Input, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, useZodForm } from '@/components/ui/form';
+import { createOrgFormSchema, createOrgDefaults, editOrgFormSchema, editOrgDefaults } from '@keyra/shared-validation';
 import { Plus, Loader2, Users, Pencil, Trash2, Search, Building2 } from 'lucide-react';
 import { formatDate } from '@/lib/date';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/error-message';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 const PAGE_SIZE = 20;
 
@@ -42,12 +45,20 @@ export default function Organizations() {
   const queryClient = useQueryClient();
   const { refreshOrgs, currentOrg, switchOrg } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
-  const [newOrgName, setNewOrgName] = useState('');
   const [cursor, setCursor] = useState<string | null>(null);
   const [editingOrg, setEditingOrg] = useState<ApiOrg | null>(null);
-  const [editName, setEditName] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<ApiOrg | null>(null);
   const [search, setSearch] = useState('');
+
+  const createForm = useZodForm({
+    schema: createOrgFormSchema,
+    defaultValues: createOrgDefaults,
+  });
+
+  const editForm = useZodForm({
+    schema: editOrgFormSchema,
+    defaultValues: editOrgDefaults,
+  });
 
   const { data: orgsResponse, isLoading } = useQuery({
     queryKey: ['organizations', cursor],
@@ -65,9 +76,19 @@ export default function Organizations() {
     o.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  useEffect(() => {
+    if (editingOrg) {
+      editForm.form.reset({ name: editingOrg.name });
+    }
+  }, [editingOrg, editForm.form]);
+
   const createMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const res = await orgsApi.create({ name });
+    mutationFn: async (data: { name: string; slug?: string }) => {
+      const payload: { name: string; slug?: string } = { name: data.name };
+      if (data.slug && data.slug.trim()) {
+        payload.slug = data.slug.trim();
+      }
+      const res = await orgsApi.create(payload);
       return res.data.data;
     },
     onSuccess: async (newOrg) => {
@@ -75,7 +96,7 @@ export default function Organizations() {
       if (newOrg) switchOrg(newOrg.id);
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
       setIsCreating(false);
-      setNewOrgName('');
+      createForm.form.reset(createOrgDefaults);
       toast.success('Organization created');
     },
     onError: (err: unknown) => {
@@ -170,7 +191,7 @@ export default function Organizations() {
                       size="icon"
                       className="h-7 w-7"
                       onClick={() => {
-                        setEditName(org.name);
+                        editForm.form.reset({ name: org.name });
                         setEditingOrg(org);
                       }}
                     >
@@ -257,77 +278,115 @@ export default function Organizations() {
         />
       )}
 
-      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+      <Dialog
+        open={isCreating}
+        onOpenChange={(open) => {
+          if (!open) {
+            createForm.form.reset(createOrgDefaults);
+          }
+          setIsCreating(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Organization</DialogTitle>
             <DialogDescription>Add a new organization to manage products and licenses</DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (newOrgName.trim()) createMutation.mutate(newOrgName.trim());
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <Label htmlFor="orgName">Organization Name</Label>
-              <Input
-                id="orgName"
-                placeholder="My Organization"
-                value={newOrgName}
-                onChange={(e) => setNewOrgName(e.target.value)}
-                autoFocus
+          <Form {...createForm.form}>
+            <form
+              id="create-org-form"
+              onSubmit={createForm.form.handleSubmit((values) => {
+                createMutation.mutate({ name: values.name, slug: values.slug });
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={createForm.form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Organization Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="My Organization" autoFocus {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending || !newOrgName.trim()}>
-                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create
-              </Button>
-            </DialogFooter>
-          </form>
+              <FormField
+                control={createForm.form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="my-org" {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createMutation.isPending}>
+                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editingOrg} onOpenChange={(open) => !open && setEditingOrg(null)}>
+      <Dialog
+        open={!!editingOrg}
+        onOpenChange={(open) => {
+          if (!open) {
+            editForm.form.reset(editOrgDefaults);
+            setEditingOrg(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Organization</DialogTitle>
             <DialogDescription>Update organization name</DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (editingOrg && editName.trim()) {
-                updateMutation.mutate({ id: editingOrg.id, name: editName.trim() });
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <Label htmlFor="editOrgName">Organization Name</Label>
-              <Input
-                id="editOrgName"
-                placeholder="My Organization"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                autoFocus
+          <Form {...editForm.form}>
+            <form
+              id="edit-org-form"
+              onSubmit={editForm.form.handleSubmit((values) => {
+                if (!editingOrg) return;
+                updateMutation.mutate({ id: editingOrg.id, name: values.name });
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={editForm.form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Organization Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="My Organization" autoFocus {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditingOrg(null)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={updateMutation.isPending || !editName.trim()}>
-                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </form>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditingOrg(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 

@@ -15,8 +15,11 @@ import { SelectField } from "../select-field";
 
 const schema = z.object({ type: z.enum(["a", "b"]) });
 
+let lastFormValues: { type: "a" | "b" } | null = null;
+
 function Demo() {
   const { form } = useZodForm({ schema, defaultValues: { type: "a" as const } });
+  lastFormValues = form.watch();
   return (
     <Form {...form}>
       <FormField
@@ -49,7 +52,35 @@ describe("SelectField", () => {
     render(<Demo />);
     const trigger = screen.getByRole("combobox");
     expect(trigger).toBeInTheDocument();
-    expect(trigger).toHaveTextContent("a");
+    expect(trigger).toHaveTextContent("A");
+    expect(lastFormValues?.type).toBe("a");
     await user.click(trigger);
+  });
+
+  it("falls back to raw value when option not found", () => {
+    function StaleDemo() {
+      const { form } = useZodForm({ schema, defaultValues: { type: "b" as const } });
+      return (
+        <Form {...form}>
+          <FormField
+            control={form.control}
+            name="type"
+            render={() => (
+              <FormItem>
+                <FormControl>
+                  <SelectField
+                    name="type"
+                    options={[{ value: "a", label: "A" }]}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </Form>
+      );
+    }
+    render(<StaleDemo />);
+    const trigger = screen.getByRole("combobox");
+    expect(trigger).toHaveTextContent("b");
   });
 });

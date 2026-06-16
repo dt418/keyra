@@ -28,32 +28,42 @@ export const SelectField = ({
   ...rest
 }: SelectFieldProps) => {
   const { control } = useFormContext();
+  const optionMap = React.useMemo(
+    () => new Map(options.map((opt) => [opt.value, opt.label])),
+    [options],
+  );
   return (
     <Controller
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
-        <Select
-          {...rest}
-          value={(field.value as string | undefined) ?? ""}
-          onValueChange={(value) => field.onChange(value)}
-          name={field.name}
-        >
-          <SelectTrigger
-            className={triggerClassName}
-            aria-invalid={!!fieldState.error}
+      render={({ field, fieldState }) => {
+        const current = (field.value as string | undefined) ?? "";
+        const display = current
+          ? (optionMap.get(current) ?? current)
+          : placeholder;
+        return (
+          <Select
+            {...rest}
+            value={current}
+            onValueChange={(value) => field.onChange(value)}
+            name={field.name}
           >
-            <SelectValue placeholder={placeholder} />
-          </SelectTrigger>
-          <SelectContent>
-            {options.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
+            <SelectTrigger
+              className={triggerClassName}
+              aria-invalid={!!fieldState.error}
+            >
+              <SelectValue>{display}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      }}
     />
   );
 };

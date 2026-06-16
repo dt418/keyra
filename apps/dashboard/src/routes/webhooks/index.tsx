@@ -4,7 +4,6 @@ import { webhooksApi } from "@keyra/api-client";
 import {
   Button,
   Input,
-  Label,
   PageHeader,
   Skeleton,
   StatusBadge,
@@ -19,6 +18,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, useZodForm } from "@/components/ui/form";
+import { createWebhookFormSchema, createWebhookDefaults, editWebhookFormSchema, editWebhookDefaults, webhookEventOptions, webhookEventLabels, type EditWebhookFormValues } from "@keyra/shared-validation";
 import {
   Webhook,
   Plus,
@@ -30,19 +31,11 @@ import {
   Power,
   PowerOff,
   Send,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { errorMessage } from "@/lib/error-message";
 import { formatRelativeTime } from "@/lib/date";
-
-const WEBHOOK_EVENTS = [
-  { value: "license.created", label: "License Created" },
-  { value: "license.updated", label: "License Updated" },
-  { value: "license.revoked", label: "License Revoked" },
-  { value: "license.expired", label: "License Expired" },
-  { value: "device.activated", label: "Device Activated" },
-  { value: "device.deactivated", label: "Device Deactivated" },
-];
 
 interface Webhook {
   id: string;
@@ -66,7 +59,7 @@ interface Delivery {
 export default function Webhooks() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
-  const [form, setForm] = useState({ url: "", events: [] as string[] });
+  const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null);
   const [createdSecret, setCreatedSecret] = useState<{
     id: string;
     secret: string;
@@ -75,6 +68,16 @@ export default function Webhooks() {
   const [viewingDeliveries, setViewingDeliveries] = useState<Webhook | null>(
     null,
   );
+
+  const createForm = useZodForm({
+    schema: createWebhookFormSchema,
+    defaultValues: createWebhookDefaults,
+  });
+
+  const editForm = useZodForm({
+    schema: editWebhookFormSchema,
+    defaultValues: editWebhookDefaults,
+  });
 
   const { data: webhooks, isLoading } = useQuery({
     queryKey: ["webhooks"],
@@ -97,18 +100,34 @@ export default function Webhooks() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { url: string; events: string[] }) => {
+    mutationFn: async (data: { url: string; events: string[]; active: boolean }) => {
       const res = await webhooksApi.create(data);
       return res.data.data as { id: string; secret: string };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["webhooks"] });
       setIsCreating(false);
-      setForm({ url: "", events: [] });
+      createForm.form.reset(createWebhookDefaults);
       setCreatedSecret({ id: data.id, secret: data.secret });
     },
     onError: (err: unknown) =>
       toast.error(errorMessage(err, "Failed to create webhook")),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { url: string; events: string[]; active: boolean } }) => {
+      const res = await webhooksApi.update(id, data);
+      return res.data.data as Webhook;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      queryClient.invalidateQueries({ queryKey: ["webhook-deliveries"] });
+      setEditingWebhook(null);
+      editForm.form.reset(editWebhookDefaults);
+      toast.success("Webhook updated");
+    },
+    onError: (err: unknown) =>
+      toast.error(errorMessage(err, "Failed to update webhook")),
   });
 
   const deleteMutation = useMutation({
@@ -163,15 +182,6 @@ export default function Webhooks() {
     toast.success("Copied to clipboard");
   };
 
-  const toggleEvent = (event: string) => {
-    setForm((prev) => ({
-      ...prev,
-      events: prev.events.includes(event)
-        ? prev.events.filter((e) => e !== event)
-        : [...prev.events, event],
-    }));
-  };
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -215,7 +225,7 @@ export default function Webhooks() {
                         key={e}
                         className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[10px] font-mono text-muted-foreground"
                       >
-                        {e}
+                        {webhookEventLabels[e as keyof typeof webhookEventLabels] ?? e}
                       </span>
                     ))}
                   </div>
@@ -265,6 +275,22 @@ export default function Webhooks() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      editForm.form.reset({
+                        url: wh.url,
+                        events: wh.events as EditWebhookFormValues["events"],
+                        active: wh.active,
+                      });
+                      setEditingWebhook(wh);
+                    }}
+                    title="Edit"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 text-destructive hover:text-destructive"
                     onClick={() => setDeleteConfirm(wh.id)}
                     title="Delete"
@@ -289,7 +315,15 @@ export default function Webhooks() {
         />
       )}
 
-      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+      <Dialog
+        open={isCreating}
+        onOpenChange={(open) => {
+          if (!open) {
+            createForm.form.reset(createWebhookDefaults);
+          }
+          setIsCreating(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Webhook</DialogTitle>
@@ -297,68 +331,204 @@ export default function Webhooks() {
               Receive events at the URL you provide
             </DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (form.url && form.events.length > 0) {
-                createMutation.mutate(form);
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <Label htmlFor="url">Endpoint URL</Label>
-              <Input
-                id="url"
-                type="url"
-                placeholder="https://api.example.com/webhooks"
-                value={form.url}
-                onChange={(e) => setForm({ ...form, url: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label>Events</Label>
-              <div className="mt-2 space-y-1.5 rounded-md border border-border p-3 max-h-60 overflow-y-auto">
-                {WEBHOOK_EVENTS.map((e) => (
-                  <label
-                    key={e.value}
-                    className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.events.includes(e.value)}
-                      onChange={() => toggleEvent(e.value)}
-                      className="h-3.5 w-3.5 rounded border-input"
-                    />
-                    <span className="font-mono text-xs">{e.value}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsCreating(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={
-                  createMutation.isPending ||
-                  !form.url ||
-                  form.events.length === 0
-                }
-              >
-                {createMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Form {...createForm.form}>
+            <form
+              id="create-webhook-form"
+              onSubmit={createForm.form.handleSubmit((values) => {
+                createMutation.mutate(values);
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={createForm.form.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Endpoint URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        placeholder="https://api.example.com/webhooks"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-                Create
-              </Button>
-            </DialogFooter>
-          </form>
+              />
+              <FormField
+                control={createForm.form.control}
+                name="events"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Events</FormLabel>
+                    <FormControl>
+                      <div className="mt-2 space-y-1.5 rounded-md border border-border p-3 max-h-60 overflow-y-auto">
+                        {webhookEventOptions.map((e) => (
+                          <label
+                            key={e.value}
+                            className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={field.value.includes(e.value)}
+                              onChange={(ev) => {
+                                const target = ev.target as HTMLInputElement;
+                                const newValue = target.checked
+                                  ? [...field.value, e.value]
+                                  : field.value.filter((v: string) => v !== e.value);
+                                field.onChange(newValue);
+                              }}
+                              className="h-3.5 w-3.5 rounded border-input"
+                            />
+                            <span className="font-mono text-xs">{e.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreating(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                >
+                  {createMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Create
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!editingWebhook}
+        onOpenChange={(open) => {
+          if (!open) {
+            editForm.form.reset(editWebhookDefaults);
+            setEditingWebhook(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Webhook</DialogTitle>
+            <DialogDescription>
+              Update webhook configuration
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm.form}>
+            <form
+              id="edit-webhook-form"
+              onSubmit={editForm.form.handleSubmit((values) => {
+                if (!editingWebhook) return;
+                editMutation.mutate({
+                  id: editingWebhook.id,
+                  data: values,
+                });
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={editForm.form.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Endpoint URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        placeholder="https://api.example.com/webhooks"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.form.control}
+                name="events"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Events</FormLabel>
+                    <FormControl>
+                      <div className="mt-2 space-y-1.5 rounded-md border border-border p-3 max-h-60 overflow-y-auto">
+                        {webhookEventOptions.map((e) => (
+                          <label
+                            key={e.value}
+                            className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={field.value.includes(e.value)}
+                              onChange={(ev) => {
+                                const target = ev.target as HTMLInputElement;
+                                const newValue = target.checked
+                                  ? [...field.value, e.value]
+                                  : field.value.filter((v: string) => v !== e.value);
+                                field.onChange(newValue);
+                              }}
+                              className="h-3.5 w-3.5 rounded border-input"
+                            />
+                            <span className="font-mono text-xs">{e.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.form.control}
+                name="active"
+                render={({ field }) => (
+                  <FormItem>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-input"
+                      />
+                      <span>Active</span>
+                    </label>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingWebhook(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={editMutation.isPending}
+                >
+                  {editMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 

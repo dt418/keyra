@@ -57,6 +57,15 @@ pnpm + Turborepo monorepo containing:
 
 10. **Theme storage key is `keyra-ui-theme`.** Values: `light` | `dark` | `system`.
 
+11. **Always prefer existing components over creating new ones.** Before writing
+    any UI markup, check `apps/dashboard/src/components/ui/` for an existing
+    shadcn/base-ui primitive (e.g. `Button`, `Input`, `Select`, `Dialog`,
+    `Popover`, `Calendar`, `Combobox`, `DateField`, `SelectField`, etc.) or a
+    custom component (`StatusBadge`, `EmptyState`, `ConfirmDialog`,
+    `PageHeader`, form fields, etc.). Only create a new component when no
+    suitable one exists. This applies to all UI work — forms, tables, cards,
+    dialogs, pickers, etc. The principle: reuse first, build only when missing.
+
 ## Development Commands
 
 ```bash

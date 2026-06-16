@@ -4,7 +4,7 @@ import { productsApi } from '@keyra/api-client';
 import { Card, Button, Input, Label, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, TextField, useZodForm } from '@/components/ui/form';
-import { editProductFormSchema, editProductDefaults } from '@keyra/shared-validation';
+import { editProductFormSchema, editProductDefaults, createProductFormSchema, createProductDefaults } from '@keyra/shared-validation';
 import { Plus, Loader2, Copy, Key as KeyIcon, Package, Pencil, Trash2, Eye, EyeOff, AlertCircle, Search, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { errorMessage } from '@/lib/error-message';
@@ -44,10 +44,13 @@ function ProductCardSkeleton() {
 export default function Products() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: '', description: '' });
   const [search, setSearch] = useState('');
   const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, string>>({});
   const [editingProduct, setEditingProduct] = useState<ProductWithStatus | null>(null);
+  const createForm = useZodForm({
+    schema: createProductFormSchema,
+    defaultValues: createProductDefaults,
+  });
   const editForm = useZodForm({
     schema: editProductFormSchema,
     defaultValues: editProductDefaults,
@@ -62,7 +65,7 @@ export default function Products() {
         description: editingProduct.description || '',
       });
     }
-  }, [editingProduct, editForm.form]);
+  }, [editingProduct]);
 
   const { data: productsResponse, isLoading, isFetching } = useQuery({
     queryKey: ['products', cursor],
@@ -103,7 +106,7 @@ export default function Products() {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products-api-keys'] });
       setIsCreating(false);
-      setNewProduct({ name: '', description: '' });
+      createForm.form.reset(createProductDefaults);
       toast.success('Product created');
     },
     onError: (err: unknown) => {
@@ -342,51 +345,66 @@ export default function Products() {
         />
       )}
 
-      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+      <Dialog
+        open={isCreating}
+        onOpenChange={(open) => {
+          if (!open) {
+            createForm.form.reset(createProductDefaults);
+          }
+          setIsCreating(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Product</DialogTitle>
             <DialogDescription>Add a new product to generate license keys</DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (newProduct.name.trim()) {
+          <Form {...createForm.form}>
+            <form
+              id="create-product-form"
+              onSubmit={createForm.form.handleSubmit((values) => {
                 createMutation.mutate({
-                  name: newProduct.name.trim(),
-                  description: newProduct.description.trim() || undefined,
+                  name: values.name.trim(),
+                  description: values.description?.trim() || undefined,
                 });
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <Label htmlFor="name">Product Name</Label>
-              <Input
-                id="name"
-                placeholder="My Awesome App"
-                value={newProduct.name}
-                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                autoFocus
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={createForm.form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="My Awesome App" autoFocus {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div>
-              <Label htmlFor="description">Description (optional)</Label>
-              <Input
-                id="description"
-                placeholder="Product description"
-                value={newProduct.description}
-                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+              <FormField
+                control={createForm.form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Product description" {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
-              <Button type="submit" disabled={createMutation.isPending || !newProduct.name.trim()}>
-                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create
-              </Button>
-            </DialogFooter>
-          </form>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
+                <Button type="submit" disabled={createMutation.isPending}>
+                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 

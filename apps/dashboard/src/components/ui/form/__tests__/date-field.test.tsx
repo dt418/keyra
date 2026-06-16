@@ -36,11 +36,11 @@ describe("DateField", () => {
     expect(screen.getByRole("button", { name: /pick a date/i })).toBeInTheDocument();
   });
 
-  it("opens calendar popover on trigger click", async () => {
+  it("opens calendar on trigger click", async () => {
     const user = userEvent.setup();
     render(<Demo />);
     await user.click(screen.getByRole("button", { name: /pick a date/i }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Su")).toBeInTheDocument();
   });
 
   it("displays formatted date when value is set", () => {

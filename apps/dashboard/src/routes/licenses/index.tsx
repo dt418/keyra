@@ -1,13 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { licensesApi, productsApi, type LicenseType } from '@keyra/api-client';
-import { Button, Input, Label, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog, DataTable } from '@/components/ui';
+import { Button, Input, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog, DataTable } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, useZodForm, DateField, SelectField } from '@/components/ui/form';
+import { createLicenseFormSchema, createLicenseDefaults, editLicenseFormSchema, editLicenseDefaults, licenseTypeOptions } from '@keyra/shared-validation';
 import { Plus, Loader2, Copy, Key, Pencil, Trash2, ShieldOff, Shield, Search, Copy as CopyIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { errorMessage } from '@/lib/error-message';
 import { formatRelativeTime } from '@/lib/date';
 import type { ColumnDef } from '@tanstack/react-table';
+
+const LICENSE_TYPE_BADGE_MAP: Record<string, string> = Object.fromEntries(
+  licenseTypeOptions.map((o) => [o.value, o.variant]),
+);
 
 const PAGE_SIZE = 20;
 
@@ -21,15 +27,6 @@ type License = {
   expires_at: string | null;
   created_at: string;
 };
-
-const LICENSE_TYPES: { value: LicenseType; label: string; variant: 'violet' | 'slate' | 'info' | 'success' | 'warning' | 'danger' }[] = [
-  { value: 'trial', label: 'Trial', variant: 'violet' },
-  { value: 'free', label: 'Free', variant: 'slate' },
-  { value: 'personal', label: 'Personal', variant: 'info' },
-  { value: 'professional', label: 'Professional', variant: 'info' },
-  { value: 'business', label: 'Business', variant: 'info' },
-  { value: 'enterprise', label: 'Enterprise', variant: 'warning' },
-];
 
 function LicenseRowSkeleton() {
   return (
@@ -46,19 +43,32 @@ function LicenseRowSkeleton() {
 export default function Licenses() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
-  const [newLicense, setNewLicense] = useState({
-    productId: '',
-    type: 'trial' as LicenseType,
-    maxDevices: 1,
-    expiresAt: '',
-  });
   const [createdLicenseKey, setCreatedLicenseKey] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [cursor, setCursor] = useState<string | null>(null);
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
-  const [editForm, setEditForm] = useState({ type: 'trial' as LicenseType, maxDevices: 1, expiresAt: '' });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const createForm = useZodForm({
+    schema: createLicenseFormSchema,
+    defaultValues: createLicenseDefaults,
+  });
+
+  const editForm = useZodForm({
+    schema: editLicenseFormSchema,
+    defaultValues: editLicenseDefaults,
+  });
+
+  useEffect(() => {
+    if (editingLicense) {
+      editForm.form.reset({
+        type: editingLicense.type as LicenseType,
+        maxDevices: editingLicense.max_devices,
+        expiresAt: editingLicense.expires_at || '',
+      });
+    }
+  }, [editingLicense, editForm.form]);
 
   const { data: products } = useQuery({
     queryKey: ['products'],
@@ -91,7 +101,7 @@ export default function Licenses() {
       queryClient.invalidateQueries({ queryKey: ['licenses'] });
       setCreatedLicenseKey(data.key);
       setIsCreating(false);
-      setNewLicense({ productId: '', type: 'trial', maxDevices: 1, expiresAt: '' });
+      createForm.form.reset(createLicenseDefaults);
       toast.success('License created');
     },
     onError: (err: unknown) => {
@@ -165,7 +175,7 @@ export default function Licenses() {
   };
 
   const typeVariant = (type: string) => {
-    return LICENSE_TYPES.find((t) => t.value === type)?.variant || 'default' as const;
+    return (LICENSE_TYPE_BADGE_MAP[type] as 'violet' | 'slate' | 'info' | 'success' | 'warning' | 'danger' | undefined) || 'default' as const;
   };
 
   const columns: ColumnDef<License>[] = [
@@ -229,8 +239,8 @@ export default function Licenses() {
             size="icon"
             className="h-7 w-7"
             onClick={() => {
-              setEditForm({
-                type: row.original.type as LicenseType,
+              editForm.form.reset({
+                type: row.original.type as any,
                 maxDevices: row.original.max_devices,
                 expiresAt: row.original.expires_at || '',
               });
@@ -316,145 +326,189 @@ export default function Licenses() {
         />
       )}
 
-      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+      <Dialog
+        open={isCreating}
+        onOpenChange={(open) => {
+          if (!open) {
+            createForm.form.reset(createLicenseDefaults);
+          }
+          setIsCreating(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create License</DialogTitle>
             <DialogDescription>Generate a new license key</DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (newLicense.productId && newLicense.type) {
+          <Form {...createForm.form}>
+            <form
+              id="create-license-form"
+              onSubmit={createForm.form.handleSubmit((values) => {
                 createMutation.mutate({
-                  product_id: newLicense.productId,
-                  type: newLicense.type,
-                  max_devices: newLicense.maxDevices,
-                  expires_at: newLicense.expiresAt || undefined,
+                  product_id: values.productId,
+                  type: values.type,
+                  max_devices: values.maxDevices,
+                  expires_at: values.expiresAt || undefined,
                 });
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <Label htmlFor="product">Product</Label>
-              <select
-                id="product"
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                value={newLicense.productId}
-                onChange={(e) => setNewLicense({ ...newLicense, productId: e.target.value })}
-              >
-                <option value="">Select a product</option>
-                {products?.map((p: any) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <select
-                  id="type"
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                  value={newLicense.type}
-                  onChange={(e) => setNewLicense({ ...newLicense, type: e.target.value as LicenseType })}
-                >
-                  {LICENSE_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="maxDevices">Max Devices</Label>
-                <Input
-                  id="maxDevices"
-                  type="number"
-                  min={1}
-                  value={newLicense.maxDevices}
-                  onChange={(e) => setNewLicense({ ...newLicense, maxDevices: parseInt(e.target.value) || 1 })}
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={createForm.form.control}
+                name="productId"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Product</FormLabel>
+                    <FormControl>
+                      <SelectField
+                        name="productId"
+                        options={products?.map((p: any) => ({ value: p.id, label: p.name })) || []}
+                        placeholder="Select a product"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={createForm.form.control}
+                  name="type"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Type</FormLabel>
+                      <FormControl>
+                        <SelectField
+                          name="type"
+                          options={licenseTypeOptions}
+                          placeholder="Select type"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.form.control}
+                  name="maxDevices"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Max Devices</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={1} {...field} onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(Math.max(1, parseInt(e.target.value, 10) || 0))} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            </div>
-            <div>
-              <Label htmlFor="expiresAt">Expires At (optional)</Label>
-              <Input
-                id="expiresAt"
-                type="datetime-local"
-                value={newLicense.expiresAt}
-                onChange={(e) => setNewLicense({ ...newLicense, expiresAt: e.target.value })}
+              <FormField
+                control={createForm.form.control}
+                name="expiresAt"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Expires At (optional)</FormLabel>
+                    <FormControl>
+                      <DateField name="expiresAt" placeholder="No expiration" showTime />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
-              <Button type="submit" disabled={createMutation.isPending || !newLicense.productId}>
-                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create
-              </Button>
-            </DialogFooter>
-          </form>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
+                <Button type="submit" disabled={createMutation.isPending}>
+                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editingLicense} onOpenChange={(open) => !open && setEditingLicense(null)}>
+      <Dialog
+        open={!!editingLicense}
+        onOpenChange={(open) => {
+          if (!open) {
+            editForm.form.reset(editLicenseDefaults);
+            setEditingLicense(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit License</DialogTitle>
             <DialogDescription>Update license settings</DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (editingLicense) {
+          <Form {...editForm.form}>
+            <form
+              id="edit-license-form"
+              onSubmit={editForm.form.handleSubmit((values) => {
+                if (!editingLicense) return;
                 updateMutation.mutate({
                   id: editingLicense.id,
-                  data: { type: editForm.type, max_devices: editForm.maxDevices, expires_at: editForm.expiresAt || undefined },
+                  data: {
+                    type: values.type as LicenseType | undefined,
+                    max_devices: values.maxDevices,
+                    expires_at: values.expiresAt || undefined,
+                  },
                 });
-              }
-            }}
-            className="space-y-4"
-          >
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="edit-type">Type</Label>
-                <select
-                  id="edit-type"
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                  value={editForm.type}
-                  onChange={(e) => setEditForm({ ...editForm, type: e.target.value as LicenseType })}
-                >
-                  {LICENSE_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="edit-maxDevices">Max Devices</Label>
-                <Input
-                  id="edit-maxDevices"
-                  type="number"
-                  min={1}
-                  value={editForm.maxDevices}
-                  onChange={(e) => setEditForm({ ...editForm, maxDevices: parseInt(e.target.value) || 1 })}
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="edit-expiresAt">Expires At (optional)</Label>
-              <Input
-                id="edit-expiresAt"
-                type="datetime-local"
-                value={editForm.expiresAt}
-                onChange={(e) => setEditForm({ ...editForm, expiresAt: e.target.value })}
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={editForm.form.control}
+                name="type"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <FormControl>
+                      <SelectField
+                        name="type"
+                        options={licenseTypeOptions}
+                        placeholder="Select type"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditingLicense(null)}>Cancel</Button>
-              <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </form>
+              <FormField
+                control={editForm.form.control}
+                name="maxDevices"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Devices</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} {...field} onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(Math.max(1, parseInt(e.target.value, 10) || 0))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.form.control}
+                name="expiresAt"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Expires At (optional)</FormLabel>
+                    <FormControl>
+                      <DateField name="expiresAt" placeholder="No expiration" showTime />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditingLicense(null)}>Cancel</Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 

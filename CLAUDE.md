@@ -24,6 +24,7 @@
 8. **Auth middleware returns Response, does not throw.** Tests read `await result.json()`, not `rejects.toMatchObject`.
 9. **Theme storage key: `keyra-ui-theme`**. Values: `light` | `dark` | `system`.
 10. **Read `DESIGN.md` before any UI work** — has the design tokens, layout patterns, and component list.
+11. **Always prefer existing components over creating new ones.** Before writing any UI markup, check `apps/dashboard/src/components/ui/` for an existing shadcn/base-ui primitive (`Button`, `Input`, `Select`, `Dialog`, `Popover`, `Calendar`, `Combobox`, `DateField`, `SelectField`, etc.) or a custom component (`StatusBadge`, `EmptyState`, `ConfirmDialog`, `PageHeader`, form fields, etc.). Only create a new component when no suitable one exists. Reuse first, build only when missing.
 
 ## Commands
 

@@ -14,3 +14,4 @@ export { NumberField } from "./number-field";
 export { DateField } from "./date-field";
 export { CheckboxField } from "./checkbox-field";
 export { MultiCheckboxField } from "./multi-checkbox-field";
+export { ComboboxField } from "./combobox-field";

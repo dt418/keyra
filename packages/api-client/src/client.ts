@@ -82,7 +82,8 @@ export const orgsApi = {
   list: (params?: { limit?: number; cursor?: string }) =>
     api.get("/organizations", { params }),
   get: (id: string) => api.get(`/organizations/${id}`),
-  create: (data: { name: string }) => api.post("/organizations", data),
+  create: (data: { name: string; slug?: string }) =>
+    api.post("/organizations", data),
   update: (id: string, data: { name?: string }) =>
     api.patch(`/organizations/${id}`, data),
   delete: (id: string) => api.delete(`/organizations/${id}`),

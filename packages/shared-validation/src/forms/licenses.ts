@@ -9,13 +9,28 @@ export const licenseTypeValues = [
   'enterprise',
 ] as const;
 
-export const licenseTypeOptions: Array<{ value: (typeof licenseTypeValues)[number]; label: string }> = [
-  { value: 'trial', label: 'Trial' },
-  { value: 'free', label: 'Free' },
-  { value: 'personal', label: 'Personal' },
-  { value: 'professional', label: 'Professional' },
-  { value: 'business', label: 'Business' },
-  { value: 'enterprise', label: 'Enterprise' },
+export const licenseTypeVariants = [
+  'violet',
+  'slate',
+  'info',
+  'success',
+  'warning',
+  'danger',
+] as const;
+
+export type LicenseTypeVariant = (typeof licenseTypeVariants)[number];
+
+export const licenseTypeOptions: Array<{
+  value: (typeof licenseTypeValues)[number];
+  label: string;
+  variant: LicenseTypeVariant;
+}> = [
+  { value: 'trial', label: 'Trial', variant: 'violet' },
+  { value: 'free', label: 'Free', variant: 'slate' },
+  { value: 'personal', label: 'Personal', variant: 'info' },
+  { value: 'professional', label: 'Professional', variant: 'info' },
+  { value: 'business', label: 'Business', variant: 'info' },
+  { value: 'enterprise', label: 'Enterprise', variant: 'warning' },
 ];
 
 export const createLicenseFormSchema = z.object({

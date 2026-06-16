@@ -44,6 +44,7 @@ docs/             # API spec, architecture
 8. **Auth middleware returns Response, does not throw.** Tests must read `await result.json()`.
 9. **Theme storage key: `keyra-ui-theme`**. Values: light/dark/system.
 10. **In UI code, the API returns snake_case** (`product_id`, `max_devices`, etc.) not camelCase.
+11. **Always prefer existing components over creating new ones.** Before writing any UI markup, check `apps/dashboard/src/components/ui/` for an existing shadcn/base-ui primitive (`Button`, `Input`, `Select`, `Dialog`, `Popover`, `Calendar`, `Combobox`, `DateField`, `SelectField`, etc.) or a custom component (`StatusBadge`, `EmptyState`, `ConfirmDialog`, `PageHeader`, form fields, etc.). Only create a new component when no suitable one exists. Reuse first, build only when missing.
 
 ## Commands
 
