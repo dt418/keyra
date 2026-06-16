@@ -2,7 +2,7 @@ import type { Context } from "hono";
 import { AppError } from "../../middleware/error";
 import { createWebhookSchema } from "@keyra/shared-validation";
 import { hashApiKey } from "../../lib/password";
-import { WEBHOOK_EVENTS } from "../../lib/webhooks";
+import { generateWebhookSecret } from "../../lib/webhooks";
 
 export async function createWebhookHandler(c: Context) {
   const userId = c.get("userId");
@@ -26,19 +26,8 @@ export async function createWebhookHandler(c: Context) {
     throw parsed.error;
   }
 
-  const invalidEvents = parsed.data.events.filter(
-    (e) => !WEBHOOK_EVENTS.includes(e as (typeof WEBHOOK_EVENTS)[number]),
-  );
-  if (invalidEvents.length > 0) {
-    throw new AppError(
-      "BAD_REQUEST",
-      `Unknown event types: ${invalidEvents.join(", ")}`,
-      400,
-    );
-  }
-
   const id = crypto.randomUUID();
-  const secret = parsed.data.secret || generateSecret();
+  const secret = generateWebhookSecret();
   const secretHash = await hashApiKey(secret);
   const now = new Date().toISOString();
 
@@ -72,14 +61,4 @@ export async function createWebhookHandler(c: Context) {
     },
     201,
   );
-}
-
-function generateSecret(): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let s = "whsec_";
-  for (let i = 0; i < 40; i++) {
-    s += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return s;
 }

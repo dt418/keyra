@@ -7,6 +7,7 @@ import {
   EmptyState,
   StatusBadge,
   Input,
+  Button,
 } from "@/components/ui";
 import { FileText, Search, Download, Activity } from "lucide-react";
 import { formatRelativeTime } from "@/lib/date";
@@ -128,14 +129,14 @@ export default function AuditLogs() {
         description="Track all administrative actions across your organization"
         icon={FileText}
         actions={
-          <button
+          <Button
+            variant="outline"
             onClick={() => exportCsv(filtered)}
             disabled={!filtered.length}
-            className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-50"
           >
             <Download className="mr-2 h-4 w-4" />
             Export CSV
-          </button>
+          </Button>
         }
       />
 

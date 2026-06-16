@@ -8,6 +8,10 @@ const mockDB = {
   run: vi.fn().mockResolvedValue({ success: true }),
 };
 
+const mockSessions = {
+  put: vi.fn().mockResolvedValue(undefined),
+};
+
 function createMockContext(sessionId?: string) {
   const ctx = {
     req: {
@@ -17,7 +21,7 @@ function createMockContext(sessionId?: string) {
         return undefined;
       }),
     },
-    env: { DB: mockDB },
+    env: { DB: mockDB, SESSIONS: mockSessions },
     executionCtx: { waitUntil: vi.fn() },
     json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
     get: vi.fn((key: string) => {
@@ -47,6 +51,11 @@ describe('logoutHandler', () => {
       'session-456'
     );
     expect(mockDB.run).toHaveBeenCalled();
+    expect(mockSessions.put).toHaveBeenCalledWith(
+      'session:session-456',
+      'revoked',
+      expect.objectContaining({ expirationTtl: expect.any(Number) })
+    );
     expect(ctx.json).toHaveBeenCalledWith({ data: { success: true } });
   });
 
@@ -56,6 +65,7 @@ describe('logoutHandler', () => {
     await logoutHandler(ctx);
 
     expect(mockDB.prepare).not.toHaveBeenCalled();
+    expect(mockSessions.put).not.toHaveBeenCalled();
     expect(ctx.json).toHaveBeenCalledWith({ data: { success: true } });
   });
 });

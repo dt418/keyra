@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { createLicenseSchema } from "@keyra/shared-validation";
 import { AppError } from "../../middleware/error";
 import { hashApiKey } from "../../lib/password";
+import { generateLicenseKey } from "../../lib/license";
 import { dispatchWebhookEvent } from "../../lib/webhooks";
 
 export async function createLicenseHandler(c: Context) {
@@ -86,17 +87,4 @@ export async function createLicenseHandler(c: Context) {
     },
     201,
   );
-}
-
-function generateLicenseKey(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const segments = [];
-  for (let s = 0; s < 4; s++) {
-    let segment = "";
-    for (let i = 0; i < 5; i++) {
-      segment += chars[Math.floor(Math.random() * chars.length)];
-    }
-    segments.push(segment);
-  }
-  return segments.join("-");
 }

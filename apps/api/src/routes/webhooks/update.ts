@@ -1,7 +1,6 @@
 import type { Context } from "hono";
 import { AppError } from "../../middleware/error";
 import { updateWebhookSchema } from "@keyra/shared-validation";
-import { WEBHOOK_EVENTS } from "../../lib/webhooks";
 
 export async function updateWebhookHandler(c: Context) {
   const userId = c.get("userId");
@@ -27,19 +26,6 @@ export async function updateWebhookHandler(c: Context) {
     throw parsed.error;
   }
 
-  if (parsed.data.events) {
-    const invalidEvents = parsed.data.events.filter(
-      (e) => !WEBHOOK_EVENTS.includes(e as (typeof WEBHOOK_EVENTS)[number]),
-    );
-    if (invalidEvents.length > 0) {
-      throw new AppError(
-        "BAD_REQUEST",
-        `Unknown event types: ${invalidEvents.join(", ")}`,
-        400,
-      );
-    }
-  }
-
   const updates: string[] = [];
   const params: unknown[] = [];
 
@@ -57,7 +43,39 @@ export async function updateWebhookHandler(c: Context) {
   }
 
   if (updates.length === 0) {
-    throw new AppError("BAD_REQUEST", "No fields to update", 400);
+    const current = (await c.env.DB.prepare(
+      `SELECT id, organization_id, url, events, active, created_at, updated_at FROM webhook_configs WHERE id = ? AND organization_id = ?`,
+    )
+      .bind(id, member.org_id)
+      .first()) as {
+      id: string;
+      organization_id: string;
+      url: string;
+      events: string;
+      active: number;
+      created_at: string;
+      updated_at: string;
+    } | null;
+    if (!current) {
+      throw new AppError("NOT_FOUND", "Webhook not found", 404);
+    }
+    let events: string[] = [];
+    try {
+      events = JSON.parse(current.events) as string[];
+    } catch {
+      events = [];
+    }
+    return c.json({
+      data: {
+        id: current.id,
+        organization_id: current.organization_id,
+        url: current.url,
+        events,
+        active: current.active === 1,
+        created_at: current.created_at,
+        updated_at: current.updated_at,
+      },
+    });
   }
 
   const now = new Date().toISOString();

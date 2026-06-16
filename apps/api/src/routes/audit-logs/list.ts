@@ -67,8 +67,10 @@ export async function listAuditLogsHandler(c: Context) {
     ? parseInt(Buffer.from(cursor, "base64").toString("utf8"), 10)
     : 0;
 
-  const conditions: string[] = ["(a.org_id = ? OR a.org_id IS NULL)"];
-  const params: unknown[] = [member.org_id];
+  const conditions: string[] = [
+    "(a.org_id = ? OR (a.org_id IS NULL AND a.user_id = ?))",
+  ];
+  const params: unknown[] = [member.org_id, userId];
 
   if (action) {
     conditions.push("a.action = ?");

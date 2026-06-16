@@ -40,18 +40,11 @@ export async function getTopProductsHandler(c: Context) {
   };
 
   return c.json({
-    data: (rows.results || []).map(
-      (r: {
-        id: string;
-        name: string;
-        license_count: number;
-        active_count: number;
-      }) => ({
-        id: r.id,
-        name: r.name,
-        license_count: r.license_count ?? 0,
-        active_count: r.active_count ?? 0,
-      }),
-    ),
+    data: (rows.results || []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      license_count: r.license_count ?? 0,
+      active_count: r.active_count ?? 0,
+    })),
   });
 }
