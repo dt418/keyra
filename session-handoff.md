@@ -59,3 +59,22 @@
 
 - Finish `feat-016`: run `./init.sh quick`, then update `CLAUDE.md` to add `init.sh` and `feature_list.json` to the "Commands" and "Key Files" sections, then `scripts/ship-phase.sh "chore: complete agent harness scaffold"`.
 - Then pick **one** form (recommend: Edit Product dialog) and execute feat-017 (RHF migration) — do not refactor all forms in one go.
+
+---
+
+# Session Handoff — feat-017 React Hook Form Integration (DONE 2026-06-16)
+
+## Outcome
+
+- 28 shared-validation form schema tests + 62 dashboard tests + 38 e2e pass
+- Edit Product dialog migrated to RHF + zodResolver
+- shadcn primitives: Calendar, Checkbox (base-ui), Combobox, Field, RadioGroup, Switch
+- DateField uses Calendar in Popover
+- Login/register migration deferred to a follow-up feature
+
+## Open follow-up
+
+- Migrate remaining 4 forms (Create Product, Create/Edit Org, Create/Edit License, Create Webhook) to the new RHF primitives — out of scope for feat-017 (Edit Product was the proof)
+- Migrate login/register (auth) to RHF — separate feature
+- Tighten form primitive tests (e.g. error-state coverage in form-field test #2)
+- Add a base-ui/slot ref forwarding to Button so PopoverTrigger stops warning

@@ -136,8 +136,8 @@
       "name": "React Hook Form Integration",
       "description": "Replace direct useState form state across dashboard forms with RHF + zodResolver; align with shared-validation schemas",
       "dependencies": ["feat-011"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "62 dashboard tests + 28 shared-validation tests pass; 38 e2e pass; Edit Product dialog migrated to RHF + zodResolver; shadcn primitives (Calendar, Checkbox, Combobox, Field, RadioGroup, Switch) added; DateField uses Calendar in Popover"
     },
     {
       "id": "feat-018",

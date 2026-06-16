@@ -3,9 +3,9 @@
 ## Current State
 
 **Last Updated:** 2026-06-16
-**Session:** harness-bootstrap
-**Active Feature:** feat-016 — Agent Harness
-**Branch:** main (working tree clean pending commit)
+**Session:** feat-017-rhf
+**Active Feature:** feat-017 — React Hook Form Integration
+**Branch:** main
 
 ## Status
 
@@ -63,3 +63,13 @@
 - For destructive actions, use `ConfirmDialog` from `@/components/ui` (Critical Rule #3 in DESIGN.md workflow).
 - If verification fails, the fix goes in the same commit as the feature — never "fix tests later."
 - `apps/api/test:e2e` requires wrangler to be running; `init.sh full` handles that. If you run it manually, use the same wrangler boot pattern from `scripts/ship-phase.sh`.
+
+## feat-017 — React Hook Form Integration (DONE)
+
+- 7 form schemas added: products (create+edit), orgs (create+edit), licenses (create+edit), webhooks (create)
+- 7 form primitives shipped: `<Form>`, `<useZodForm>`, `<FormField>`, `<FormItem>`, `<FormLabel>`, `<FormControl>`, `<FormMessage>`, plus TextField/TextareaField/SelectField/NumberField/DateField/CheckboxField/MultiCheckboxField
+- shadcn primitives added: Calendar, Checkbox (base-ui), Combobox, Field, RadioGroup, Switch
+- DateField uses Calendar in Popover
+- Edit Product dialog migrated to RHF + zodResolver
+- 62 dashboard unit tests + 28 shared-validation tests + 38 e2e tests pass
+- Login/register (auth flows) intentionally out of scope — separate future feature
