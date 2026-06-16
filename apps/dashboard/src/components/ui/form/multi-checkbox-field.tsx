@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useFormContext, Controller } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -27,7 +26,6 @@ export const MultiCheckboxField = ({ name, options }: MultiCheckboxFieldProps) =
                     checked={isChecked}
                     onCheckedChange={(checked) => {
                       const next = new Set(selected);
-                      if (checked === "indeterminate") return;
                       if (checked) next.add(opt.value);
                       else next.delete(opt.value);
                       field.onChange(Array.from(next));
