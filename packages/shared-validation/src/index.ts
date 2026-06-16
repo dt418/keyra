@@ -4,3 +4,4 @@ export * from "./products";
 export * from "./licenses";
 export * from "./activations";
 export * from "./webhooks";
+export * from "./forms";
