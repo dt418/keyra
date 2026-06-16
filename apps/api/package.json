@@ -4,13 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --port 8788",
-    "predev": "wrangler d1 migrations apply DB --local",
+    "dev": "fuser -k 8788/tcp 2>/dev/null || true && wrangler dev --port 8788",
+    "predev": "wrangler d1 migrations apply keyra-db --local",
     "deploy": "wrangler deploy",
     "test": "vitest --run",
     "test:e2e": "playwright test --config=e2e/playwright.config.ts",
-    "test:e2e:setup": "wrangler d1 migrations apply DB --local",
-    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "test:e2e:setup": "wrangler d1 migrations apply keyra-db --local",
+    "db:migrate:local": "wrangler d1 migrations apply keyra-db --local",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "lint": "eslint src --fix"
