@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { AppError } from "../../middleware/error";
 import { createWebhookSchema } from "@keyra/shared-validation";
 import { hashApiKey } from "../../lib/password";
+import { generateWebhookSecret } from "../../lib/webhooks";
 
 export async function createWebhookHandler(c: Context) {
   const userId = c.get("userId");
@@ -26,7 +27,7 @@ export async function createWebhookHandler(c: Context) {
   }
 
   const id = crypto.randomUUID();
-  const secret = generateSecret();
+  const secret = generateWebhookSecret();
   const secretHash = await hashApiKey(secret);
   const now = new Date().toISOString();
 
@@ -60,14 +61,4 @@ export async function createWebhookHandler(c: Context) {
     },
     201,
   );
-}
-
-function generateSecret(): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let s = "whsec_";
-  for (let i = 0; i < 40; i++) {
-    s += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return s;
 }
