@@ -47,17 +47,15 @@ export async function updateWebhookHandler(c: Context) {
       `SELECT id, organization_id, url, events, active, created_at, updated_at FROM webhook_configs WHERE id = ? AND organization_id = ?`,
     )
       .bind(id, member.org_id)
-      .first()) as
-      | {
-          id: string;
-          organization_id: string;
-          url: string;
-          events: string;
-          active: number;
-          created_at: string;
-          updated_at: string;
-        }
-      | null;
+      .first()) as {
+      id: string;
+      organization_id: string;
+      url: string;
+      events: string;
+      active: number;
+      created_at: string;
+      updated_at: string;
+    } | null;
     if (!current) {
       throw new AppError("NOT_FOUND", "Webhook not found", 404);
     }

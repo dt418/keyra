@@ -30,7 +30,14 @@ export async function getTopProductsHandler(c: Context) {
      LIMIT ?`,
   )
     .bind(member.org_id, limit)
-    .all()  ) as { results: { id: string; name: string; license_count: number; active_count: number }[] };
+    .all()) as {
+    results: {
+      id: string;
+      name: string;
+      license_count: number;
+      active_count: number;
+    }[];
+  };
 
   return c.json({
     data: (rows.results || []).map((r) => ({
