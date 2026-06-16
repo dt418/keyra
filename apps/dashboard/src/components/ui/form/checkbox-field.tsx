@@ -22,7 +22,7 @@ export const CheckboxField = ({ name, label, ...rest }: CheckboxFieldProps) => {
             {...rest}
             checked={!!field.value}
             onCheckedChange={(checked) => {
-              field.onChange(checked === "indeterminate" ? false : !!checked);
+              field.onChange(!!checked);
             }}
             name={field.name}
             aria-invalid={!!fieldState.error}
