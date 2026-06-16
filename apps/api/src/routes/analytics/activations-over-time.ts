@@ -45,5 +45,9 @@ export async function getActivationsOverTimeHandler(c: Context) {
     series.push({ date: day, count: map.get(day) || 0 });
   }
 
-  return c.json({ data: series, period });
+  return c.json({
+    data: series,
+    period,
+    now: new Date().toISOString().slice(0, 10),
+  });
 }
