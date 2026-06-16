@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --port 8788",
+    "predev": "wrangler d1 migrations apply DB --local",
     "deploy": "wrangler deploy",
     "test": "vitest --run",
     "test:e2e": "playwright test --config=e2e/playwright.config.ts",
-    "test:e2e:setup": "wrangler d1 execute keyra-db --local --file=../../database/migrations/0001_users.sql && wrangler d1 execute keyra-db --local --file=../../database/migrations/0002_organizations.sql && wrangler d1 execute keyra-db --local --file=../../database/migrations/0003_org_members.sql && wrangler d1 execute keyra-db --local --file=../../database/migrations/0004_sessions.sql && wrangler d1 execute keyra-db --local --file=../../database/migrations/0005_session_cleanup.sql && wrangler d1 execute keyra-db --local --file=../../database/migrations/0006_audit_logs.sql && wrangler d1 execute keyra-db --local --file=../../database/migrations/0007_products.sql && wrangler d1 execute keyra-db --local --file=../../database/migrations/0008_licenses.sql && wrangler d1 execute keyra-db --local --file=../../database/migrations/0009_devices.sql && wrangler d1 execute keyra-db --local --file=../../database/migrations/0010_activations.sql",
+    "test:e2e:setup": "wrangler d1 migrations apply DB --local",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "lint": "eslint src --fix"
