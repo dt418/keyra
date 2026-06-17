@@ -6,9 +6,10 @@ on:
       - "sdk-v*"
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Tag to publish (e.g. sdk-v0.1.0). Leave empty to use ref."
+      version:
+        description: "Version to publish. Either an exact semver (e.g. 0.2.0) or a bump type (patch|minor|major). Defaults to patch."
         required: false
+        default: "patch"
 
 permissions:
   contents: write
@@ -39,12 +40,35 @@ jobs:
       - name: Resolve version
         id: version
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.tag }}" ]]; then
-            VERSION="${{ inputs.tag }}"
+          set -euo pipefail
+          CURRENT=$(node -p "require('./packages/sdk-js/package.json').version")
+          echo "Current package version: ${CURRENT}"
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            INPUT="${{ inputs.version }}"
+            if [[ "${INPUT}" =~ ^(patch|minor|major)$ ]]; then
+              IFS='.' read -r MAJOR MINOR PATCH <<< "${CURRENT}"
+              case "${INPUT}" in
+                major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+                minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+                patch) PATCH=$((PATCH + 1)) ;;
+              esac
+              VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            elif [[ "${INPUT}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.+].*)?$ ]]; then
+              VERSION="${INPUT}"
+            else
+              echo "::error::Invalid version input: ${INPUT}. Use semver or bump type (patch|minor|major)."
+              exit 1
+            fi
           else
-            VERSION="${GITHUB_REF_NAME}"
+            REF="${GITHUB_REF_NAME}"
+            if [[ "${REF}" != sdk-v* ]]; then
+              echo "::error::Ref ${REF} is not an sdk-v* tag."
+              exit 1
+            fi
+            VERSION="${REF#sdk-v}"
           fi
-          VERSION="${VERSION#sdk-v}"
+
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Publishing @keyra/sdk-js@${VERSION}"
 
