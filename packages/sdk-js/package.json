@@ -10,14 +10,37 @@
       "import": "./dist/index.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "prepublishOnly": "tsc"
   },
-  "dependencies": {
-    "axios": "^1.7.0"
+  "keywords": [
+    "keyra",
+    "license",
+    "licensing",
+    "sdk"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dt418/keyra.git",
+    "directory": "packages/sdk-js"
+  },
+  "homepage": "https://github.com/dt418/keyra#readme",
+  "bugs": {
+    "url": "https://github.com/dt418/keyra/issues"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

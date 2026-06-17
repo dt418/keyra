@@ -1,0 +1,111 @@
+name: Publish SDK
+
+on:
+  push:
+    tags:
+      - "sdk-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. sdk-v0.1.0). Leave empty to use ref."
+        required: false
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: publish-sdk
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build & Publish SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org/
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.tag }}" ]]; then
+            VERSION="${{ inputs.tag }}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+          VERSION="${VERSION#sdk-v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Publishing @keyra/sdk-js@${VERSION}"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ steps.version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build SDK
+        run: pnpm --filter @keyra/sdk-js build
+
+      - name: Generate changelog from conventional commits
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --list 'sdk-v*' --sort=-v:refname | sed -n '2p')
+          RANGE="${PREV_TAG}..${GITHUB_REF_NAME}"
+          if [[ -z "$PREV_TAG" ]]; then
+            RANGE="${GITHUB_REF_NAME}"
+          fi
+          {
+            echo "## Changes"
+            echo ""
+            git log "${RANGE}" --pretty=format:"%h %s" \
+              | awk '{
+                  hash=$1; $1=""; sub(/^[ \t]+/, "");
+                  subj=$0;
+                  if (subj ~ /^feat/) tag="feat";
+                  else if (subj ~ /^fix/) tag="fix";
+                  else if (subj ~ /^perf/) tag="perf";
+                  else if (subj ~ /^refactor/) tag="refactor";
+                  else if (subj ~ /^docs/) tag="docs";
+                  else if (subj ~ /^chore/) tag="chore";
+                  else if (subj ~ /^test/) tag="test";
+                  else if (subj ~ /^ci/) tag="ci";
+                  else tag="other";
+                  print "- " tag ": " subj " (" hash ")"
+                }'
+          } > CHANGELOG_RELEASE.md
+          cat CHANGELOG_RELEASE.md
+
+      - name: Bump package version
+        working-directory: packages/sdk-js
+        run: |
+          npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
+          echo "package.json version:"
+          node -p "require('./package.json').version"
+
+      - name: Publish to npm (provenance)
+        working-directory: packages/sdk-js
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "@keyra/sdk-js@${{ steps.version.outputs.version }}"
+          body_path: CHANGELOG_RELEASE.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}

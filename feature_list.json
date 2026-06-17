@@ -144,8 +144,8 @@
       "name": "SDK npm Publish",
       "description": "GitHub Actions workflow to publish @keyra/sdk to npm on tagged release; provenance attestations; changelog generation from conventional commits",
       "dependencies": ["feat-013"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "publish-sdk.yml triggers on sdk-v* tags + workflow_dispatch; npm publish --provenance (id-token:write perm); conventional-commit changelog generator + softprops/action-gh-release; package.json files/publishConfig/repository/license/keywords; README + LICENSE added"
     }
   ]
 }
