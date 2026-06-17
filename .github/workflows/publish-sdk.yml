@@ -41,13 +41,27 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          CURRENT=$(node -p "require('./packages/sdk-js/package.json').version")
-          echo "Current package version: ${CURRENT}"
+          PACKAGE_NAME=$(node -p "require('./packages/sdk-js/package.json').name")
+          WORKSPACE_VER=$(node -p "require('./packages/sdk-js/package.json').version")
+          echo "Workspace version: ${WORKSPACE_VER} (${PACKAGE_NAME})"
+
+          # Fetch the latest published version from npm registry (empty if not yet published)
+          PUBLISHED_VER=$(curl -sf "https://registry.npmjs.org/${PACKAGE_NAME}/latest" \
+            | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).version||'')}catch{console.log('')}})")
+          echo "Published version: ${PUBLISHED_VER:-<none>}"
+
+          # Pick the higher of workspace vs published so we never collide with an existing tag
+          if [[ -n "${PUBLISHED_VER}" ]]; then
+            BASE_VER=$(node -e "const s=v=>v.split(/[.+-]/).map(Number);const a=s(process.argv[1]),b=s(process.argv[2]);console.log(a.join('.')<b.join('.')?process.argv[2]:process.argv[1]);" "${WORKSPACE_VER}" "${PUBLISHED_VER}")
+          else
+            BASE_VER="${WORKSPACE_VER}"
+          fi
+          echo "Bump base version: ${BASE_VER}"
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             INPUT="${{ inputs.version }}"
             if [[ "${INPUT}" =~ ^(patch|minor|major)$ ]]; then
-              IFS='.' read -r MAJOR MINOR PATCH <<< "${CURRENT}"
+              IFS='.' read -r MAJOR MINOR PATCH <<< "${BASE_VER}"
               case "${INPUT}" in
                 major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
                 minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
@@ -55,6 +69,12 @@ jobs:
               esac
               VERSION="${MAJOR}.${MINOR}.${PATCH}"
             elif [[ "${INPUT}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.+].*)?$ ]]; then
+              # Explicit version must be strictly greater than both workspace and published
+              GT_WORKSPACE=$(node -e "const s=v=>v.split(/[.+-]/).map(Number);const a=s(process.argv[1]),b=s(process.argv[2]);console.log(a.join('.')>b.join('.')?1:0);" "${INPUT}" "${BASE_VER}")
+              if [[ "${GT_WORKSPACE}" != "1" ]]; then
+                echo "::error::Explicit version ${INPUT} must be greater than ${BASE_VER}."
+                exit 1
+              fi
               VERSION="${INPUT}"
             else
               echo "::error::Invalid version input: ${INPUT}. Use semver or bump type (patch|minor|major)."
@@ -67,10 +87,16 @@ jobs:
               exit 1
             fi
             VERSION="${REF#sdk-v}"
+            # Tag-based releases also must be greater than published
+            GT_BASE=$(node -e "const s=v=>v.split(/[.+-]/).map(Number);const a=s(process.argv[1]),b=s(process.argv[2]);console.log(a.join('.')>b.join('.')?1:0);" "${VERSION}" "${BASE_VER}")
+            if [[ "${GT_BASE}" != "1" ]]; then
+              echo "::error::Tag version ${VERSION} must be greater than ${BASE_VER} (workspace/published)."
+              exit 1
+            fi
           fi
 
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Publishing @keyra-sdk/sdk-js@${VERSION}"
+          echo "Publishing ${PACKAGE_NAME}@${VERSION}"
 
       - uses: actions/cache@v4
         with:
