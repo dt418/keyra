@@ -12,6 +12,7 @@ const mockDB = {
   bind: vi.fn().mockReturnThis(),
   first: vi.fn(),
   run: vi.fn().mockResolvedValue({ success: true }),
+  all: vi.fn().mockResolvedValue({ results: [] }),
 };
 
 const mockKV = {
@@ -143,6 +144,7 @@ describe("refreshHandler", () => {
       TEST_REFRESH_SECRET,
     );
 
+    mockDB.first.mockResolvedValueOnce({ revoked_at: null });
     mockDB.first.mockResolvedValueOnce({
       id: "user-123",
       email: "test@example.com",
@@ -171,6 +173,22 @@ describe("refreshHandler", () => {
 
     await expect(refreshHandler(ctx)).rejects.toThrow(
       "Invalid or expired refresh token",
+    );
+  });
+
+  it("should detect refresh token reuse and revoke all user sessions", async () => {
+    const refreshToken = await signRefreshToken(
+      { sub: "user-123", email: "test@example.com", jti: "reused-session" },
+      TEST_REFRESH_SECRET,
+    );
+
+    mockDB.first.mockResolvedValueOnce({
+      revoked_at: "2026-01-01T00:00:00.000Z",
+    });
+    const ctx = createMockContext({ refresh_token: refreshToken }) as any;
+
+    await expect(refreshHandler(ctx)).rejects.toThrow(
+      "Refresh token reuse detected",
     );
   });
 });

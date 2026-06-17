@@ -1,8 +1,8 @@
-import type { Context } from 'hono';
-import { hashPassword } from './password';
+import type { Context } from "hono";
+import { hashPassword } from "./password";
 
 export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-export const SESSION_KV_PREFIX = 'session:';
+export const SESSION_KV_PREFIX = "session:";
 
 export interface StoreSessionOptions {
   userId: string;
@@ -14,7 +14,7 @@ export interface StoreSessionOptions {
 
 export async function storeRefreshToken(
   c: Context,
-  opts: StoreSessionOptions
+  opts: StoreSessionOptions,
 ): Promise<void> {
   const now = new Date().toISOString();
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
@@ -22,7 +22,7 @@ export async function storeRefreshToken(
 
   await c.env.DB.prepare(
     `INSERT INTO sessions (id, user_id, refresh_token_hash, user_agent, ip_address, expires_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
       opts.sessionId,
@@ -31,23 +31,56 @@ export async function storeRefreshToken(
       opts.userAgent ?? null,
       opts.ipAddress ?? null,
       expiresAt,
-      now
+      now,
     )
     .run();
 
-  await c.env.SESSIONS.put(`${SESSION_KV_PREFIX}${opts.sessionId}`, 'active', {
+  await c.env.SESSIONS.put(`${SESSION_KV_PREFIX}${opts.sessionId}`, "active", {
     expirationTtl: Math.ceil(SESSION_TTL_MS / 1000),
   });
 }
 
-export async function revokeSession(c: Context, sessionId: string): Promise<void> {
+export async function revokeSession(
+  c: Context,
+  sessionId: string,
+): Promise<void> {
   const now = new Date().toISOString();
   await c.env.DB.prepare(
-    'UPDATE sessions SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL'
+    "UPDATE sessions SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL",
   )
     .bind(now, sessionId)
     .run();
-  await c.env.SESSIONS.put(`${SESSION_KV_PREFIX}${sessionId}`, 'revoked', {
+  await c.env.SESSIONS.put(`${SESSION_KV_PREFIX}${sessionId}`, "revoked", {
     expirationTtl: Math.ceil(SESSION_TTL_MS / 1000),
   });
+}
+
+export async function revokeAllUserSessions(
+  c: Context,
+  userId: string,
+): Promise<string[]> {
+  const result = await c.env.DB.prepare(
+    "SELECT id FROM sessions WHERE user_id = ? AND revoked_at IS NULL",
+  )
+    .bind(userId)
+    .all();
+
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    "UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL",
+  )
+    .bind(now, userId)
+    .run();
+
+  const ids = ((result.results ?? []) as Array<{ id: string }>).map(
+    (r) => r.id,
+  );
+  await Promise.all(
+    ids.map((id: string) =>
+      c.env.SESSIONS.put(`${SESSION_KV_PREFIX}${id}`, "revoked", {
+        expirationTtl: Math.ceil(SESSION_TTL_MS / 1000),
+      }),
+    ),
+  );
+  return ids;
 }
