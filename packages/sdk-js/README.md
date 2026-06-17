@@ -1,11 +1,11 @@
-# @keyra/sdk-js
+# @keyra-sdk/sdk-js
 
 Standalone JavaScript SDK for verifying and managing [Keyra](https://github.com/dt418/keyra) licenses in customer applications.
 
 ## Installation
 
 ```bash
-npm install @keyra/sdk-js
+npm install @keyra-sdk/sdk-js
 ```
 
 Requires Node.js 18+ (uses native `fetch`).
@@ -13,7 +13,7 @@ Requires Node.js 18+ (uses native `fetch`).
 ## Usage
 
 ```ts
-import { createClient } from "@keyra/sdk-js";
+import { createClient } from "@keyra-sdk/sdk-js";
 
 const keyra = createClient({
   apiUrl: "https://your-keyra-instance.com",

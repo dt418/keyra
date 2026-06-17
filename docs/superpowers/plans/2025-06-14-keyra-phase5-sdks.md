@@ -9,14 +9,15 @@
 ## Overview
 
 Phase 5 implements SDKs and integration tools:
-- `@keyra/sdk-js` - JavaScript/TypeScript SDK
+
+- `@keyra-sdk/sdk-js` - JavaScript/TypeScript SDK
 - `@keyra/cli` - CLI tool for license management
 
 ---
 
 ## Tasks Completed
 
-### 1. @keyra/sdk-js
+### 1. @keyra-sdk/sdk-js
 
 JavaScript/TypeScript SDK for client-side license verification:
 

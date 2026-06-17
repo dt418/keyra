@@ -70,7 +70,7 @@ jobs:
           fi
 
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Publishing @keyra/sdk-js@${VERSION}"
+          echo "Publishing @keyra-sdk/sdk-js@${VERSION}"
 
       - uses: actions/cache@v4
         with:
@@ -82,7 +82,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build SDK
-        run: pnpm --filter @keyra/sdk-js build
+        run: pnpm --filter @keyra-sdk/sdk-js build
 
       - name: Generate changelog from conventional commits
         id: changelog
@@ -129,7 +129,7 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          name: "@keyra/sdk-js@${{ steps.version.outputs.version }}"
+          name: "@keyra-sdk/sdk-js@${{ steps.version.outputs.version }}"
           body_path: CHANGELOG_RELEASE.md
           draft: false
           prerelease: ${{ contains(steps.version.outputs.version, '-') }}

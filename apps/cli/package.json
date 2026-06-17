@@ -10,7 +10,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@keyra/sdk-js": "workspace:*",
+    "@keyra-sdk/sdk-js": "workspace:*",
     "inquirer": "^9.2.0"
   },
   "devDependencies": {

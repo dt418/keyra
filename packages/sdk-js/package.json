@@ -1,5 +1,5 @@
 {
-  "name": "@keyra/sdk-js",
+  "name": "@keyra-sdk/sdk-js",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",

@@ -19,7 +19,7 @@ GitHub — information-dense, professional, and fast.
 - **Router:** React Router v6
 - **Toasts:** Sonner
 - **Backend:** Hono (Cloudflare Workers), D1 (SQLite)
-- **SDK:** `@keyra/sdk-js` for license verification
+- **SDK:** `@keyra-sdk/sdk-js` for license verification
 
 ## Folder Structure
 
@@ -80,6 +80,7 @@ Primary accent: violet/indigo. Status colors follow semantic naming:
 ### Spacing
 
 8px grid:
+
 - `gap-2` (8px) — tight
 - `gap-3` (12px) — comfortable
 - `gap-4` (16px) — standard
@@ -96,6 +97,7 @@ Container padding: `px-6 py-6` (default), `lg:p-8` on large screens.
 ### Shadows
 
 Subtle by default, never heavy:
+
 - `shadow-sm` for cards
 - `shadow-lg` for popovers/dialogs
 - `shadow-md` for hover elevations
@@ -133,6 +135,7 @@ Subtle by default, never heavy:
 ### Page Header
 
 Every page uses `<PageHeader>` for consistent introduction:
+
 - Icon (rounded-lg, primary/10 bg)
 - Title (text-xl font-semibold tracking-tight)
 - Description (text-sm text-muted-foreground)
@@ -142,29 +145,29 @@ Every page uses `<PageHeader>` for consistent introduction:
 
 Located in `apps/dashboard/src/components/ui/`:
 
-| Component | Purpose |
-|-----------|---------|
-| `Button` | Forwarded ref, base-ui primitive, cva variants |
-| `Card` | Surface container, header/content/footer slots |
-| `Dialog` | Modal/dialog, base-ui, ref-forwarded trigger |
-| `DropdownMenu` | Context menus, base-ui |
-| `Input` | Text input with consistent styling |
-| `Label` | Form labels |
-| `Select` | Native select wrapper |
-| `Separator` | Horizontal/vertical divider |
-| `Sheet` | Slide-out panel |
-| `Skeleton` | Loading placeholder |
-| `Tabs` | View switcher |
-| `Tooltip` | Hover hints |
-| `Popover` | Floating content |
-| `Command` | Cmd+K palette (cmdk-based) |
-| `EmptyState` | Icon + title + CTA pattern |
-| `StatCard` | KPI tile with trend indicator |
-| `StatusBadge` | Semantic status pill (success/warn/danger/info) |
-| `PageHeader` | Page introduction block |
-| `ConfirmDialog` | Destructive confirmation |
-| `SearchToolbar` | Search input + actions row |
-| `DataTable` | TanStack Table wrapper (sort, filter, pagination, column visibility) |
+| Component       | Purpose                                                              |
+| --------------- | -------------------------------------------------------------------- |
+| `Button`        | Forwarded ref, base-ui primitive, cva variants                       |
+| `Card`          | Surface container, header/content/footer slots                       |
+| `Dialog`        | Modal/dialog, base-ui, ref-forwarded trigger                         |
+| `DropdownMenu`  | Context menus, base-ui                                               |
+| `Input`         | Text input with consistent styling                                   |
+| `Label`         | Form labels                                                          |
+| `Select`        | Native select wrapper                                                |
+| `Separator`     | Horizontal/vertical divider                                          |
+| `Sheet`         | Slide-out panel                                                      |
+| `Skeleton`      | Loading placeholder                                                  |
+| `Tabs`          | View switcher                                                        |
+| `Tooltip`       | Hover hints                                                          |
+| `Popover`       | Floating content                                                     |
+| `Command`       | Cmd+K palette (cmdk-based)                                           |
+| `EmptyState`    | Icon + title + CTA pattern                                           |
+| `StatCard`      | KPI tile with trend indicator                                        |
+| `StatusBadge`   | Semantic status pill (success/warn/danger/info)                      |
+| `PageHeader`    | Page introduction block                                              |
+| `ConfirmDialog` | Destructive confirmation                                             |
+| `SearchToolbar` | Search input + actions row                                           |
+| `DataTable`     | TanStack Table wrapper (sort, filter, pagination, column visibility) |
 
 ## StatusBadge
 
@@ -186,6 +189,7 @@ In dark mode: translucent background + light text (`emerald-400` on `emerald-500
 ## DataTable
 
 Wraps TanStack Table v8 with sensible defaults:
+
 - Sortable columns (header click)
 - Column visibility toggle (gear icon → checkboxes)
 - Global filter input
@@ -198,6 +202,7 @@ Used by Licenses and Devices pages for information density.
 ## Command Palette
 
 `Ctrl+K` / `Cmd+K` opens a global palette:
+
 - Navigation (5 routes with shortcut hints like "g o")
 - Settings (4 routes)
 - Theme switching (Light/Dark/System)
@@ -212,6 +217,7 @@ Forms use controlled state with React Hook Form (planned) + Zod validation.
 Currently simple controlled inputs in Dialog components.
 
 Patterns:
+
 - **Create:** Open in Dialog with form fields
 - **Edit:** Open in Dialog with prefilled values
 - **Delete:** ConfirmDialog with destructive styling
@@ -236,7 +242,11 @@ Every list/table page has an `<EmptyState>`:
   icon={Package}
   title="No products yet"
   description="Create your first product to start generating license keys"
-  primaryAction={{ label: 'Create product', onClick: () => setIsCreating(true), icon: Plus }}
+  primaryAction={{
+    label: "Create product",
+    onClick: () => setIsCreating(true),
+    icon: Plus,
+  }}
 />
 ```
 
