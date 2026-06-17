@@ -126,9 +126,21 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Create and push tag (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          TAG="sdk-v${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898230+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG}" -m "Release @keyra-sdk/sdk-js@${{ steps.version.outputs.version }}"
+          git push origin "${TAG}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+        id: tag_dispatch
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && steps.tag_dispatch.outputs.tag || github.ref_name }}
           name: "@keyra-sdk/sdk-js@${{ steps.version.outputs.version }}"
           body_path: CHANGELOG_RELEASE.md
           draft: false
