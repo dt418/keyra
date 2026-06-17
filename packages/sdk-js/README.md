@@ -44,10 +44,10 @@ await keyra.deactivate(deviceToken);
 
 ### `createClient(options)`
 
-| Option   | Type     | Description                                  |
-| -------- | -------- | -------------------------------------------- |
-| `apiUrl` | `string` | Base URL of your Keyra API                   |
-| `apiKey` | `string` | Product API key issued by Keyra dashboard    |
+| Option   | Type     | Description                               |
+| -------- | -------- | ----------------------------------------- |
+| `apiUrl` | `string` | Base URL of your Keyra API                |
+| `apiKey` | `string` | Product API key issued by Keyra dashboard |
 
 ### `keyra.verify(licenseKey, deviceToken?)`
 
