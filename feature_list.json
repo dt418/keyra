@@ -204,12 +204,12 @@
       "evidence": "apps/api/src/routes/verify/index.ts — success body now {valid, expires_at, product_id, license_type}; dropped license_id, product_name, feature_flags. apps/api/src/routes/activations/activate.ts — success body now {activation_id, device_id, license_type, expires_at, activated_at}; dropped license_id, product_name, feature_flags. Activation test updated to assert new shape and explicitly assert dropped fields are undefined. Plan: docs/superpowers/plans/audit-2026-06-18/s6-verify-activate-scope-reduction.md (Closes P0-8)"
     },
     {
-      "id": "feat-026",
-      "name": "Audit S7 — Auth Flow Hygiene",
-      "description": "OAuth callback requires OAUTH_REDIRECT_URI env; login runs dummy bcrypt on user-not-found; register sets email_verified=0 + email_verification_tokens table; org delete cleans up audit_logs",
+      "id": "feat-027",
+      "name": "Show/Hide Password Toggle (Login + Register)",
+      "description": "Add eye-icon toggle on the password input fields in the Login and Register pages so users can reveal the typed password before submitting",
       "dependencies": [],
       "status": "done",
-      "evidence": "apps/api/src/routes/auth/oauth.ts: 3 sites throw OAUTH_NOT_CONFIGURED 500 when OAUTH_REDIRECT_URI / clientId / clientSecret missing. apps/api/src/routes/auth/login.ts: dummy bcrypt on user-not-found (real hash of '__keyra_dummy_pw__' inline). apps/api/src/routes/auth/register.ts: email_verified=0 on INSERT. database/migrations/0013_email_verification.sql: email_verification_tokens table + indexes. apps/api/src/routes/auth/verify-email.ts: 501 NOT_IMPLEMENTED stub mounted at GET /auth/verify-email/:token. apps/api/src/routes/orgs/delete.ts: DELETE FROM audit_logs WHERE org_id=? before org_members. Test mocks: oauth.test.ts typo OAUTH_GITHUB_CLIENT_CLIENT_SECRET -> OAUTH_GITHUB_CLIENT_SECRET fixed. Plan: docs/superpowers/plans/audit-2026-06-18/s7-auth-flow-hygiene.md (Closes P1-1, P1-2, P1-3, P1-5)"
+      "evidence": "apps/dashboard/src/components/ui/password-input.tsx — new PasswordInput primitive built on InputGroup + InputGroupAddon (inline-end) + InputGroupButton (icon-xs ghost). Eye/EyeOff icons from lucide-react. type='password' by default, toggles to type='text'. aria-label and aria-pressed for screen readers. apps/dashboard/src/components/ui/index.ts exports it. login.tsx + register.tsx use PasswordInput (register uses it for both password and confirmPassword). 3 new tests in __tests__/password-input.test.tsx. Dashboard tests 70/70 pass (was 67)."
     }
   ]
 }

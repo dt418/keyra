@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, Input, Label } from '@/components/ui';
+import { Button, Input, Label, PasswordInput } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -100,9 +100,8 @@ export default function Login() {
                 <Label htmlFor="password">Password</Label>
                 <a href="#" className="text-xs text-muted-foreground hover:text-foreground">Forgot password?</a>
               </div>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
