@@ -24,6 +24,7 @@ apps/api/src/middleware/__tests__/
 ## Task 1: Atomic rate-limit middleware
 
 **Files:**
+
 - Edit: `apps/api/src/middleware/rateLimit.ts`
 
 - [ ] **Step 1: Replace the check-then-increment logic**
@@ -36,8 +37,8 @@ The new code:
 
 ```typescript
 // apps/api/src/middleware/rateLimit.ts
-import type { MiddlewareHandler } from 'hono';
-import { AppError } from './error';
+import type { MiddlewareHandler } from "hono";
+import { AppError } from "./error";
 
 export interface RateLimitOptions {
   /** window seconds */
@@ -52,15 +53,15 @@ export interface RateLimitOptions {
 
 export function rateLimit(opts: RateLimitOptions): MiddlewareHandler {
   return async (c, next) => {
-    if (opts.respectDevFlag && c.env.DISABLE_RATE_LIMIT === '1') {
+    if (opts.respectDevFlag && c.env.DISABLE_RATE_LIMIT === "1") {
       await next();
       return;
     }
 
     const ip =
-      c.req.header('cf-connecting-ip') ??
-      c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
-      'unknown';
+      c.req.header("cf-connecting-ip") ??
+      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+      "unknown";
     const key = `rl:${opts.scope}:${ip}`;
     const now = Math.floor(Date.now() / 1000);
     const bucket = Math.floor(now / opts.window);
@@ -70,9 +71,9 @@ export function rateLimit(opts: RateLimitOptions): MiddlewareHandler {
     const current = currentRaw ? parseInt(currentRaw, 10) : 0;
     if (current >= opts.max) {
       const resetIn = (bucket + 1) * opts.window - now;
-      c.header('Retry-After', String(resetIn));
+      c.header("Retry-After", String(resetIn));
       throw new AppError(
-        'RATE_LIMITED',
+        "RATE_LIMITED",
         `Too many requests. Retry in ${resetIn}s.`,
         429,
       );
@@ -96,6 +97,7 @@ If any other middleware callers exist, update them. Today only `auth/router.ts` 
 ## Task 2: Apply to public endpoints
 
 **Files:**
+
 - Edit: `apps/api/src/routes/auth/router.ts`
 - Edit: `apps/api/src/routes/verify/router.ts` (or wherever the verify mount lives)
 - Edit: `apps/api/src/routes/activations/router.ts`
@@ -104,26 +106,36 @@ If any other middleware callers exist, update them. Today only `auth/router.ts` 
 
 ```typescript
 // apps/api/src/routes/activations/router.ts
-import { Hono } from 'hono';
-import { rateLimit } from '../../middleware/rateLimit';
-import { activateHandler } from './activate';
+import { Hono } from "hono";
+import { rateLimit } from "../../middleware/rateLimit";
+import { activateHandler } from "./activate";
 // (verify uses a different public router; see below)
 
 export const activationsRouter = new Hono();
-activationsRouter.use('/*', rateLimit({ window: 60, max: 30, scope: 'activate', respectDevFlag: true }));
-activationsRouter.post('/activate', activateHandler);
+activationsRouter.use(
+  "/*",
+  rateLimit({ window: 60, max: 30, scope: "activate", respectDevFlag: true }),
+);
+activationsRouter.post("/activate", activateHandler);
 ```
 
 - [ ] **Step 2: Add a limit to `/verify`**
 
 ```typescript
-verifyRouter.use('/*', rateLimit({ window: 60, max: 60, scope: 'verify', respectDevFlag: true }));
+verifyRouter.use(
+  "/*",
+  rateLimit({ window: 60, max: 60, scope: "verify", respectDevFlag: true }),
+);
 ```
 
 - [ ] **Step 3: Add a limit to `/auth/refresh`**
 
 ```typescript
-authRouter.post('/refresh', rateLimit({ window: 60, max: 30, scope: 'refresh', respectDevFlag: true }), refreshHandler);
+authRouter.post(
+  "/refresh",
+  rateLimit({ window: 60, max: 30, scope: "refresh", respectDevFlag: true }),
+  refreshHandler,
+);
 ```
 
 - [ ] **Step 4: Adjust existing limits in `auth/router.ts`**
@@ -131,34 +143,41 @@ authRouter.post('/refresh', rateLimit({ window: 60, max: 30, scope: 'refresh', r
 Change any `rateLimit({window:60, max:20})` calls to use the new function signature and a `scope` field. Example:
 
 ```typescript
-authRouter.post('/login', rateLimit({ window: 60, max: 20, scope: 'login', respectDevFlag: true }), loginHandler);
+authRouter.post(
+  "/login",
+  rateLimit({ window: 60, max: 20, scope: "login", respectDevFlag: true }),
+  loginHandler,
+);
 ```
 
 ## Task 3: Test
 
 **Files:**
+
 - Create: `apps/api/src/middleware/__tests__/rateLimit.test.ts`
 
 - [ ] **Step 1: Test atomic limit + scope separation**
 
 ```typescript
-it('rejects over the limit', async () => {
+it("rejects over the limit", async () => {
   const put = vi.fn().mockResolvedValue(undefined);
-  const get = vi.fn().mockResolvedValue('100');
-  const env = { SESSIONS: { get, put }, DISABLE_RATE_LIMIT: '0' };
+  const get = vi.fn().mockResolvedValue("100");
+  const env = { SESSIONS: { get, put }, DISABLE_RATE_LIMIT: "0" };
 
   const app = new Hono();
-  app.use('/*', rateLimit({ window: 60, max: 5, scope: 'test' }));
-  app.get('/', (c) => c.json({ ok: true }));
+  app.use("/*", rateLimit({ window: 60, max: 5, scope: "test" }));
+  app.get("/", (c) => c.json({ ok: true }));
   app.onError(errorHandler);
   (app as any).env = env;
 
-  const res = await app.request('/', { headers: { 'cf-connecting-ip': '1.2.3.4' } });
+  const res = await app.request("/", {
+    headers: { "cf-connecting-ip": "1.2.3.4" },
+  });
   expect(res.status).toBe(429);
-  expect(res.headers.get('Retry-After')).toBeDefined();
+  expect(res.headers.get("Retry-After")).toBeDefined();
 });
 
-it('uses per-scope counters (login limit does not block verify)', async () => {
+it("uses per-scope counters (login limit does not block verify)", async () => {
   // call login 20 times, then verify — verify should still work
 });
 ```

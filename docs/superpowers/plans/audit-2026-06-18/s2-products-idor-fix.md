@@ -22,6 +22,7 @@ Depends on: **S1** (middleware sets `orgId` on context).
 ## Task 1: Add org filter to UPDATE
 
 **Files:**
+
 - Edit: `apps/api/src/routes/products/update.ts`
 
 - [ ] **Step 1: Replace the UPDATE WHERE clause**
@@ -30,7 +31,7 @@ In `update.ts`, after parsing the body and building the `updates` array, the exi
 
 ```typescript
 const result = await c.env.DB.prepare(
-  `UPDATE products SET ${updates.join(', ')} WHERE id = ?`,
+  `UPDATE products SET ${updates.join(", ")} WHERE id = ?`,
 )
   .bind(...params)
   .run();
@@ -39,11 +40,12 @@ const result = await c.env.DB.prepare(
 Change it to:
 
 ```typescript
-const orgId = c.get('orgId');
-if (!orgId) throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+const orgId = c.get("orgId");
+if (!orgId)
+  throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
 
 const result = await c.env.DB.prepare(
-  `UPDATE products SET ${updates.join(', ')} WHERE id = ? AND organization_id = ?`,
+  `UPDATE products SET ${updates.join(", ")} WHERE id = ? AND organization_id = ?`,
 )
   .bind(...params, orgId)
   .run();
@@ -81,17 +83,18 @@ The no-op branch also reads `SELECT ... WHERE id = ?`. Add the same `AND organiz
 ## Task 2: Cross-tenant rejection test
 
 **Files:**
+
 - Create: `apps/api/src/routes/products/__tests__/update.test.ts`
 
 - [ ] **Step 1: Write the test**
 
 ```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { Hono } from 'hono';
-import { updateProductHandler } from '../update';
-import { errorHandler } from '../../../middleware/error';
-import { requireOrgMember } from '../../../middleware/org';
-import { authMiddleware } from '../../../middleware/auth';
+import { describe, it, expect, vi } from "vitest";
+import { Hono } from "hono";
+import { updateProductHandler } from "../update";
+import { errorHandler } from "../../../middleware/error";
+import { requireOrgMember } from "../../../middleware/org";
+import { authMiddleware } from "../../../middleware/auth";
 
 function makeEnv(updates: { changes: number } = { changes: 1 }) {
   return {
@@ -106,8 +109,8 @@ function makeEnv(updates: { changes: number } = { changes: 1 }) {
   };
 }
 
-describe('PATCH /products/:id', () => {
-  it('attaches organization_id to the UPDATE so cross-tenant writes fail', async () => {
+describe("PATCH /products/:id", () => {
+  it("attaches organization_id to the UPDATE so cross-tenant writes fail", async () => {
     const seenSql: string[] = [];
     const env = {
       DB: {
@@ -124,19 +127,23 @@ describe('PATCH /products/:id', () => {
     };
 
     const app = new Hono();
-    app.use('/*', async (c, next) => { c.set('userId', 'u_admin'); c.set('orgId', 'org_a'); await next(); });
-    app.patch('/:id', updateProductHandler);
+    app.use("/*", async (c, next) => {
+      c.set("userId", "u_admin");
+      c.set("orgId", "org_a");
+      await next();
+    });
+    app.patch("/:id", updateProductHandler);
     app.onError(errorHandler);
     (app as any).env = env;
 
-    const res = await app.request('/prod_xyz', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: 'renamed' }),
+    const res = await app.request("/prod_xyz", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "renamed" }),
     });
 
     expect(res.status).toBe(404);
-    const updateSql = seenSql.find((s) => s.startsWith('UPDATE products'));
+    const updateSql = seenSql.find((s) => s.startsWith("UPDATE products"));
     expect(updateSql).toBeDefined();
     expect(updateSql).toMatch(/WHERE id = \? AND organization_id = \?/);
   });

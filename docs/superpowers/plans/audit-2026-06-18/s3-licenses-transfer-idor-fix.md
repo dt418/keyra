@@ -5,6 +5,7 @@
 ## Goal
 
 Two fixes:
+
 1. The source-license `UPDATE` (sets `status='transferred'`) must include `AND organization_id = ?`.
 2. The destination-org must be verified to exist AND the caller must be a member of it (owner or admin).
 
@@ -24,6 +25,7 @@ Depends on: **S1** (middleware sets `orgId`).
 ## Task 1: Add org filter to the source UPDATE
 
 **Files:**
+
 - Edit: `apps/api/src/routes/licenses/transfer.ts`
 
 - [ ] **Step 1: Add `AND organization_id = ?` to the source UPDATE**
@@ -41,8 +43,9 @@ await c.env.DB.prepare(
 Replace with:
 
 ```typescript
-const orgId = c.get('orgId');
-if (!orgId) throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+const orgId = c.get("orgId");
+if (!orgId)
+  throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
 
 await c.env.DB.prepare(
   `UPDATE licenses SET status = 'transferred', transferred_at = ?, updated_at = ?
@@ -66,7 +69,7 @@ const targetOrg = (await c.env.DB.prepare(
   .first()) as { id: string; name: string } | null;
 
 if (!targetOrg) {
-  throw new AppError('NOT_FOUND', 'Target organization not found', 404);
+  throw new AppError("NOT_FOUND", "Target organization not found", 404);
 }
 ```
 
@@ -77,12 +80,12 @@ Add a check that the caller is an owner/admin of the target org too (or that the
 const targetMembership = (await c.env.DB.prepare(
   `SELECT role FROM org_members WHERE org_id = ? AND user_id = ? AND role IN ('owner','admin') LIMIT 1`,
 )
-  .bind(target_org_id, c.get('userId'))
+  .bind(target_org_id, c.get("userId"))
   .first()) as { role: string } | null;
 
 if (!targetMembership) {
   // Do not disclose whether the target org exists; use 404.
-  throw new AppError('NOT_FOUND', 'Target organization not found', 404);
+  throw new AppError("NOT_FOUND", "Target organization not found", 404);
 }
 ```
 
@@ -91,18 +94,19 @@ If the product wants to allow transfer to a brand-new org (or any org), this gat
 ## Task 2: Tests
 
 **Files:**
+
 - Create: `apps/api/src/routes/licenses/__tests__/transfer.test.ts`
 
 - [ ] **Step 1: Test cross-tenant source**
 
 ```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { Hono } from 'hono';
-import { transferLicenseHandler } from '../transfer';
-import { errorHandler } from '../../../middleware/error';
+import { describe, it, expect, vi } from "vitest";
+import { Hono } from "hono";
+import { transferLicenseHandler } from "../transfer";
+import { errorHandler } from "../../../middleware/error";
 
-describe('POST /licenses/:id/transfer', () => {
-  it('attaches organization_id to the source UPDATE', async () => {
+describe("POST /licenses/:id/transfer", () => {
+  it("attaches organization_id to the source UPDATE", async () => {
     const seenSql: string[] = [];
     const env = {
       DB: {
@@ -120,20 +124,26 @@ describe('POST /licenses/:id/transfer', () => {
     };
 
     const app = new Hono();
-    app.use('/*', async (c, next) => { c.set('userId', 'u1'); c.set('orgId', 'org_a'); await next(); });
-    app.post('/:id/transfer', transferLicenseHandler);
+    app.use("/*", async (c, next) => {
+      c.set("userId", "u1");
+      c.set("orgId", "org_a");
+      await next();
+    });
+    app.post("/:id/transfer", transferLicenseHandler);
     app.onError(errorHandler);
     (app as any).env = env;
 
-    const res = await app.request('/lic_xyz/transfer', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ target_org_id: 'org_b' }),
+    const res = await app.request("/lic_xyz/transfer", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ target_org_id: "org_b" }),
     });
 
     // 404 because the source license lookup returns null
     expect([404, 403]).toContain(res.status);
-    const updateSql = seenSql.find((s) => s.startsWith('UPDATE licenses SET status'));
+    const updateSql = seenSql.find((s) =>
+      s.startsWith("UPDATE licenses SET status"),
+    );
     expect(updateSql).toMatch(/organization_id/);
   });
 });

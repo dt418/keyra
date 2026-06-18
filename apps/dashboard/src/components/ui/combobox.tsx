@@ -60,7 +60,14 @@ const ComboboxInput = React.forwardRef<
     showClear?: boolean;
   }
 >(function ComboboxInput(
-  { className, children, disabled = false, showTrigger = true, showClear = false, ...props },
+  {
+    className,
+    children,
+    disabled = false,
+    showTrigger = true,
+    showClear = false,
+    ...props
+  },
   ref,
 ) {
   return (

@@ -34,6 +34,7 @@ apps/api/src/middleware/__tests__/
 ## Task 1: Define the typed context + middleware
 
 **Files:**
+
 - Create: `apps/api/src/lib/context.ts`
 - Create: `apps/api/src/middleware/org.ts`
 
@@ -42,29 +43,29 @@ apps/api/src/middleware/__tests__/
 `apps/api/src/lib/context.ts`:
 
 ```typescript
-import type { Context } from 'hono';
+import type { Context } from "hono";
 
 export interface OrgContext {
   userId: string;
   orgId: string;
-  orgRole: 'owner' | 'admin' | 'member';
+  orgRole: "owner" | "admin" | "member";
 }
 
-declare module 'hono' {
+declare module "hono" {
   interface ContextVariableMap {
     userId: string;
     sessionId?: string;
     orgId?: string;
-    orgRole?: 'owner' | 'admin' | 'member';
+    orgRole?: "owner" | "admin" | "member";
   }
 }
 
 export function getOrgContext(c: Context): OrgContext {
-  const userId = c.get('userId');
-  const orgId = c.get('orgId');
-  const orgRole = c.get('orgRole');
+  const userId = c.get("userId");
+  const orgId = c.get("orgId");
+  const orgRole = c.get("orgRole");
   if (!userId || !orgId || !orgRole) {
-    throw new Error('orgContext not set — apply requireOrgMember() first');
+    throw new Error("orgContext not set — apply requireOrgMember() first");
   }
   return { userId, orgId, orgRole };
 }
@@ -75,8 +76,8 @@ export function getOrgContext(c: Context): OrgContext {
 `apps/api/src/middleware/org.ts`:
 
 ```typescript
-import type { MiddlewareHandler } from 'hono';
-import { AppError } from './error';
+import type { MiddlewareHandler } from "hono";
+import { AppError } from "./error";
 
 /**
  * Requires the caller to be an owner or admin of at least one organization.
@@ -87,9 +88,9 @@ import { AppError } from './error';
  * audit-2026-06-18 P2-1.)
  */
 export const requireOrgMember: MiddlewareHandler = async (c, next) => {
-  const userId = c.get('userId');
+  const userId = c.get("userId");
   if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
 
   const member = (await c.env.DB.prepare(
@@ -99,25 +100,27 @@ export const requireOrgMember: MiddlewareHandler = async (c, next) => {
      LIMIT 1`,
   )
     .bind(userId)
-    .first()) as { org_id: string; role: 'owner' | 'admin' } | null;
+    .first()) as { org_id: string; role: "owner" | "admin" } | null;
 
   if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
 
-  c.set('orgId', member.org_id);
-  c.set('orgRole', member.role);
+  c.set("orgId", member.org_id);
+  c.set("orgRole", member.role);
   await next();
 };
 ```
 
 Notes:
+
 - The ORDER BY picks `owner` before `admin` so a user who owns Org A and admins Org B is consistently treated as owning A. Old code returned whichever row LIMIT 1 hit first; this is intentional determinism.
 - For products/licenses endpoints, the subsequent `SELECT ... WHERE organization_id = ?` continues to work — `c.get('orgId')` is now the filter value.
 
 ## Task 2: Refactor every handler to use the middleware
 
 For each route group below, the change is identical:
+
 1. Add `requireOrgMember` import
 2. Apply it on the router via `router.use('/*', requireOrgMember)` AFTER `authMiddleware`
 3. In each handler, replace the inline `member = ...` block with `const orgId = c.get('orgId')!;`
@@ -134,6 +137,7 @@ For each route group below, the change is identical:
 - `apps/api/src/routes/products/api-key.ts` — drop both inline checks; still check role === 'admin' || 'owner' if needed
 
 Same pattern for:
+
 - `routes/licenses/*` (create, list, get, update, revoke, transfer, reset-devices)
 - `routes/webhooks/*` (all 8)
 - `routes/analytics/*` (all 4)
@@ -142,6 +146,7 @@ Same pattern for:
 - `routes/activations/activate.ts` (uses `org_id` for the license-key flow, not the membership — keep its query as-is for now; we'll wire a thin refactor in S6)
 
 **Skip:**
+
 - `routes/orgs/*` (get, update, delete) — these use the path-param org id, not the caller's "any admin org"
 - `routes/orgs/create.ts` — no membership needed
 - `routes/activations/activate.ts` public path — keep current behavior; revisit in S5/S6
@@ -150,14 +155,14 @@ Same pattern for:
 
 ```typescript
 // apps/api/src/routes/products/router.ts
-import { Hono } from 'hono';
-import { authMiddleware } from '../../middleware/auth';
-import { requireOrgMember } from '../../middleware/org';
+import { Hono } from "hono";
+import { authMiddleware } from "../../middleware/auth";
+import { requireOrgMember } from "../../middleware/org";
 // ...handler imports
 
 export const productsRouter = new Hono();
-productsRouter.use('/*', authMiddleware);
-productsRouter.use('/*', requireOrgMember);
+productsRouter.use("/*", authMiddleware);
+productsRouter.use("/*", requireOrgMember);
 // ...routes
 ```
 
@@ -165,14 +170,20 @@ productsRouter.use('/*', requireOrgMember);
 
 ```typescript
 // apps/api/src/routes/products/list.ts
-import type { Context } from 'hono';
-import { listProductsSchema } from '@keyra/shared-validation';
+import type { Context } from "hono";
+import { listProductsSchema } from "@keyra/shared-validation";
 
-type ProductRow = { id: string; name: string; description: string | null; created_at: string; updated_at: string };
+type ProductRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export async function listProductsHandler(c: Context) {
-  const orgId = c.get('orgId');           // set by requireOrgMember
-  if (!orgId) throw new Error('orgId missing — middleware misconfigured');
+  const orgId = c.get("orgId"); // set by requireOrgMember
+  if (!orgId) throw new Error("orgId missing — middleware misconfigured");
 
   const query = c.req.query();
   const parsed = listProductsSchema.safeParse(query);
@@ -181,11 +192,16 @@ export async function listProductsHandler(c: Context) {
 
   let sql = `SELECT id, name, description, created_at, updated_at FROM products WHERE organization_id = ?`;
   const params: unknown[] = [orgId];
-  if (cursor) { sql += ` AND id < ?`; params.push(cursor); }
+  if (cursor) {
+    sql += ` AND id < ?`;
+    params.push(cursor);
+  }
   sql += ` ORDER BY created_at DESC, id DESC LIMIT ?`;
   params.push(limit + 1);
 
-  const result = await c.env.DB.prepare(sql).bind(...params).all();
+  const result = await c.env.DB.prepare(sql)
+    .bind(...params)
+    .all();
   // ...rest unchanged
 }
 ```
@@ -195,17 +211,18 @@ export async function listProductsHandler(c: Context) {
 ## Task 3: Test the middleware
 
 **Files:**
+
 - Create: `apps/api/src/middleware/__tests__/org.test.ts`
 
 - [ ] **Step 1: Cover happy path + 401 + 403**
 
 ```typescript
 // apps/api/src/middleware/__tests__/org.test.ts
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Hono } from 'hono';
-import { requireOrgMember } from '../org';
-import { authMiddleware } from '../auth';
-import { errorHandler } from '../error';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { Hono } from "hono";
+import { requireOrgMember } from "../org";
+import { authMiddleware } from "../auth";
+import { errorHandler } from "../error";
 
 function createMockContext() {
   const prepare = vi.fn();
@@ -219,46 +236,61 @@ function createMockContext() {
   } as any;
 }
 
-describe('requireOrgMember middleware', () => {
-  it('returns 401 when userId missing', async () => {
+describe("requireOrgMember middleware", () => {
+  it("returns 401 when userId missing", async () => {
     const app = new Hono();
-    app.use('/*', async (c, next) => { await next(); });
-    app.use('/*', requireOrgMember);
+    app.use("/*", async (c, next) => {
+      await next();
+    });
+    app.use("/*", requireOrgMember);
     app.onError(errorHandler);
-    app.get('/', (c) => c.json({ ok: true }));
+    app.get("/", (c) => c.json({ ok: true }));
 
-    const res = await app.request('/');
+    const res = await app.request("/");
     expect(res.status).toBe(500); // c.get('userId') is undefined → throws
   });
 
-  it('sets orgId and orgRole on context when membership exists', async () => {
+  it("sets orgId and orgRole on context when membership exists", async () => {
     let captured: any = {};
     const app = new Hono();
-    app.use('/*', async (c, next) => {
-      c.set('userId', 'u1');
+    app.use("/*", async (c, next) => {
+      c.set("userId", "u1");
       await next();
     });
-    app.use('/*', requireOrgMember);
-    app.get('/', (c) => {
-      captured = { orgId: c.get('orgId'), orgRole: c.get('orgRole') };
+    app.use("/*", requireOrgMember);
+    app.get("/", (c) => {
+      captured = { orgId: c.get("orgId"), orgRole: c.get("orgRole") };
       return c.json({ ok: true });
     });
-    (app as any).env = { DB: { prepare: () => ({ bind: () => ({ first: async () => ({ org_id: 'o1', role: 'admin' }) }) }) } };
+    (app as any).env = {
+      DB: {
+        prepare: () => ({
+          bind: () => ({
+            first: async () => ({ org_id: "o1", role: "admin" }),
+          }),
+        }),
+      },
+    };
 
-    await app.request('/');
-    expect(captured.orgId).toBe('o1');
-    expect(captured.orgRole).toBe('admin');
+    await app.request("/");
+    expect(captured.orgId).toBe("o1");
+    expect(captured.orgRole).toBe("admin");
   });
 
-  it('returns 403 when no admin/owner membership', async () => {
+  it("returns 403 when no admin/owner membership", async () => {
     const app = new Hono();
-    app.use('/*', async (c, next) => { c.set('userId', 'u1'); await next(); });
-    app.use('/*', requireOrgMember);
+    app.use("/*", async (c, next) => {
+      c.set("userId", "u1");
+      await next();
+    });
+    app.use("/*", requireOrgMember);
     app.onError(errorHandler);
-    app.get('/', (c) => c.json({ ok: true }));
-    (app as any).env = { DB: { prepare: () => ({ bind: () => ({ first: async () => null }) }) } };
+    app.get("/", (c) => c.json({ ok: true }));
+    (app as any).env = {
+      DB: { prepare: () => ({ bind: () => ({ first: async () => null }) }) },
+    };
 
-    const res = await app.request('/');
+    const res = await app.request("/");
     expect(res.status).toBe(403);
   });
 });

@@ -5,6 +5,7 @@
 ## Goal
 
 The public `POST /api/v1/verify` endpoint currently returns a rich object including `feature_flags` and `license_id` on success. These should be limited to what a customer SDK actually needs. Introduce a server-side distinction between two response shapes:
+
 - **Public/SDK response** (no auth): `valid`, `expires_at`, `product_id`, `license_type`. No `license_id`, no `feature_flags`.
 - **Authenticated response** (auth required): full object.
 
@@ -25,6 +26,7 @@ apps/api/src/routes/activations/
 ## Task 1: Trim /verify response
 
 **Files:**
+
 - Edit: `apps/api/src/routes/verify/index.ts`
 
 - [ ] **Step 1: Read the current response shape**
@@ -53,6 +55,7 @@ Search for callers of `/verify` and `verifyApi` in `apps/dashboard/` and `apps/a
 ## Task 2: Trim /activate response
 
 **Files:**
+
 - Edit: `apps/api/src/routes/activations/activate.ts`
 
 - [ ] **Step 1: Read the response shape**
@@ -66,20 +69,21 @@ The SDK is a customer-installed module. Its only public surface is the verify/ac
 ## Task 3: Tests
 
 **Files:**
+
 - Edit: `apps/api/src/routes/verify/__tests__/*.test.ts` (create if absent)
 - Edit: `apps/api/src/routes/activations/__tests__/handlers.test.ts`
 
 - [ ] **Step 1: Verify response shape**
 
 ```typescript
-it('verify response contains only valid, expires_at, product_id, license_type', async () => {
+it("verify response contains only valid, expires_at, product_id, license_type", async () => {
   // ...mock license lookup, call endpoint
   const body = await res.json();
   expect(body.data).toEqual({
     valid: true,
-    expires_at: '...',
-    product_id: '...',
-    license_type: '...',
+    expires_at: "...",
+    product_id: "...",
+    license_type: "...",
   });
   expect(body.data.feature_flags).toBeUndefined();
   expect(body.data.license_id).toBeUndefined();
@@ -89,7 +93,7 @@ it('verify response contains only valid, expires_at, product_id, license_type', 
 - [ ] **Step 2: Activate response does not leak feature_flags**
 
 ```typescript
-it('activate response does not include feature_flags', async () => {
+it("activate response does not include feature_flags", async () => {
   // call /activate, expect body.data not to have feature_flags
 });
 ```

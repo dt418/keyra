@@ -14,16 +14,16 @@
 
 ## Plan order (suggested)
 
-| # | Plan | Theme | Depends on | Effort |
-|---|------|-------|-----------|--------|
-| S0 | `s0-secret-rotation-and-env-hygiene.md` | Remove committed secrets | — | S |
-| S1 | `s1-org-membership-middleware.md` | `requireOrgMember` middleware (replaces 31x copy-paste) | — | M |
-| S2 | `s2-products-idor-fix.md` | PATCH /products/:id org-filter IDOR | S1 | S |
-| S3 | `s3-licenses-transfer-idor-fix.md` | POST /licenses/:id/transfer org-filter + target-org ownership | S1 | S |
-| S4 | `s4-oauth-hardening.md` | State required, account-link by email → bind or error, unified storeRefreshToken | — | S |
-| S5 | `s5-public-endpoints-rate-limit.md` | Per-endpoint rate limit on /verify, /activate, /auth/refresh | S0 | M |
-| S6 | `s6-verify-activate-scope-reduction.md` | Trim /verify response (no feature_flags, no license_id if invalid) | — | S |
-| S7 | `s7-auth-flow-hygiene.md` | Login timing-safe, register email_verified default 0, OAuth redirect_uri guard | — | S |
+| #   | Plan                                    | Theme                                                                            | Depends on | Effort |
+| --- | --------------------------------------- | -------------------------------------------------------------------------------- | ---------- | ------ |
+| S0  | `s0-secret-rotation-and-env-hygiene.md` | Remove committed secrets                                                         | —          | S      |
+| S1  | `s1-org-membership-middleware.md`       | `requireOrgMember` middleware (replaces 31x copy-paste)                          | —          | M      |
+| S2  | `s2-products-idor-fix.md`               | PATCH /products/:id org-filter IDOR                                              | S1         | S      |
+| S3  | `s3-licenses-transfer-idor-fix.md`      | POST /licenses/:id/transfer org-filter + target-org ownership                    | S1         | S      |
+| S4  | `s4-oauth-hardening.md`                 | State required, account-link by email → bind or error, unified storeRefreshToken | —          | S      |
+| S5  | `s5-public-endpoints-rate-limit.md`     | Per-endpoint rate limit on /verify, /activate, /auth/refresh                     | S0         | M      |
+| S6  | `s6-verify-activate-scope-reduction.md` | Trim /verify response (no feature_flags, no license_id if invalid)               | —          | S      |
+| S7  | `s7-auth-flow-hygiene.md`               | Login timing-safe, register email_verified default 0, OAuth redirect_uri guard   | —          | S      |
 
 **Sequencing rule:** S0 first (rotation). S1 unlocks S2 and S3. S4 + S5 + S6 + S7 can run in parallel.
 

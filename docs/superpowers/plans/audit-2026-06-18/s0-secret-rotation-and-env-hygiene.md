@@ -29,6 +29,7 @@ scripts/
 ## Task 1: Rotate JWT secrets and Cloudflare token
 
 **Files:**
+
 - (Cloudflare dashboard)
 - `apps/api/.dev.vars` (edit)
 - (production secret store)
@@ -75,6 +76,7 @@ The committed file now contains placeholders. The real file lives on each develo
 ## Task 2: Gitignore the secrets
 
 **Files:**
+
 - Edit: `.gitignore` (root)
 - Create: `apps/api/.gitignore`
 
@@ -113,6 +115,7 @@ If git refuses due to secrets, use `git filter-repo` (or BFG) to scrub from hist
 ## Task 3: Public env surface
 
 **Files:**
+
 - Create: `apps/api/.env.example`
 
 - [ ] **Step 1: List all required env vars**
@@ -147,6 +150,7 @@ DISABLE_RATE_LIMIT=1                     # 1 in dev to keep e2e fast
 ## Task 4: Secret-scanning pre-commit hook
 
 **Files:**
+
 - Create: `scripts/check-secrets.sh`
 - Edit: `lefthook.yml` (add pre-commit hook)
 

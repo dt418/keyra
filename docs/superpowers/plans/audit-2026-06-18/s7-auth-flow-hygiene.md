@@ -5,6 +5,7 @@
 ## Goal
 
 Four small, focused cleanups:
+
 1. OAuth callback requires `OAUTH_REDIRECT_URI` env var (no empty default).
 2. Login handler returns in constant time (or near-constant) regardless of whether the user exists.
 3. Register sets `email_verified=0` and adds a `verify_email` endpoint that flips it (out of scope of this plan; this plan only flips the default).
@@ -28,6 +29,7 @@ database/migrations/
 ## Task 1: OAuth redirect URI required
 
 **Files:**
+
 - Edit: `apps/api/src/routes/auth/oauth.ts`
 
 - [ ] **Step 1: Replace empty default with hard failure**
@@ -35,7 +37,7 @@ database/migrations/
 Line 174 currently:
 
 ```typescript
-const redirectUri = (c.env.OAUTH_REDIRECT_URI as string | undefined) ?? '';
+const redirectUri = (c.env.OAUTH_REDIRECT_URI as string | undefined) ?? "";
 ```
 
 Replace with:
@@ -44,8 +46,8 @@ Replace with:
 const redirectUri = c.env.OAUTH_REDIRECT_URI as string | undefined;
 if (!redirectUri) {
   throw new AppError(
-    'OAUTH_NOT_CONFIGURED',
-    'OAuth is not configured on this server. Set OAUTH_REDIRECT_URI in wrangler secrets.',
+    "OAUTH_NOT_CONFIGURED",
+    "OAuth is not configured on this server. Set OAUTH_REDIRECT_URI in wrangler secrets.",
     500,
   );
 }
@@ -56,6 +58,7 @@ Apply the same guard in `oauthInitiateHandler` (around line 325 of the original)
 ## Task 2: Login constant-time-ish
 
 **Files:**
+
 - Edit: `apps/api/src/routes/auth/login.ts`
 
 - [ ] **Step 1: Add a dummy bcrypt verify on user-not-found**
@@ -63,11 +66,11 @@ Apply the same guard in `oauthInitiateHandler` (around line 325 of the original)
 Lines 29-36 currently early-return on user-not-found, leaking via timing. To minimize the leak, also call `verifyPassword` against a fixed dummy hash when the user is missing:
 
 ```typescript
-const DUMMY_HASH = '$2a$12$' + 'A'.repeat(53); // valid bcrypt shape with low cost; will always fail
+const DUMMY_HASH = "$2a$12$" + "A".repeat(53); // valid bcrypt shape with low cost; will always fail
 
 if (!user) {
   await verifyPassword(password, DUMMY_HASH); // same cost as a real check
-  throw new AppError('UNAUTHORIZED', 'Invalid email or password', 401);
+  throw new AppError("UNAUTHORIZED", "Invalid email or password", 401);
 }
 ```
 
@@ -80,6 +83,7 @@ Add a comment in `login.ts` explaining: "D1 user-not-found timing leak remains. 
 ## Task 3: Register sets `email_verified=0`
 
 **Files:**
+
 - Edit: `apps/api/src/routes/auth/register.ts`
 - Edit: `database/migrations/0001_users.sql` — UNCHANGED (default is already 0)
 - New file: `apps/api/src/routes/auth/verify-email.ts` (stub)
@@ -93,7 +97,7 @@ In `register.ts` line 39-43, change:
 await c.env.DB.prepare(
   `INSERT INTO users (id, email, password_hash, name, email_verified, created_at, updated_at)
    VALUES (?, ?, ?, ?, 1, ?, ?)`,
-)
+);
 ```
 
 to:
@@ -102,7 +106,7 @@ to:
 await c.env.DB.prepare(
   `INSERT INTO users (id, email, password_hash, name, email_verified, created_at, updated_at)
    VALUES (?, ?, ?, ?, 0, ?, ?)`,
-)
+);
 ```
 
 - [ ] **Step 2: Add a `verify_email` table (migration)**
@@ -129,15 +133,19 @@ CREATE INDEX IF NOT EXISTS idx_email_verification_expires ON email_verification_
 `apps/api/src/routes/auth/verify-email.ts`:
 
 ```typescript
-import type { Context } from 'hono';
-import { AppError } from '../../middleware/error';
+import type { Context } from "hono";
+import { AppError } from "../../middleware/error";
 
 export async function verifyEmailHandler(c: Context) {
   const { token } = c.req.param();
-  if (!token) throw new AppError('BAD_REQUEST', 'Missing token', 400);
+  if (!token) throw new AppError("BAD_REQUEST", "Missing token", 400);
 
   // TODO(feat): validate token_hash, flip users.email_verified, mark used_at
-  throw new AppError('NOT_IMPLEMENTED', 'Email verification is not yet enabled', 501);
+  throw new AppError(
+    "NOT_IMPLEMENTED",
+    "Email verification is not yet enabled",
+    501,
+  );
 }
 ```
 
@@ -150,6 +158,7 @@ OAuth already sets `email_verified=1` because the provider has verified the emai
 ## Task 4: Org delete cleans up
 
 **Files:**
+
 - Edit: `apps/api/src/routes/orgs/delete.ts`
 - Edit: `database/migrations/0014_audit_logs_fk.sql` (new) OR document the retention choice
 
@@ -158,9 +167,9 @@ OAuth already sets `email_verified=1` because the provider has verified the emai
 In `delete.ts`, before deleting `org_members` and `organizations`:
 
 ```typescript
-await c.env.DB.prepare(
-  'DELETE FROM audit_logs WHERE org_id = ?'
-).bind(orgId).run();
+await c.env.DB.prepare("DELETE FROM audit_logs WHERE org_id = ?")
+  .bind(orgId)
+  .run();
 ```
 
 This orphans nothing. Alternative: keep audit rows for compliance and add a soft-delete flag; that's a product decision. The plan takes the simple path (delete) and documents the choice.
