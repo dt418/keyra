@@ -13,18 +13,18 @@ Cloud-native licensing platform for software distribution with device activation
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Runtime | Cloudflare Workers |
-| Database | Cloudflare D1 (SQLite) |
-| Cache | Cloudflare KV |
-| Backend | Hono |
-| Auth | JWT + bcrypt + OAuth |
-| Monorepo | Turborepo + pnpm |
-| Language | TypeScript |
+| Layer    | Technology                                       |
+| -------- | ------------------------------------------------ |
+| Runtime  | Cloudflare Workers                               |
+| Database | Cloudflare D1 (SQLite)                           |
+| Cache    | Cloudflare KV                                    |
+| Backend  | Hono                                             |
+| Auth     | JWT + bcrypt + OAuth                             |
+| Monorepo | Turborepo + pnpm                                 |
+| Language | TypeScript                                       |
 | Frontend | React 18, Vite, Tailwind v4, shadcn/ui (base-ui) |
-| Data | TanStack Query, TanStack Table |
-| Forms | React Hook Form (planned) + Zod |
+| Data     | TanStack Query, TanStack Table                   |
+| Forms    | React Hook Form (planned) + Zod                  |
 
 ## Project Structure
 
@@ -149,6 +149,7 @@ Security audit 2026-06-18 closed 9 P0 + 7 P1 + 1 P2 findings across 8 plans (fea
 ## Agent Support
 
 This project includes configuration for AI coding agents:
+
 - `AGENTS.md` — Universal agent guidance
 - `CLAUDE.md` — Claude Code compatibility
 - `.cursor/rules/keyra.mdc` — Cursor rules
@@ -156,14 +157,14 @@ This project includes configuration for AI coding agents:
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| `apps/api` | Cloudflare Workers API |
-| `apps/dashboard` | React admin UI |
-| `packages/api-client` | Axios client for dashboard |
-| `packages/sdk-js` | Verification SDK |
-| `packages/shared-types` | Shared TypeScript types |
-| `packages/shared-validation` | Zod validation schemas |
+| Package                      | Description                |
+| ---------------------------- | -------------------------- |
+| `apps/api`                   | Cloudflare Workers API     |
+| `apps/dashboard`             | React admin UI             |
+| `packages/api-client`        | Axios client for dashboard |
+| `packages/sdk-js`            | Verification SDK           |
+| `packages/shared-types`      | Shared TypeScript types    |
+| `packages/shared-validation` | Zod validation schemas     |
 
 ## License
 
