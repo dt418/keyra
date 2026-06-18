@@ -1,7 +1,7 @@
 {
   "schema": "feature-list.schema.json",
   "project": "keyra",
-  "lastUpdated": "2026-06-16",
+  "lastUpdated": "2026-06-18",
   "features": [
     {
       "id": "feat-001",
@@ -146,6 +146,70 @@
       "dependencies": ["feat-013"],
       "status": "done",
       "evidence": "publish-sdk.yml triggers on sdk-v* tags + workflow_dispatch; npm publish --provenance (id-token:write perm); conventional-commit changelog generator + softprops/action-gh-release; package.json files/publishConfig/repository/license/keywords; README + LICENSE added"
+    },
+    {
+      "id": "feat-019",
+      "name": "Audit S0 — Secret Rotation & Env Hygiene",
+      "description": "Remove committed secrets from apps/api/.dev.vars; rotate JWT + Cloudflare token; .gitignore .dev.vars; .env.example; scripts/check-secrets.sh pre-commit guard",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s0-secret-rotation-and-env-hygiene.md (Closes P0-6)"
+    },
+    {
+      "id": "feat-020",
+      "name": "Audit S1 — Org-Membership Middleware",
+      "description": "Replace 31 inline SELECTs for org_members role check with requireOrgMember Hono middleware; set orgId + orgRole on context; typed helpers",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s1-org-membership-middleware.md (Closes P2-1, unlocks S2/S3)"
+    },
+    {
+      "id": "feat-021",
+      "name": "Audit S2 — Products IDOR Fix",
+      "description": "PATCH /products/:id adds AND organization_id = ? to UPDATE + post-update SELECT; cross-tenant write rejected with 404",
+      "dependencies": ["feat-020"],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s2-products-idor-fix.md (Closes P0-1)"
+    },
+    {
+      "id": "feat-022",
+      "name": "Audit S3 — Licenses Transfer IDOR Fix",
+      "description": "POST /licenses/:id/transfer source UPDATE adds AND organization_id = ?; target-org ownership enforced (caller must be admin/owner of destination)",
+      "dependencies": ["feat-020"],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s3-licenses-transfer-idor-fix.md (Closes P0-2)"
+    },
+    {
+      "id": "feat-023",
+      "name": "Audit S4 — OAuth Hardening",
+      "description": "OAuth state required; account-takeover fix (bind OAuth identity on email match or 409 OAUTH_ALREADY_LINKED); unified storeRefreshToken writes to KV with userAgent/ipAddress",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s4-oauth-hardening.md (Closes P0-3, P0-4, P0-5, P1-7)"
+    },
+    {
+      "id": "feat-024",
+      "name": "Audit S5 — Public Endpoints Rate Limit",
+      "description": "Per-endpoint rate limit on /verify, /activate, /auth/refresh; atomic per-(scope+ip+bucket) KV key; replaces global per-IP check-then-increment",
+      "dependencies": ["feat-019"],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s5-public-endpoints-rate-limit.md (Closes P0-7, P1-8, P1-9)"
+    },
+    {
+      "id": "feat-025",
+      "name": "Audit S6 — Verify/Activate Scope Reduction",
+      "description": "Public /verify returns {valid, expires_at, product_id, license_type} only; /activate strips feature_flags from response; full detail moved to authenticated channels",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s6-verify-activate-scope-reduction.md (Closes P0-8)"
+    },
+    {
+      "id": "feat-026",
+      "name": "Audit S7 — Auth Flow Hygiene",
+      "description": "OAuth callback requires OAUTH_REDIRECT_URI env; login runs dummy bcrypt on user-not-found; register sets email_verified=0 + email_verification_tokens table; org delete cleans up audit_logs",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s7-auth-flow-hygiene.md (Closes P1-1, P1-2, P1-3, P1-5)"
     }
   ]
 }

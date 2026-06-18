@@ -2,67 +2,65 @@
 
 ## Current State
 
-**Last Updated:** 2026-06-16
-**Session:** feat-017-rhf
-**Active Feature:** feat-017 — React Hook Form Integration
+**Last Updated:** 2026-06-18
+**Session:** audit-2026-06-18
+**Active Phase:** audit-2026-06-18 — Security Hardening (S0–S7)
 **Branch:** main
 
 ## Status
 
 ### What's Done
 
-- [x] Audited existing harness: AGENTS.md (8.1K), CLAUDE.md (2.7K), scripts/ship-phase.sh, DESIGN.md (10.4K), 7 skills in `.agents/skills/`
-- [x] Scaffolded `init.sh` (quick + full modes, pnpm-aware, `export CI=1` to avoid vitest watch-mode hang, auto-migrates D1 for e2e)
-- [x] Created `feature_list.json` with 18 features seeded from CHANGELOG + README — statuses reflect v1.0.0-alpha + Unreleased
-- [x] Created `progress.md` (this file)
-- [x] Created `session-handoff.md` for multi-session continuity
-- [x] Linked new harness into CLAUDE.md "Commands" + "Harness" + "Key Files" sections
-- [x] `./init.sh quick` passes (9/9 turbo tasks, 141/141 unit tests: 91 API + 41 dashboard + 9 sdk-js)
-- [x] feat-016 marked `done` in `feature_list.json` with evidence
-- [x] Committed and pushed: `0273af9 chore: add agent harness artifacts` on main
+- [x] Audited 2026-06-18 — 9 P0 + 7 P1 + 8 P2 + 4 P3 findings written up
+- [x] 8 self-contained plans written in `docs/superpowers/plans/audit-2026-06-18/`
+- [x] feat-019..feat-026 added to `feature_list.json` (status=not-started, sequenced)
+- [x] forwardRef base-ui warnings fixed (commit 5e7f079)
+- [x] prior phases feat-001..feat-018 all `done`
 
 ### What's In Progress
 
-- (none — feat-016 complete)
+- feat-019 (S0 — secret rotation) — first audit plan to implement
 
 ### What's Next
 
-1. Pick **one** form (recommend: Edit Product dialog) for feat-017 (RHF migration) — do not refactor all 9 pages simultaneously
-2. Run `./init.sh quick` before and after the change
-3. Update `feature_list.json` evidence + `progress.md` when done
-
-## Blockers / Risks
-
-- None blocking. Risk: `init.sh full` mode spawns wrangler in background — must use `kill -9` on the dev PID, not SIGTERM, to avoid orphaned workers on agent timeout.
+1. Implement feat-019 (S0) → ship via `scripts/ship-phase.sh`
+2. feat-020 (S1 middleware) — unlocks S2, S3
+3. feat-021 (S2), feat-022 (S3) in parallel
+4. feat-023..feat-026 in parallel
 
 ## Decisions Made
 
-- **Use canonical harness-creator templates, not custom format.** Keeps the harness inspectable by any agent that has read the walkinglabs/learn-harness-engineering course.
-- **Keep AGENTS.md/CLAUDE.md as-is.** Both already comprehensive and project-specific. New harness files are additive, not replacement.
-- **`init.sh` supports `quick` (default) and `full` modes.** `quick` runs install + typecheck + lint + unit tests in ~30s; `full` adds build + e2e. Agents should default to `quick` per-feature, `full` only before claiming a phase done.
-- **`feature_list.json` seeded with real project state.** Most features are `done` (v1.0.0-alpha + Unreleased shipped); feat-016 is `in-progress`; feat-017/018 are `not-started`. Schema is the canonical feature-list.schema.json from harness-creator (status enum: not-started | in-progress | blocked | done).
+- **8 audit plans = 8 features** in feature_list.json. One plan = one commit. No batching.
+- **Sequence enforced via dependencies** in feature_list.json: S2/S3 depend on S1; S5 depends on S0. S4, S6, S7 are independent.
+- **`init.sh quick` per plan** — never claim a plan done without green gates.
+- **dev.vars stays locally** — committed file replaced with placeholders only. Real values live in 1Password + `wrangler secret put`.
 
 ## Files Modified This Session
 
-- `init.sh` — created, pnpm-aware, two modes
-- `feature_list.json` — created, 18 features seeded
-- `progress.md` — created (this file)
-- `session-handoff.md` — created, multi-session template
+- `feature_list.json` — feat-019..feat-026 added; lastUpdated → 2026-06-18
+- `progress.md` — current state reset to audit phase
+- `session-handoff.md` — next-step handoff updated
+- (per-plan) `docs/superpowers/plans/audit-2026-06-18/sN-*.md` will see evidence updates as each ships
 
-## Evidence of Completion
+## Evidence of Completion (audit phase)
 
-- [ ] `./init.sh quick` exits 0
-- [ ] `feature_list.json` validates against `feature-list.schema.json`
-- [ ] `git status` clean after commit
-- [ ] CI green on push
+- [ ] feat-019 done: .dev.vars scrubbed + .gitignore + .env.example + check-secrets.sh
+- [ ] feat-020 done: 31 inline SQLs replaced with `requireOrgMember`; 0 inline copies remain
+- [ ] feat-021 done: `update.ts` SQL contains `AND organization_id = ?`
+- [ ] feat-022 done: `transfer.ts` source UPDATE has org filter + target-org ownership
+- [ ] feat-023 done: state required; 409 on provider mismatch; KV session present
+- [ ] feat-024 done: 429 on /verify (60/min), /activate (30/min), /auth/refresh (30/min)
+- [ ] feat-025 done: /verify response no longer includes `license_id` or `feature_flags`
+- [ ] feat-026 done: login timing-narrowed; register email_verified=0; org delete audit cleanup
 
 ## Notes for Next Session
 
-- If picking up feat-017 (RHF migration), start with **one dialog** (e.g., the Edit Product dialog) end-to-end. Do not refactor all 9 pages simultaneously — that violates the one-feature-at-a-time harness rule.
-- Always read `AGENTS.md` before touching UI (Critical Rule #1: API returns snake_case; #3: base-ui not radix; #5: no spinners, use Skeleton; #6: every list page needs `<EmptyState>`).
-- For destructive actions, use `ConfirmDialog` from `@/components/ui` (Critical Rule #3 in DESIGN.md workflow).
-- If verification fails, the fix goes in the same commit as the feature — never "fix tests later."
-- `apps/api/test:e2e` requires wrangler to be running; `init.sh full` handles that. If you run it manually, use the same wrangler boot pattern from `scripts/ship-phase.sh`.
+- One plan per `scripts/ship-phase.sh` invocation. e2e step starts wrangler locally — ensure port 8788 is free.
+- For S1: refactor 25+ handlers; do not change SQL semantics. Middleware writes `orgId` + `orgRole` to context; handlers read `c.get('orgId')`.
+- For S2/S3: the S1 middleware makes these one-line `AND organization_id = ?` additions.
+- For S4: the local `storeRefreshToken` in `oauth.ts:132-150` is the bug; replace with `lib/sessions.ts` import.
+- For S5: per-scope KV key `rl:<scope>:<ip>:<bucket>`. DO upgrade is future work.
+- For S6: SDK only needs `valid` + `expires_at` + `license_type` + `product_id`; do not break the SDK.
 
 ## feat-017 — React Hook Form Integration (DONE)
 
