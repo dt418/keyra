@@ -6,10 +6,10 @@
 # Usage: bash apps/api/scripts/seed-all.sh
 
 set -e
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
 
 DB_NAME="keyra-db"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Hash passwords + license keys via node (bcryptjs is in apps/api/node_modules).
 read -r ADMIN_HASH DEMO_HASH < <(node -e "
@@ -23,7 +23,7 @@ const c=require('crypto');
 const gen=()=>Array.from(c.randomBytes(20)).map(b=>'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[b%36]).join('').match(/.{1,5}/g).join('-');
 const keys=Array.from({length:8},gen);
 const hashes=keys.map(k=>c.createHash('sha256').update(k).digest('hex'));
-process.stdout.write(keys.join(' ')+' '+hashes.join(' '));
+process.stdout.write(keys.join(' ')+' '+hashes.join(' ')+'\n');
 ")
 H1=${KEYS[8]}; H2=${KEYS[9]}; H3=${KEYS[10]}; H4=${KEYS[11]}
 H5=${KEYS[12]}; H6=${KEYS[13]}; H7=${KEYS[14]}; H8=${KEYS[15]}
