@@ -15,23 +15,36 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    const originalRequest = error.config;
+    const isRefreshCall = originalRequest?.url?.includes("/auth/refresh");
+
+    if (
+      error.response?.status === 401 &&
+      !isRefreshCall &&
+      !originalRequest?._isRetry
+    ) {
       const refreshToken = localStorage.getItem("refresh_token");
       if (refreshToken) {
+        originalRequest._isRetry = true;
         try {
           const res = await api.post("/auth/refresh", {
             refresh_token: refreshToken,
           });
           localStorage.setItem("access_token", res.data.data.access_token);
           localStorage.setItem("refresh_token", res.data.data.refresh_token);
-          error.config.headers.Authorization = `Bearer ${res.data.data.access_token}`;
-          return api(error.config);
+          originalRequest.headers.Authorization = `Bearer ${res.data.data.access_token}`;
+          return api(originalRequest);
         } catch {
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
           window.location.href = "/login";
+          return Promise.reject(error);
         }
       }
+    } else if (error.response?.status === 401) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   },
