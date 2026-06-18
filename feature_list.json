@@ -152,8 +152,8 @@
       "name": "Audit S0 — Secret Rotation & Env Hygiene",
       "description": "Remove committed secrets from apps/api/.dev.vars; rotate JWT + Cloudflare token; .gitignore .dev.vars; .env.example; scripts/check-secrets.sh pre-commit guard",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s0-secret-rotation-and-env-hygiene.md (Closes P0-6)"
+      "status": "done",
+      "evidence": "apps/api/.gitignore created; apps/api/.env.example lists all required env vars; apps/api/.dev.vars replaced with placeholders; scripts/check-secrets.sh wired into lefthook.yml pre-commit (parses staged diff, greps for AWS/JWT/Stripe/GitHub/Cloudflare patterns, exits non-zero on hit). Root .gitignore already had .dev.vars (line 5) so the file was never tracked in this checkout. Plan: docs/superpowers/plans/audit-2026-06-18/s0-secret-rotation-and-env-hygiene.md (Closes P0-6)"
     },
     {
       "id": "feat-020",

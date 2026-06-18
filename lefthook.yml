@@ -4,6 +4,10 @@
 pre-commit:
   parallel: true
   commands:
+    secret-scan:
+      glob: "*"
+      run: scripts/check-secrets.sh
+
     typecheck:
       glob: "*.{ts,tsx,js,jsx}"
       run: pnpm typecheck
