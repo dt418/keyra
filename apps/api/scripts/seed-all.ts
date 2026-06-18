@@ -6,62 +6,65 @@
 // Run:  node --experimental-strip-types scripts/seed-all.ts
 // (Node 22+ has built-in TS stripping; no compile step needed.)
 
-import { randomBytes, createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
-import { resolve } from 'node:path';
-import bcrypt from 'bcryptjs';
+import { randomBytes, createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
+import bcrypt from "bcryptjs";
 
-const DB_NAME = 'keyra-db';
-const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const DB_NAME = "keyra-db";
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 function genKey(): string {
   const bytes = randomBytes(20);
   return Array.from(bytes)
     .map((b) => CHARS[b % 36])
-    .join('')
+    .join("")
     .match(/.{1,5}/g)!
-    .join('-');
+    .join("-");
 }
 
 function d1(sql: string): void {
   execFileSync(
-    'wrangler',
-    ['d1', 'execute', DB_NAME, '--local', '--command', sql],
-    { cwd: resolve(import.meta.dirname, '..'), stdio: ['ignore', 'ignore', 'inherit'] },
+    "wrangler",
+    ["d1", "execute", DB_NAME, "--local", "--command", sql],
+    {
+      cwd: resolve(import.meta.dirname, ".."),
+      stdio: ["ignore", "ignore", "inherit"],
+    },
   );
 }
 
-const ADMIN_HASH = await bcrypt.hash('admin123', 10);
-const DEMO_HASH = await bcrypt.hash('demo123', 10);
+const ADMIN_HASH = await bcrypt.hash("admin123", 10);
+const DEMO_HASH = await bcrypt.hash("demo123", 10);
 
 const KEYS = Array.from({ length: 8 }, genKey);
-const HASHES = KEYS.map((k) => createHash('sha256').update(k).digest('hex'));
+const HASHES = KEYS.map((k) => createHash("sha256").update(k).digest("hex"));
 const [K1, K2, K3, K4, K5, K6, K7, K8] = KEYS;
 const [H1, H2, H3, H4, H5, H6, H7, H8] = HASHES;
 
-const U_ADMIN = '550e8400-e29b-41d4-a716-446655440001';
-const U_DEMO = '550e8400-e29b-41d4-a716-446655440002';
-const ORG = '00000000-0000-4000-8000-000000000001';
-const P1 = '00000000-0000-4000-8000-000000000100';
-const P2 = '00000000-0000-4000-8000-000000000101';
-const P3 = '00000000-0000-4000-8000-000000000102';
-const L1 = '00000000-0000-4000-8000-000000000200';
-const L2 = '00000000-0000-4000-8000-000000000201';
-const L3 = '00000000-0000-4000-8000-000000000202';
-const L4 = '00000000-0000-4000-8000-000000000203';
-const L5 = '00000000-0000-4000-8000-000000000204';
-const L6 = '00000000-0000-4000-8000-000000000205';
-const L7 = '00000000-0000-4000-8000-000000000206';
-const L8 = '00000000-0000-4000-8000-000000000207';
-const D1 = '00000000-0000-4000-8000-000000000300';
-const D2 = '00000000-0000-4000-8000-000000000301';
-const D3 = '00000000-0000-4000-8000-000000000302';
-const D4 = '00000000-0000-4000-8000-000000000303';
-const D5 = '00000000-0000-4000-8000-000000000304';
-const W1 = '00000000-0000-4000-8000-000000000500';
-const W2 = '00000000-0000-4000-8000-000000000501';
+const U_ADMIN = "550e8400-e29b-41d4-a716-446655440001";
+const U_DEMO = "550e8400-e29b-41d4-a716-446655440002";
+const ORG = "00000000-0000-4000-8000-000000000001";
+const P1 = "00000000-0000-4000-8000-000000000100";
+const P2 = "00000000-0000-4000-8000-000000000101";
+const P3 = "00000000-0000-4000-8000-000000000102";
+const L1 = "00000000-0000-4000-8000-000000000200";
+const L2 = "00000000-0000-4000-8000-000000000201";
+const L3 = "00000000-0000-4000-8000-000000000202";
+const L4 = "00000000-0000-4000-8000-000000000203";
+const L5 = "00000000-0000-4000-8000-000000000204";
+const L6 = "00000000-0000-4000-8000-000000000205";
+const L7 = "00000000-0000-4000-8000-000000000206";
+const L8 = "00000000-0000-4000-8000-000000000207";
+const D1 = "00000000-0000-4000-8000-000000000300";
+const D2 = "00000000-0000-4000-8000-000000000301";
+const D3 = "00000000-0000-4000-8000-000000000302";
+const D4 = "00000000-0000-4000-8000-000000000303";
+const D5 = "00000000-0000-4000-8000-000000000304";
+const W1 = "00000000-0000-4000-8000-000000000500";
+const W2 = "00000000-0000-4000-8000-000000000501";
 
-console.log('🔧 Seeding full demo dataset...');
+console.log("🔧 Seeding full demo dataset...");
 
 // 1. Users
 d1(`
@@ -92,8 +95,8 @@ d1(`
 `);
 
 // 5. Licenses (clear first — no UNIQUE constraint so reruns would duplicate)
-d1('DELETE FROM licenses;');
-d1('DELETE FROM devices; DELETE FROM activations;');
+d1("DELETE FROM licenses;");
+d1("DELETE FROM devices; DELETE FROM activations;");
 d1(`
   INSERT INTO licenses (id, product_id, organization_id, key_hash, type, status, max_devices, expires_at, feature_flags, created_at, updated_at) VALUES
     ('${L1}', '${P1}', '${ORG}', '${H1}', 'professional', 'active',   5,  NULL,                    '{"analytics":true}',                                                                                datetime('now','-30 days'),  datetime('now','-30 days')),
@@ -123,7 +126,7 @@ d1(`
 `);
 
 // 8. Webhooks (clear first to be idempotent — no UNIQUE constraint)
-d1('DELETE FROM webhook_deliveries; DELETE FROM webhook_configs;');
+d1("DELETE FROM webhook_deliveries; DELETE FROM webhook_configs;");
 d1(`
   INSERT INTO webhook_configs (id, organization_id, url, secret_hash, events, active, created_at, updated_at) VALUES
     ('${W1}', '${ORG}', 'https://example.com/webhooks/keyra',     'placeholder-secret-hash-1', '["license.created","license.revoked","device.activated"]', 1, datetime('now','-15 days'), datetime('now','-15 days')),
@@ -134,12 +137,14 @@ d1(`
     ('00000000-0000-4000-8000-000000000602', '${W2}', 'license.expired',  '{"event":"license.expired","license_id":"${L8}"}',  'failed',  500, 'timeout',     3, 0, datetime('now','-1 day'),   datetime('now','-1 day'));
 `);
 
-console.log('');
-console.log('✅ Full seed complete!');
-console.log('');
-console.log('👤 Login: admin@keyra.dev / admin123 (or demo@keyra.dev / demo123)');
-console.log('');
-console.log('🔑 License keys (for SDK testing):');
+console.log("");
+console.log("✅ Full seed complete!");
+console.log("");
+console.log(
+  "👤 Login: admin@keyra.dev / admin123 (or demo@keyra.dev / demo123)",
+);
+console.log("");
+console.log("🔑 License keys (for SDK testing):");
 console.log(`  Web Dashboard Pro:    ${K1}`);
 console.log(`  Web Dashboard Ent:    ${K2}`);
 console.log(`  Web Dashboard Trial:  ${K3}`);

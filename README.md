@@ -81,6 +81,11 @@ pnpm dev
 pnpm dev:api
 pnpm --filter @keyra/dashboard dev
 
+# Seed local D1 with full demo dataset (2 users, 1 org, 3 products, 8 licenses, 5 devices, 5 activations, 2 webhooks, 3 deliveries)
+bash apps/api/scripts/seed-all.sh         # bash
+node --experimental-strip-types apps/api/scripts/seed-all.ts   # Node 22+ TS
+pwsh apps/api/scripts/seed-all.ps1       # PowerShell
+
 # Tests
 pnpm test
 pnpm --filter @keyra/api test:e2e  # Playwright
@@ -90,6 +95,9 @@ pnpm typecheck
 
 # Build
 pnpm build
+
+# Secret rotation (pushes .dev.vars to wrangler + gh secrets; never echoes)
+bash scripts/sync-secrets.sh
 ```
 
 ### Environment Setup
@@ -97,6 +105,13 @@ pnpm build
 ```bash
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 # Fill in JWT_SECRET, JWT_REFRESH_SECRET, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+```
+
+### Local Login (after seed)
+
+```
+admin@keyra.dev / admin123
+demo@keyra.dev  / demo123
 ```
 
 ### Remote Database Setup
@@ -120,11 +135,16 @@ GitHub Actions automatically deploy on push to `main`.
 
 ## Documentation
 
-- [DESIGN.md](DESIGN.md) — Design system, tokens, layout, components
+- [DESIGN.md](DESIGN.md) — Design system, tokens, layout, components, dark mode
 - [AGENTS.md](AGENTS.md) — Agent guidance, critical rules, conventions
 - [docs/API_SPEC.md](docs/API_SPEC.md) — Complete API reference
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — System design details
+- [docs/superpowers/plans/audit-2026-06-18/](docs/superpowers/plans/audit-2026-06-18/) — 8 self-contained security plans (S0–S7)
 - [CHANGELOG.md](CHANGELOG.md) — Version history
+
+## Security
+
+Security audit 2026-06-18 closed 9 P0 + 7 P1 + 1 P2 findings across 8 plans (feat-019..feat-026). See [CHANGELOG.md](CHANGELOG.md) `## [Unreleased] → ### Security Audit 2026-06-18` for the full list.
 
 ## Agent Support
 
