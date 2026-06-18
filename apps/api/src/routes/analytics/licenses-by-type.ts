@@ -10,7 +10,7 @@ export async function getLicensesByTypeHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const rows = (await c.env.DB.prepare(
+  const rows = (await c.env.DB.prepare(
     `SELECT type, COUNT(*) as count
      FROM licenses
      WHERE organization_id = ?

@@ -12,7 +12,7 @@ export async function deleteWebhookHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const result = await c.env.DB.prepare(
+  const result = await c.env.DB.prepare(
     `DELETE FROM webhook_configs WHERE id = ? AND organization_id = ?`,
   )
     .bind(id, orgId)

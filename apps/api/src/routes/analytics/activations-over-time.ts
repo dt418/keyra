@@ -10,7 +10,7 @@ export async function getActivationsOverTimeHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const period = c.req.query("period") || "7d";
+  const period = c.req.query("period") || "7d";
   const days = period === "90d" ? 90 : period === "30d" ? 30 : 7;
 
   const rows = (await c.env.DB.prepare(

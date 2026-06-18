@@ -1,13 +1,19 @@
-import type { Context } from 'hono';
-import { listProductsSchema } from '@keyra/shared-validation';
-import { AppError } from '../../middleware/error';
+import type { Context } from "hono";
+import { listProductsSchema } from "@keyra/shared-validation";
+import { AppError } from "../../middleware/error";
 
-type ProductRow = { id: string; name: string; description: string | null; created_at: string; updated_at: string };
+type ProductRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export async function listProductsHandler(c: Context) {
-  const userId = c.get('userId');
+  const userId = c.get("userId");
   if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
 
   const query = c.req.query();
@@ -21,7 +27,7 @@ export async function listProductsHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-let sql = `
+  let sql = `
     SELECT id, name, description, created_at, updated_at
     FROM products
     WHERE organization_id = ?
@@ -39,7 +45,10 @@ let sql = `
   const result = await c.env.DB.prepare(sql)
     .bind(...params)
     .all();
-  const products = (result as { results?: ProductRow[] }).results || (result as ProductRow[]) || [];
+  const products =
+    (result as { results?: ProductRow[] }).results ||
+    (result as ProductRow[]) ||
+    [];
 
   let hasMore = false;
   let data = products;

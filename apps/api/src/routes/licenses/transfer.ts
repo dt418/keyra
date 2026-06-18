@@ -21,7 +21,7 @@ export async function transferLicenseHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const license = (await c.env.DB.prepare(
+  const license = (await c.env.DB.prepare(
     `SELECT id, status, organization_id FROM licenses WHERE id = ? AND organization_id = ?`,
   )
     .bind(id, orgId)

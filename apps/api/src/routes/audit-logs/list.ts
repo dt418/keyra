@@ -50,7 +50,7 @@ export async function listAuditLogsHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const limit = Math.min(parseInt(c.req.query("limit") || "50", 10), 100);
+  const limit = Math.min(parseInt(c.req.query("limit") || "50", 10), 100);
   const cursor = c.req.query("cursor");
   const action = c.req.query("action");
   const resourceType = c.req.query("resource_type");

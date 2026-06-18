@@ -168,8 +168,8 @@
       "name": "Audit S2 — Products IDOR Fix",
       "description": "PATCH /products/:id adds AND organization_id = ? to UPDATE + post-update SELECT; cross-tenant write rejected with 404",
       "dependencies": ["feat-020"],
-      "status": "not-started",
-      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s2-products-idor-fix.md (Closes P0-1)"
+      "status": "done",
+      "evidence": "apps/api/src/routes/products/update.ts: UPDATE + 2 SELECTs now `WHERE id = ? AND organization_id = ?`; orgId appended to bind params; cross-tenant PATCH returns 404 (meta.changes === 0). 95/95 API unit tests pass. Plan: docs/superpowers/plans/audit-2026-06-18/s2-products-idor-fix.md (Closes P0-1)"
     },
     {
       "id": "feat-022",

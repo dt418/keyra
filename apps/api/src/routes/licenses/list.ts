@@ -1,6 +1,6 @@
-import type { Context } from 'hono';
-import { listLicensesSchema } from '@keyra/shared-validation';
-import { AppError } from '../../middleware/error';
+import type { Context } from "hono";
+import { listLicensesSchema } from "@keyra/shared-validation";
+import { AppError } from "../../middleware/error";
 
 type LicenseRow = {
   id: string;
@@ -18,9 +18,9 @@ type LicenseRow = {
 };
 
 export async function listLicensesHandler(c: Context) {
-  const userId = c.get('userId');
+  const userId = c.get("userId");
   if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
 
   const query = c.req.query();
@@ -34,7 +34,7 @@ export async function listLicensesHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-let sql = `
+  let sql = `
     SELECT l.id, l.product_id, l.type, l.status, l.max_devices, l.expires_at,
            l.feature_flags, l.created_at, l.updated_at, l.revoked_at, l.revoked_reason,
            p.name as product_name
@@ -65,7 +65,10 @@ let sql = `
   const result = await c.env.DB.prepare(sql)
     .bind(...params)
     .all();
-  const licenses = (result as { results?: LicenseRow[] }).results || (result as LicenseRow[]) || [];
+  const licenses =
+    (result as { results?: LicenseRow[] }).results ||
+    (result as LicenseRow[]) ||
+    [];
 
   let hasMore = false;
   let data = licenses;

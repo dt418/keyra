@@ -1,10 +1,10 @@
-import type { Context } from 'hono';
-import { AppError } from '../../middleware/error';
+import type { Context } from "hono";
+import { AppError } from "../../middleware/error";
 
 export async function deleteProductHandler(c: Context) {
-  const userId = c.get('userId');
+  const userId = c.get("userId");
   if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
 
   const { id } = c.req.param();
@@ -22,7 +22,7 @@ export async function deleteProductHandler(c: Context) {
     .run();
 
   if (result.meta?.changes === 0) {
-    throw new AppError('NOT_FOUND', 'Product not found', 404);
+    throw new AppError("NOT_FOUND", "Product not found", 404);
   }
 
   return c.json({ data: { success: true } });

@@ -10,7 +10,7 @@ export async function getTopProductsHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const limit = Math.min(parseInt(c.req.query("limit") || "5", 10), 20);
+  const limit = Math.min(parseInt(c.req.query("limit") || "5", 10), 20);
 
   const rows = (await c.env.DB.prepare(
     `SELECT p.id, p.name, COUNT(l.id) as license_count,

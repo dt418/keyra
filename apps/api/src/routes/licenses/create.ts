@@ -23,7 +23,7 @@ export async function createLicenseHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const product = (await c.env.DB.prepare(
+  const product = (await c.env.DB.prepare(
     `SELECT id FROM products WHERE id = ? AND organization_id = ?`,
   )
     .bind(product_id, orgId)

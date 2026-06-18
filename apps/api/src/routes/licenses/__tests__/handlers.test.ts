@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { listLicensesHandler } from '../list';
-import { createLicenseHandler } from '../create';
-import { getLicenseHandler } from '../get';
-import { updateLicenseHandler } from '../update';
-import { revokeLicenseHandler } from '../revoke';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { listLicensesHandler } from "../list";
+import { createLicenseHandler } from "../create";
+import { getLicenseHandler } from "../get";
+import { updateLicenseHandler } from "../update";
+import { revokeLicenseHandler } from "../revoke";
 
 const mockDB = {
   prepare: vi.fn().mockReturnThis(),
@@ -15,8 +15,8 @@ const mockDB = {
 
 const mockEnv = {
   DB: mockDB,
-  JWT_SECRET: 'test-secret',
-  JWT_REFRESH_SECRET: 'test-refresh',
+  JWT_SECRET: "test-secret",
+  JWT_REFRESH_SECRET: "test-refresh",
 };
 
 function createMockContext(overrides: Record<string, unknown> = {}) {
@@ -25,16 +25,18 @@ function createMockContext(overrides: Record<string, unknown> = {}) {
       json: vi.fn().mockResolvedValue({}),
       query: vi.fn().mockReturnValue({}),
       param: vi.fn().mockReturnValue({}),
-      header: vi.fn().mockReturnValue('Bearer token'),
+      header: vi.fn().mockReturnValue("Bearer token"),
     },
     env: mockEnv,
     executionCtx: { waitUntil: vi.fn() },
-    json: vi.fn().mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
+    json: vi
+      .fn()
+      .mockReturnValue(new Response(JSON.stringify({}), { status: 200 })),
     get: vi.fn().mockImplementation((key: string) => {
-      if (key === 'userId') return 'user-123';
-      if (key === 'userEmail') return 'test@example.com';
-      if (key === 'orgId') return 'org-1';
-      if (key === 'orgRole') return 'admin';
+      if (key === "userId") return "user-123";
+      if (key === "userEmail") return "test@example.com";
+      if (key === "orgId") return "org-1";
+      if (key === "orgRole") return "admin";
       return undefined;
     }),
     set: vi.fn(),
@@ -42,7 +44,7 @@ function createMockContext(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('listLicensesHandler', () => {
+describe("listLicensesHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDB.prepare.mockClear();
@@ -53,9 +55,22 @@ describe('listLicensesHandler', () => {
     mockDB.run.mockResolvedValue({ success: true });
   });
 
-  it('should list licenses for admin user', async () => {
+  it("should list licenses for admin user", async () => {
     mockDB.all.mockResolvedValueOnce([
-      { id: 'lic-1', product_id: 'prod-1', product_name: 'Product 1', type: 'professional', status: 'active', max_devices: 3, expires_at: null, feature_flags: null, created_at: '2024-01-01', updated_at: '2024-01-01', revoked_at: null, revoked_reason: null },
+      {
+        id: "lic-1",
+        product_id: "prod-1",
+        product_name: "Product 1",
+        type: "professional",
+        status: "active",
+        max_devices: 3,
+        expires_at: null,
+        feature_flags: null,
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
+        revoked_at: null,
+        revoked_reason: null,
+      },
     ]);
 
     const ctx = createMockContext() as any;
@@ -64,22 +79,28 @@ describe('listLicensesHandler', () => {
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.arrayContaining([
-          expect.objectContaining({ id: 'lic-1', type: 'professional', status: 'active' }),
+          expect.objectContaining({
+            id: "lic-1",
+            type: "professional",
+            status: "active",
+          }),
         ]),
-      })
+      }),
     );
   });
 
-  it('should throw if user not authenticated', async () => {
+  it("should throw if user not authenticated", async () => {
     const ctx = createMockContext({
       get: vi.fn().mockReturnValue(undefined),
     }) as any;
 
-    await expect(listLicensesHandler(ctx)).rejects.toThrow('Authentication required');
+    await expect(listLicensesHandler(ctx)).rejects.toThrow(
+      "Authentication required",
+    );
   });
 });
 
-describe('createLicenseHandler', () => {
+describe("createLicenseHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDB.prepare.mockClear();
@@ -90,16 +111,22 @@ describe('createLicenseHandler', () => {
     mockDB.run.mockResolvedValue({ success: true });
   });
 
-  it('should create license successfully', async () => {
-    mockDB.first.mockResolvedValueOnce({ id: 'prod-1' });
+  it("should create license successfully", async () => {
+    mockDB.first.mockResolvedValueOnce({ id: "prod-1" });
     mockDB.run.mockResolvedValue({ success: true });
 
     const ctx = createMockContext({
       req: {
-        json: vi.fn().mockResolvedValue({ product_id: 'prod-1', type: 'professional', max_devices: 3 }),
+        json: vi
+          .fn()
+          .mockResolvedValue({
+            product_id: "prod-1",
+            type: "professional",
+            max_devices: 3,
+          }),
         query: vi.fn().mockReturnValue({}),
         param: vi.fn().mockReturnValue({}),
-        header: vi.fn().mockReturnValue('Bearer token'),
+        header: vi.fn().mockReturnValue("Bearer token"),
       },
     }) as any;
 
@@ -108,34 +135,41 @@ describe('createLicenseHandler', () => {
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          product_id: 'prod-1',
-          type: 'professional',
-          status: 'active',
+          product_id: "prod-1",
+          type: "professional",
+          status: "active",
           max_devices: 3,
           key: expect.stringMatching(/^[A-Z0-9-]+$/),
         }),
       }),
-      201
+      201,
     );
   });
 
-  it('should reject if product not found', async () => {
+  it("should reject if product not found", async () => {
     mockDB.first.mockResolvedValueOnce(null);
 
     const ctx = createMockContext({
       req: {
-        json: vi.fn().mockResolvedValue({ product_id: 'non-existent', type: 'professional' }),
+        json: vi
+          .fn()
+          .mockResolvedValue({
+            product_id: "non-existent",
+            type: "professional",
+          }),
         query: vi.fn().mockReturnValue({}),
         param: vi.fn().mockReturnValue({}),
-        header: vi.fn().mockReturnValue('Bearer token'),
+        header: vi.fn().mockReturnValue("Bearer token"),
       },
     }) as any;
 
-    await expect(createLicenseHandler(ctx)).rejects.toThrow('Product not found');
+    await expect(createLicenseHandler(ctx)).rejects.toThrow(
+      "Product not found",
+    );
   });
 });
 
-describe('getLicenseHandler', () => {
+describe("getLicenseHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDB.prepare.mockClear();
@@ -146,15 +180,28 @@ describe('getLicenseHandler', () => {
     mockDB.run.mockResolvedValue({ success: true });
   });
 
-  it('should return license details', async () => {
-    mockDB.first.mockResolvedValueOnce({ id: 'lic-1', product_id: 'prod-1', product_name: 'Product 1', type: 'professional', status: 'active', max_devices: 3, expires_at: null, feature_flags: null, created_at: '2024-01-01', updated_at: '2024-01-01', revoked_at: null, revoked_reason: null });
+  it("should return license details", async () => {
+    mockDB.first.mockResolvedValueOnce({
+      id: "lic-1",
+      product_id: "prod-1",
+      product_name: "Product 1",
+      type: "professional",
+      status: "active",
+      max_devices: 3,
+      expires_at: null,
+      feature_flags: null,
+      created_at: "2024-01-01",
+      updated_at: "2024-01-01",
+      revoked_at: null,
+      revoked_reason: null,
+    });
 
     const ctx = createMockContext({
       req: {
         json: vi.fn().mockResolvedValue({}),
         query: vi.fn().mockReturnValue({}),
-        param: vi.fn().mockReturnValue({ id: 'lic-1' }),
-        header: vi.fn().mockReturnValue('Bearer token'),
+        param: vi.fn().mockReturnValue({ id: "lic-1" }),
+        header: vi.fn().mockReturnValue("Bearer token"),
       },
     }) as any;
 
@@ -163,30 +210,30 @@ describe('getLicenseHandler', () => {
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          id: 'lic-1',
-          type: 'professional',
+          id: "lic-1",
+          type: "professional",
         }),
-      })
+      }),
     );
   });
 
-  it('should throw if license not found', async () => {
+  it("should throw if license not found", async () => {
     mockDB.first.mockResolvedValueOnce(null);
 
     const ctx = createMockContext({
       req: {
         json: vi.fn().mockResolvedValue({}),
         query: vi.fn().mockReturnValue({}),
-        param: vi.fn().mockReturnValue({ id: 'non-existent' }),
-        header: vi.fn().mockReturnValue('Bearer token'),
+        param: vi.fn().mockReturnValue({ id: "non-existent" }),
+        header: vi.fn().mockReturnValue("Bearer token"),
       },
     }) as any;
 
-    await expect(getLicenseHandler(ctx)).rejects.toThrow('License not found');
+    await expect(getLicenseHandler(ctx)).rejects.toThrow("License not found");
   });
 });
 
-describe('updateLicenseHandler', () => {
+describe("updateLicenseHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDB.prepare.mockClear();
@@ -197,16 +244,29 @@ describe('updateLicenseHandler', () => {
     mockDB.run.mockResolvedValue({ success: true });
   });
 
-  it('should update license successfully', async () => {
+  it("should update license successfully", async () => {
     mockDB.run.mockResolvedValue({ meta: { changes: 1 } });
-    mockDB.first.mockResolvedValueOnce({ id: 'lic-1', product_id: 'prod-1', product_name: 'Product 1', type: 'enterprise', status: 'active', max_devices: 5, expires_at: null, feature_flags: null, created_at: '2024-01-01', updated_at: '2024-01-02', revoked_at: null, revoked_reason: null });
+    mockDB.first.mockResolvedValueOnce({
+      id: "lic-1",
+      product_id: "prod-1",
+      product_name: "Product 1",
+      type: "enterprise",
+      status: "active",
+      max_devices: 5,
+      expires_at: null,
+      feature_flags: null,
+      created_at: "2024-01-01",
+      updated_at: "2024-01-02",
+      revoked_at: null,
+      revoked_reason: null,
+    });
 
     const ctx = createMockContext({
       req: {
-        json: vi.fn().mockResolvedValue({ type: 'enterprise', max_devices: 5 }),
+        json: vi.fn().mockResolvedValue({ type: "enterprise", max_devices: 5 }),
         query: vi.fn().mockReturnValue({}),
-        param: vi.fn().mockReturnValue({ id: 'lic-1' }),
-        header: vi.fn().mockReturnValue('Bearer token'),
+        param: vi.fn().mockReturnValue({ id: "lic-1" }),
+        header: vi.fn().mockReturnValue("Bearer token"),
       },
     }) as any;
 
@@ -215,15 +275,15 @@ describe('updateLicenseHandler', () => {
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          type: 'enterprise',
+          type: "enterprise",
           max_devices: 5,
         }),
-      })
+      }),
     );
   });
 });
 
-describe('revokeLicenseHandler', () => {
+describe("revokeLicenseHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDB.prepare.mockClear();
@@ -234,15 +294,15 @@ describe('revokeLicenseHandler', () => {
     mockDB.run.mockResolvedValue({ success: true });
   });
 
-  it('should revoke license successfully', async () => {
+  it("should revoke license successfully", async () => {
     mockDB.run.mockResolvedValue({ meta: { changes: 1 } });
 
     const ctx = createMockContext({
       req: {
-        json: vi.fn().mockResolvedValue({ reason: 'Policy violation' }),
+        json: vi.fn().mockResolvedValue({ reason: "Policy violation" }),
         query: vi.fn().mockReturnValue({}),
-        param: vi.fn().mockReturnValue({ id: 'lic-1' }),
-        header: vi.fn().mockReturnValue('Bearer token'),
+        param: vi.fn().mockReturnValue({ id: "lic-1" }),
+        header: vi.fn().mockReturnValue("Bearer token"),
       },
     }) as any;
 
@@ -251,26 +311,28 @@ describe('revokeLicenseHandler', () => {
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          id: 'lic-1',
-          status: 'revoked',
-          revoked_reason: 'Policy violation',
+          id: "lic-1",
+          status: "revoked",
+          revoked_reason: "Policy violation",
         }),
-      })
+      }),
     );
   });
 
-  it('should throw if license already revoked', async () => {
+  it("should throw if license already revoked", async () => {
     mockDB.run.mockResolvedValue({ meta: { changes: 0 } });
 
     const ctx = createMockContext({
       req: {
         json: vi.fn().mockResolvedValue({}),
         query: vi.fn().mockReturnValue({}),
-        param: vi.fn().mockReturnValue({ id: 'lic-1' }),
-        header: vi.fn().mockReturnValue('Bearer token'),
+        param: vi.fn().mockReturnValue({ id: "lic-1" }),
+        header: vi.fn().mockReturnValue("Bearer token"),
       },
     }) as any;
 
-    await expect(revokeLicenseHandler(ctx)).rejects.toThrow('License not found or already revoked');
+    await expect(revokeLicenseHandler(ctx)).rejects.toThrow(
+      "License not found or already revoked",
+    );
   });
 });

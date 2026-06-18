@@ -13,7 +13,7 @@ export async function deactivateDeviceHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const device = (await c.env.DB.prepare(
+  const device = (await c.env.DB.prepare(
     `SELECT d.id, d.license_id, l.organization_id 
      FROM devices d
      INNER JOIN licenses l ON d.license_id = l.id

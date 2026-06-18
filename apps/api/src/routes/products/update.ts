@@ -1,11 +1,11 @@
-import type { Context } from 'hono';
-import { updateProductSchema } from '@keyra/shared-validation';
-import { AppError } from '../../middleware/error';
+import type { Context } from "hono";
+import { updateProductSchema } from "@keyra/shared-validation";
+import { AppError } from "../../middleware/error";
 
 export async function updateProductHandler(c: Context) {
-  const userId = c.get('userId');
+  const userId = c.get("userId");
   if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
 
   const { id } = c.req.param();
@@ -13,7 +13,7 @@ export async function updateProductHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const body = await c.req.json();
+  const body = await c.req.json();
   const parsed = updateProductSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;
@@ -23,23 +23,29 @@ const body = await c.req.json();
   const params: unknown[] = [];
 
   if (parsed.data.name !== undefined) {
-    updates.push('name = ?');
+    updates.push("name = ?");
     params.push(parsed.data.name);
   }
   if (parsed.data.description !== undefined) {
-    updates.push('description = ?');
+    updates.push("description = ?");
     params.push(parsed.data.description);
   }
 
   if (updates.length === 0) {
-    const product = await c.env.DB.prepare(
-      `SELECT id, name, description, created_at, updated_at FROM products WHERE id = ?`
+    const product = (await c.env.DB.prepare(
+      `SELECT id, name, description, created_at, updated_at FROM products WHERE id = ? AND organization_id = ?`,
     )
-      .bind(id)
-      .first() as { id: string; name: string; description: string | null; created_at: string; updated_at: string } | null;
+      .bind(id, orgId)
+      .first()) as {
+      id: string;
+      name: string;
+      description: string | null;
+      created_at: string;
+      updated_at: string;
+    } | null;
 
     if (!product) {
-      throw new AppError('NOT_FOUND', 'Product not found', 404);
+      throw new AppError("NOT_FOUND", "Product not found", 404);
     }
 
     return c.json({
@@ -54,25 +60,32 @@ const body = await c.req.json();
   }
 
   const now = new Date().toISOString();
-  updates.push('updated_at = ?');
+  updates.push("updated_at = ?");
   params.push(now);
   params.push(id);
+  params.push(orgId);
 
   const result = await c.env.DB.prepare(
-    `UPDATE products SET ${updates.join(', ')} WHERE id = ?`
+    `UPDATE products SET ${updates.join(", ")} WHERE id = ? AND organization_id = ?`,
   )
     .bind(...params)
     .run();
 
   if (result.meta?.changes === 0) {
-    throw new AppError('NOT_FOUND', 'Product not found', 404);
+    throw new AppError("NOT_FOUND", "Product not found", 404);
   }
 
-  const product = await c.env.DB.prepare(
-    `SELECT id, name, description, created_at, updated_at FROM products WHERE id = ?`
+  const product = (await c.env.DB.prepare(
+    `SELECT id, name, description, created_at, updated_at FROM products WHERE id = ? AND organization_id = ?`,
   )
-    .bind(id)
-    .first() as { id: string; name: string; description: string | null; created_at: string; updated_at: string } | null;
+    .bind(id, orgId)
+    .first()) as {
+    id: string;
+    name: string;
+    description: string | null;
+    created_at: string;
+    updated_at: string;
+  } | null;
 
   return c.json({
     data: {

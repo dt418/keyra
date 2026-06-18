@@ -1,12 +1,12 @@
-import type { Context } from 'hono';
-import { createProductSchema } from '@keyra/shared-validation';
-import { AppError } from '../../middleware/error';
-import { hashApiKey } from '../../lib/password';
+import type { Context } from "hono";
+import { createProductSchema } from "@keyra/shared-validation";
+import { AppError } from "../../middleware/error";
+import { hashApiKey } from "../../lib/password";
 
 export async function createProductHandler(c: Context) {
-  const userId = c.get('userId');
+  const userId = c.get("userId");
   if (!userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
 
   const body = await c.req.json();
@@ -20,14 +20,14 @@ export async function createProductHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const productId = crypto.randomUUID();
-  const apiKey = crypto.randomUUID() + '-' + crypto.randomUUID();
+  const productId = crypto.randomUUID();
+  const apiKey = crypto.randomUUID() + "-" + crypto.randomUUID();
   const apiKeyHash = await hashApiKey(apiKey);
   const now = new Date().toISOString();
 
   await c.env.DB.prepare(
     `INSERT INTO products (id, organization_id, name, description, api_key_hash, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(productId, orgId, name, description ?? null, apiKeyHash, now, now)
     .run();
@@ -42,6 +42,6 @@ const productId = crypto.randomUUID();
         created_at: now,
       },
     },
-    201
+    201,
   );
 }

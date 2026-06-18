@@ -22,7 +22,7 @@ export async function getWebhookHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const row = (await c.env.DB.prepare(
+  const row = (await c.env.DB.prepare(
     `SELECT id, organization_id, url, events, active, created_at, updated_at
      FROM webhook_configs WHERE id = ? AND organization_id = ?`,
   )

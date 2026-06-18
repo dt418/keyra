@@ -14,7 +14,7 @@ export async function updateLicenseHandler(c: Context) {
   if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-const body = await c.req.json();
+  const body = await c.req.json();
   const parsed = updateLicenseSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;
