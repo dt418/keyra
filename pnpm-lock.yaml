@@ -227,6 +227,9 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@22.19.21)(jsdom@29.1.1(@noble/hashes@1.8.0))(lightningcss@1.32.0)
+      wrangler:
+        specifier: ^4.101.0
+        version: 4.101.0(@cloudflare/workers-types@4.20260613.1)
 
   packages/api-client:
     dependencies:
