@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { Button, Input, Label, PasswordInput } from '@/components/ui';
-import { useAuth } from '@/lib/auth';
-import { useNavigate, Link } from 'react-router-dom';
-import { toast } from 'sonner';
-import { errorMessage } from '@/lib/error-message';
-import { Key, Loader2, ArrowRight, Shield, Zap, BarChart3 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Button, Input, Label, PasswordInput } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
+import { useNavigate, Link } from "react-router-dom";
+import { toast } from "sonner";
+import { errorMessage } from "@/lib/error-message";
+import { Key, Loader2, ArrowRight, Shield, Zap, BarChart3 } from "lucide-react";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    document.title = 'Sign in · Keyra';
+    document.title = "Sign in · Keyra";
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,10 +22,10 @@ export default function Login() {
     setIsLoading(true);
     try {
       await login(email, password);
-      toast.success('Welcome back!');
-      navigate('/dashboard');
+      toast.success("Welcome back!");
+      navigate("/dashboard");
     } catch (err: unknown) {
-      toast.error(errorMessage(err, 'Login failed'));
+      toast.error(errorMessage(err, "Login failed"));
     } finally {
       setIsLoading(false);
     }
@@ -47,13 +47,26 @@ export default function Login() {
               The license management platform built for modern teams.
             </h1>
             <p className="text-lg text-muted-foreground">
-              Secure, scalable, and developer-friendly. Issue, verify, and revoke licenses with confidence.
+              Secure, scalable, and developer-friendly. Issue, verify, and
+              revoke licenses with confidence.
             </p>
             <div className="space-y-3 pt-4">
               {[
-                { icon: Zap, title: 'Instant Verification', desc: 'SDK-based verification in milliseconds' },
-                { icon: Shield, title: 'Enterprise Security', desc: 'AES-256 encryption, audit logging' },
-                { icon: BarChart3, title: 'Real-time Analytics', desc: 'Track activations, devices, and usage' },
+                {
+                  icon: Zap,
+                  title: "Instant Verification",
+                  desc: "SDK-based verification in milliseconds",
+                },
+                {
+                  icon: Shield,
+                  title: "Enterprise Security",
+                  desc: "AES-256 encryption, audit logging",
+                },
+                {
+                  icon: BarChart3,
+                  title: "Real-time Analytics",
+                  desc: "Track activations, devices, and usage",
+                },
               ].map((feature) => (
                 <div key={feature.title} className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background border border-border">
@@ -61,7 +74,9 @@ export default function Login() {
                   </div>
                   <div>
                     <div className="font-medium text-sm">{feature.title}</div>
-                    <div className="text-xs text-muted-foreground">{feature.desc}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {feature.desc}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -76,8 +91,12 @@ export default function Login() {
       <div className="flex flex-1 items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-sm space-y-6">
           <div className="space-y-2 text-center">
-            <h2 className="text-2xl font-semibold tracking-tight">Welcome back</h2>
-            <p className="text-sm text-muted-foreground">Sign in to your account</p>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Welcome back
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Sign in to your account
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -98,7 +117,12 @@ export default function Login() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <a href="#" className="text-xs text-muted-foreground hover:text-foreground">Forgot password?</a>
+                <a
+                  href="#"
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Forgot password?
+                </a>
               </div>
               <PasswordInput
                 id="password"
@@ -111,19 +135,27 @@ export default function Login() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading} size="lg">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+              size="lg"
+            >
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <ArrowRight className="mr-2 h-4 w-4" />
               )}
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
           <p className="text-sm text-muted-foreground text-center">
-            Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-primary hover:underline">
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              className="font-medium text-primary hover:underline"
+            >
               Create one
             </Link>
           </p>

@@ -2,15 +2,25 @@ import * as React from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 import { cn } from "@/lib/cn";
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "./input-group";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "./input-group";
 
-export interface PasswordInputProps
-  extends Omit<React.ComponentProps<"input">, "type"> {
+export interface PasswordInputProps extends Omit<
+  React.ComponentProps<"input">,
+  "type"
+> {
   inputClassName?: string;
 }
 
 const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
-  function PasswordInput({ className, inputClassName, disabled, ...props }, ref) {
+  function PasswordInput(
+    { className, inputClassName, disabled, ...props },
+    ref,
+  ) {
     const [visible, setVisible] = React.useState(false);
 
     return (
