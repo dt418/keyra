@@ -1,8 +1,8 @@
 import type { Context } from 'hono';
 import { oauthCallbackSchema } from '@keyra/shared-validation';
 import { signAccessToken, signRefreshToken } from '../../lib/jwt';
+import { storeRefreshToken as persistSession } from '../../lib/sessions';
 import { AppError } from '../../middleware/error';
-import { hashPassword } from '../../lib/password';
 import { logAuditEvent, extractRequestInfo } from '../../lib/audit';
 
 interface OAuthConfig {
@@ -127,26 +127,8 @@ interface DbUser {
   id: string;
   email: string;
   name: string;
-}
-
-async function storeRefreshToken(
-  c: Context,
-  userId: string,
-  refreshToken: string,
-  userAgent?: string,
-  ipAddress?: string
-): Promise<void> {
-  const sessionId = crypto.randomUUID();
-  const now = new Date().toISOString();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const tokenHash = await hashPassword(refreshToken);
-
-  await c.env.DB.prepare(
-    `INSERT INTO sessions (id, user_id, refresh_token_hash, user_agent, ip_address, expires_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  )
-    .bind(sessionId, userId, tokenHash, userAgent ?? null, ipAddress ?? null, expiresAt, now)
-    .run();
+  oauth_provider: string | null;
+  oauth_id: string | null;
 }
 
 export async function oauthCallbackHandler(c: Context) {
@@ -163,13 +145,14 @@ export async function oauthCallbackHandler(c: Context) {
 
   const { code, state } = parsed.data;
 
-  if (state) {
-    const storedState = await c.env.SESSIONS.get(`oauth_state:${state}`);
-    if (!storedState) {
-      throw new AppError('INVALID_STATE', 'Invalid or expired state parameter', 400);
-    }
-    await c.env.SESSIONS.delete(`oauth_state:${state}`);
+  if (!state) {
+    throw new AppError('INVALID_STATE', 'Missing state parameter', 400);
   }
+  const storedState = await c.env.SESSIONS.get(`oauth_state:${state}`);
+  if (!storedState) {
+    throw new AppError('INVALID_STATE', 'Invalid or expired state parameter', 400);
+  }
+  await c.env.SESSIONS.delete(`oauth_state:${state}`);
 
   const redirectUri = (c.env.OAUTH_REDIRECT_URI as string | undefined) ?? '';
 
@@ -193,8 +176,10 @@ export async function oauthCallbackHandler(c: Context) {
     throw new AppError('EMAIL_NOT_PROVIDED', 'Email not provided by OAuth provider', 400);
   }
 
+  const requestInfo = extractRequestInfo(c);
+
   const existingByOAuth = await c.env.DB.prepare(
-    'SELECT id, email, name FROM users WHERE oauth_provider = ? AND oauth_id = ?'
+    'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE oauth_provider = ? AND oauth_id = ?'
   )
     .bind(provider, userInfo.id)
     .first() as DbUser | null | undefined;
@@ -209,9 +194,14 @@ export async function oauthCallbackHandler(c: Context) {
       { sub: existingByOAuth.id, email: existingByOAuth.email, jti: sessionId },
       c.env.JWT_REFRESH_SECRET
     );
-    await storeRefreshToken(c, existingByOAuth.id, jwtRefreshToken);
+    await persistSession(c, {
+      userId: existingByOAuth.id,
+      refreshToken: jwtRefreshToken,
+      sessionId,
+      userAgent: requestInfo.userAgent,
+      ipAddress: requestInfo.ipAddress,
+    });
 
-    const requestInfo = extractRequestInfo(c);
     logAuditEvent(c, {
       action: 'user.oauth',
       userId: existingByOAuth.id,
@@ -232,12 +222,30 @@ export async function oauthCallbackHandler(c: Context) {
   }
 
   const existingByEmail = await c.env.DB.prepare(
-    'SELECT id, email, name FROM users WHERE email = ?'
+    'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE email = ?'
   )
     .bind(userInfo.email.toLowerCase())
     .first() as DbUser | null | undefined;
 
   if (existingByEmail) {
+    if (existingByEmail.oauth_provider && existingByEmail.oauth_provider !== provider) {
+      throw new AppError(
+        'OAUTH_ALREADY_LINKED',
+        `This email is linked to ${existingByEmail.oauth_provider}. Sign in with that provider or contact support.`,
+        409,
+      );
+    }
+
+    if (!existingByEmail.oauth_provider) {
+      const now = new Date().toISOString();
+      await c.env.DB.prepare(
+        `UPDATE users SET oauth_provider = ?, oauth_id = ?, updated_at = ?
+         WHERE id = ? AND oauth_provider IS NULL`,
+      )
+        .bind(provider, userInfo.id, now, existingByEmail.id)
+        .run();
+    }
+
     const sessionId = crypto.randomUUID();
     const jwtAccessToken = await signAccessToken(
       { sub: existingByEmail.id, email: existingByEmail.email, sessionId },
@@ -247,9 +255,14 @@ export async function oauthCallbackHandler(c: Context) {
       { sub: existingByEmail.id, email: existingByEmail.email, jti: sessionId },
       c.env.JWT_REFRESH_SECRET
     );
-    await storeRefreshToken(c, existingByEmail.id, jwtRefreshToken);
+    await persistSession(c, {
+      userId: existingByEmail.id,
+      refreshToken: jwtRefreshToken,
+      sessionId,
+      userAgent: requestInfo.userAgent,
+      ipAddress: requestInfo.ipAddress,
+    });
 
-    const requestInfo = extractRequestInfo(c);
     logAuditEvent(c, {
       action: 'user.oauth',
       userId: existingByEmail.id,
@@ -290,9 +303,14 @@ export async function oauthCallbackHandler(c: Context) {
     c.env.JWT_REFRESH_SECRET
   );
 
-  await storeRefreshToken(c, userId, jwtRefreshToken);
+  await persistSession(c, {
+    userId,
+    refreshToken: jwtRefreshToken,
+    sessionId,
+    userAgent: requestInfo.userAgent,
+    ipAddress: requestInfo.ipAddress,
+  });
 
-  const requestInfo = extractRequestInfo(c);
   logAuditEvent(c, {
     action: 'user.oauth',
     userId,

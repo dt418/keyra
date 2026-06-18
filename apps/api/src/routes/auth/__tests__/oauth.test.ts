@@ -266,4 +266,67 @@ describe('oauthCallbackHandler', () => {
       })
     );
   });
+
+  it('should reject callback without state (CSRF protection)', async () => {
+    const ctx = createMockContext({
+      req: {
+        param: vi.fn().mockReturnValue('google'),
+        json: vi.fn().mockResolvedValue({ code: 'valid-code' }),
+      },
+    }) as any;
+
+    await expect(oauthCallbackHandler(ctx)).rejects.toThrow('Missing state parameter');
+  });
+
+  it('should reject account takeover: existing user linked to different provider', async () => {
+    const ctx = createMockContext({
+      req: {
+        param: vi.fn().mockReturnValue('google'),
+        json: vi.fn().mockResolvedValue({ code: 'valid-code', state: 'valid-state' }),
+      },
+    }) as any;
+
+    mockKV.get.mockResolvedValueOnce('google');
+    mockDB.first
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'victim-user',
+        email: 'victim@example.com',
+        name: 'Victim',
+        oauth_provider: 'github',
+        oauth_id: '999',
+      });
+
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce(new Response(new URLSearchParams({ access_token: 'provider-token' }).toString(), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'attacker-123', email: 'victim@example.com', name: 'Attacker' }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(oauthCallbackHandler(ctx)).rejects.toThrow('This email is linked to github');
+  });
+
+  it('should write OAuth session to KV so logout can revoke it', async () => {
+    const ctx = createMockContext({
+      req: {
+        param: vi.fn().mockReturnValue('google'),
+        json: vi.fn().mockResolvedValue({ code: 'valid-code', state: 'valid-state' }),
+      },
+    }) as any;
+
+    mockKV.get.mockResolvedValueOnce('google');
+    mockDB.first.mockResolvedValueOnce(null);
+
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce(new Response(new URLSearchParams({ access_token: 'provider-token' }).toString(), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: '123', email: 'new@example.com', name: 'New User' }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await oauthCallbackHandler(ctx);
+
+    const sessionPutCall = mockKV.put.mock.calls.find(
+      (call) => typeof call[0] === 'string' && call[0].startsWith('session:') && call[1] === 'active',
+    );
+    expect(sessionPutCall).toBeDefined();
+    expect(sessionPutCall?.[2]).toEqual({ expirationTtl: 7 * 24 * 60 * 60 });
+  });
 });

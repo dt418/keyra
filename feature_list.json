@@ -184,8 +184,8 @@
       "name": "Audit S4 — OAuth Hardening",
       "description": "OAuth state required; account-takeover fix (bind OAuth identity on email match or 409 OAUTH_ALREADY_LINKED); unified storeRefreshToken writes to KV with userAgent/ipAddress",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s4-oauth-hardening.md (Closes P0-3, P0-4, P0-5, P1-7). JWT secrets synced to wrangler + github via scripts/sync-secrets.sh"
+      "status": "done",
+      "evidence": "apps/api/src/routes/auth/oauth.ts: (1) state mandatory — removed `if (state)` guard, now throws INVALID_STATE on empty; (2) existingByEmail SELECT now fetches oauth_provider+oauth_id; if existingByEmail.oauth_provider && !== provider → 409 OAUTH_ALREADY_LINKED; if !oauth_provider → UPDATE binds identity; (3) local storeRefreshToken deleted, replaced with persistSession from lib/sessions which writes session row + c.env.SESSIONS.put(session:<id>, 'active'). All 3 call sites hoist requestInfo + pass userAgent/ipAddress. 3 new tests in oauth.test.ts: state-required (rejects with 'Missing state parameter'), account-takeover (rejects with 'linked to github' 409), KV session written (asserts mockKV.put called with session:<id> + 'active'). API unit tests 98/98 pass (was 95; +3 new). Plan: docs/superpowers/plans/audit-2026-06-18/s4-oauth-hardening.md (Closes P0-3, P0-4, P0-5, P1-7)"
     },
     {
       "id": "feat-024",
