@@ -6,18 +6,11 @@ export async function getTopProductsHandler(c: Context) {
   if (!userId) {
     throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
-
-  const member = (await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
-  )
-    .bind(userId)
-    .first()) as { org_id: string } | null;
-
-  if (!member) {
+  const orgId = c.get("orgId");
+  if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const limit = Math.min(parseInt(c.req.query("limit") || "5", 10), 20);
+const limit = Math.min(parseInt(c.req.query("limit") || "5", 10), 20);
 
   const rows = (await c.env.DB.prepare(
     `SELECT p.id, p.name, COUNT(l.id) as license_count,
@@ -29,7 +22,7 @@ export async function getTopProductsHandler(c: Context) {
      ORDER BY license_count DESC
      LIMIT ?`,
   )
-    .bind(member.org_id, limit)
+    .bind(orgId, limit)
     .all()) as {
     results: {
       id: string;

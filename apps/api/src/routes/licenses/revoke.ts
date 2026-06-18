@@ -10,18 +10,11 @@ export async function revokeLicenseHandler(c: Context) {
   }
 
   const { id } = c.req.param();
-
-  const member = (await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
-  )
-    .bind(userId)
-    .first()) as { org_id: string } | null;
-
-  if (!member) {
+  const orgId = c.get("orgId");
+  if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const body = await c.req.json();
+const body = await c.req.json();
   const parsed = revokeLicenseSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;
@@ -34,7 +27,7 @@ export async function revokeLicenseHandler(c: Context) {
     `UPDATE licenses SET status = 'revoked', revoked_at = ?, revoked_reason = ?, updated_at = ?
      WHERE id = ? AND organization_id = ? AND status = 'active'`,
   )
-    .bind(now, reason ?? null, now, id, member.org_id)
+    .bind(now, reason ?? null, now, id, orgId)
     .run();
 
   if (result.meta?.changes === 0) {
@@ -45,7 +38,7 @@ export async function revokeLicenseHandler(c: Context) {
     );
   }
 
-  dispatchWebhookEvent(c, member.org_id, "license.revoked", {
+  dispatchWebhookEvent(c, orgId, "license.revoked", {
     license_id: id,
     reason: reason ?? null,
   });

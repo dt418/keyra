@@ -10,18 +10,11 @@ export async function updateLicenseHandler(c: Context) {
   }
 
   const { id } = c.req.param();
-
-  const member = (await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
-  )
-    .bind(userId)
-    .first()) as { org_id: string } | null;
-
-  if (!member) {
+  const orgId = c.get("orgId");
+  if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const body = await c.req.json();
+const body = await c.req.json();
   const parsed = updateLicenseSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;
@@ -56,7 +49,7 @@ export async function updateLicenseHandler(c: Context) {
        INNER JOIN products p ON l.product_id = p.id
        WHERE l.id = ? AND l.organization_id = ?`,
     )
-      .bind(id, member.org_id)
+      .bind(id, orgId)
       .first();
 
     if (!license) {
@@ -70,7 +63,7 @@ export async function updateLicenseHandler(c: Context) {
   updates.push("updated_at = ?");
   params.push(now);
   params.push(id);
-  params.push(member.org_id);
+  params.push(orgId);
 
   const result = await c.env.DB.prepare(
     `UPDATE licenses SET ${updates.join(", ")} WHERE id = ? AND organization_id = ?`,
@@ -82,7 +75,7 @@ export async function updateLicenseHandler(c: Context) {
     throw new AppError("NOT_FOUND", "License not found", 404);
   }
 
-  dispatchWebhookEvent(c, member.org_id, "license.updated", {
+  dispatchWebhookEvent(c, orgId, "license.updated", {
     license_id: id,
     changes: {
       type: parsed.data.type,
@@ -99,7 +92,7 @@ export async function updateLicenseHandler(c: Context) {
      INNER JOIN products p ON l.product_id = p.id
      WHERE l.id = ? AND l.organization_id = ?`,
   )
-    .bind(id, member.org_id)
+    .bind(id, orgId)
     .first();
 
   return c.json({ data: license });

@@ -33,6 +33,8 @@ function createMockContext(overrides: Record<string, unknown> = {}) {
     get: vi.fn().mockImplementation((key: string) => {
       if (key === 'userId') return 'user-123';
       if (key === 'userEmail') return 'test@example.com';
+      if (key === 'orgId') return 'org-1';
+      if (key === 'orgRole') return 'admin';
       return undefined;
     }),
     set: vi.fn(),
@@ -52,7 +54,6 @@ describe('listLicensesHandler', () => {
   });
 
   it('should list licenses for admin user', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.all.mockResolvedValueOnce([
       { id: 'lic-1', product_id: 'prod-1', product_name: 'Product 1', type: 'professional', status: 'active', max_devices: 3, expires_at: null, feature_flags: null, created_at: '2024-01-01', updated_at: '2024-01-01', revoked_at: null, revoked_reason: null },
     ]);
@@ -90,7 +91,6 @@ describe('createLicenseHandler', () => {
   });
 
   it('should create license successfully', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.first.mockResolvedValueOnce({ id: 'prod-1' });
     mockDB.run.mockResolvedValue({ success: true });
 
@@ -120,7 +120,6 @@ describe('createLicenseHandler', () => {
   });
 
   it('should reject if product not found', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.first.mockResolvedValueOnce(null);
 
     const ctx = createMockContext({
@@ -148,7 +147,6 @@ describe('getLicenseHandler', () => {
   });
 
   it('should return license details', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.first.mockResolvedValueOnce({ id: 'lic-1', product_id: 'prod-1', product_name: 'Product 1', type: 'professional', status: 'active', max_devices: 3, expires_at: null, feature_flags: null, created_at: '2024-01-01', updated_at: '2024-01-01', revoked_at: null, revoked_reason: null });
 
     const ctx = createMockContext({
@@ -173,7 +171,6 @@ describe('getLicenseHandler', () => {
   });
 
   it('should throw if license not found', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.first.mockResolvedValueOnce(null);
 
     const ctx = createMockContext({
@@ -201,7 +198,6 @@ describe('updateLicenseHandler', () => {
   });
 
   it('should update license successfully', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.run.mockResolvedValue({ meta: { changes: 1 } });
     mockDB.first.mockResolvedValueOnce({ id: 'lic-1', product_id: 'prod-1', product_name: 'Product 1', type: 'enterprise', status: 'active', max_devices: 5, expires_at: null, feature_flags: null, created_at: '2024-01-01', updated_at: '2024-01-02', revoked_at: null, revoked_reason: null });
 
@@ -239,7 +235,6 @@ describe('revokeLicenseHandler', () => {
   });
 
   it('should revoke license successfully', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.run.mockResolvedValue({ meta: { changes: 1 } });
 
     const ctx = createMockContext({
@@ -265,7 +260,6 @@ describe('revokeLicenseHandler', () => {
   });
 
   it('should throw if license already revoked', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.run.mockResolvedValue({ meta: { changes: 0 } });
 
     const ctx = createMockContext({

@@ -8,24 +8,15 @@ export async function getProductHandler(c: Context) {
   }
 
   const { id } = c.req.param();
-
-  const member = await c.env.DB.prepare(
-    `SELECT role FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`
-  )
-    .bind(userId)
-    .first() as { role: string } | null;
-
-  if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+  const orgId = c.get("orgId");
+  if (!orgId) {
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
   const product = await c.env.DB.prepare(
     `SELECT id, name, description, created_at, updated_at
-     FROM products WHERE id = ? AND organization_id = (
-       SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin')
-     )`
+     FROM products WHERE id = ? AND organization_id = ?`,
   )
-    .bind(id, userId)
+    .bind(id, orgId)
     .first() as { id: string; name: string; description: string | null; created_at: string; updated_at: string } | null;
 
   if (!product) {

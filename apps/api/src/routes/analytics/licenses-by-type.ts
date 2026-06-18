@@ -6,25 +6,18 @@ export async function getLicensesByTypeHandler(c: Context) {
   if (!userId) {
     throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
-
-  const member = (await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
-  )
-    .bind(userId)
-    .first()) as { org_id: string } | null;
-
-  if (!member) {
+  const orgId = c.get("orgId");
+  if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const rows = (await c.env.DB.prepare(
+const rows = (await c.env.DB.prepare(
     `SELECT type, COUNT(*) as count
      FROM licenses
      WHERE organization_id = ?
      GROUP BY type
      ORDER BY count DESC`,
   )
-    .bind(member.org_id)
+    .bind(orgId)
     .all()) as { results: { type: string; count: number }[] };
 
   return c.json({

@@ -16,18 +16,11 @@ export async function createProductHandler(c: Context) {
   }
 
   const { name, description } = parsed.data;
-
-  const member = await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`
-  )
-    .bind(userId)
-    .first() as { org_id: string } | null;
-
-  if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+  const orgId = c.get("orgId");
+  if (!orgId) {
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const productId = crypto.randomUUID();
+const productId = crypto.randomUUID();
   const apiKey = crypto.randomUUID() + '-' + crypto.randomUUID();
   const apiKeyHash = await hashApiKey(apiKey);
   const now = new Date().toISOString();
@@ -36,7 +29,7 @@ export async function createProductHandler(c: Context) {
     `INSERT INTO products (id, organization_id, name, description, api_key_hash, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(productId, member.org_id, name, description ?? null, apiKeyHash, now, now)
+    .bind(productId, orgId, name, description ?? null, apiKeyHash, now, now)
     .run();
 
   return c.json(

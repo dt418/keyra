@@ -42,21 +42,14 @@ export async function listDeliveriesHandler(c: Context) {
   }
 
   const { id } = c.req.param();
-
-  const member = (await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
-  )
-    .bind(userId)
-    .first()) as { org_id: string } | null;
-
-  if (!member) {
+  const orgId = c.get("orgId");
+  if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const webhook = await c.env.DB.prepare(
+const webhook = await c.env.DB.prepare(
     `SELECT id FROM webhook_configs WHERE id = ? AND organization_id = ?`,
   )
-    .bind(id, member.org_id)
+    .bind(id, orgId)
     .first();
 
   if (!webhook) {

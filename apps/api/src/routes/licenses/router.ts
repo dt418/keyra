@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { authMiddleware } from '../../middleware/auth';
+import { requireOrgMember } from '../../middleware/org';
 import { listLicensesHandler } from './list';
 import { createLicenseHandler } from './create';
 import { getLicenseHandler } from './get';
@@ -11,6 +12,7 @@ import { transferLicenseHandler } from './transfer';
 export const licensesRouter = new Hono();
 
 licensesRouter.use('/*', authMiddleware);
+licensesRouter.use('/*', requireOrgMember);
 
 licensesRouter.get('/', listLicensesHandler);
 licensesRouter.post('/', createLicenseHandler);

@@ -8,21 +8,17 @@ export async function deleteProductHandler(c: Context) {
   }
 
   const { id } = c.req.param();
-
-  const member = await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role = 'owner' LIMIT 1`
-  )
-    .bind(userId)
-    .first() as { org_id: string } | null;
-
-  if (!member) {
-    throw new AppError('FORBIDDEN', 'Only owners can delete products', 403);
+  const orgId = c.get("orgId");
+  if (!orgId) {
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
+  if (c.get("orgRole") !== "owner") {
+    throw new AppError("FORBIDDEN", "Only owners can delete products", 403);
+  }
   const result = await c.env.DB.prepare(
-    `DELETE FROM products WHERE id = ? AND organization_id = ?`
+    `DELETE FROM products WHERE id = ? AND organization_id = ?`,
   )
-    .bind(id, member.org_id)
+    .bind(id, orgId)
     .run();
 
   if (result.meta?.changes === 0) {

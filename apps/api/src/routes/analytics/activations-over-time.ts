@@ -6,18 +6,11 @@ export async function getActivationsOverTimeHandler(c: Context) {
   if (!userId) {
     throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
-
-  const member = (await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
-  )
-    .bind(userId)
-    .first()) as { org_id: string } | null;
-
-  if (!member) {
+  const orgId = c.get("orgId");
+  if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const period = c.req.query("period") || "7d";
+const period = c.req.query("period") || "7d";
   const days = period === "90d" ? 90 : period === "30d" ? 30 : 7;
 
   const rows = (await c.env.DB.prepare(
@@ -28,7 +21,7 @@ export async function getActivationsOverTimeHandler(c: Context) {
      GROUP BY day
      ORDER BY day ASC`,
   )
-    .bind(member.org_id, `-${days} days`)
+    .bind(orgId, `-${days} days`)
     .all()) as { results: { day: string; count: number }[] };
 
   const map = new Map<string, number>();

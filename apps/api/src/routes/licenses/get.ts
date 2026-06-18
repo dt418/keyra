@@ -8,18 +8,11 @@ export async function getLicenseHandler(c: Context) {
   }
 
   const { id } = c.req.param();
-
-  const member = await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`
-  )
-    .bind(userId)
-    .first() as { org_id: string } | null;
-
-  if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+  const orgId = c.get("orgId");
+  if (!orgId) {
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const license = await c.env.DB.prepare(
+const license = await c.env.DB.prepare(
     `SELECT l.id, l.product_id, l.type, l.status, l.max_devices, l.expires_at,
             l.feature_flags, l.created_at, l.updated_at, l.revoked_at, l.revoked_reason,
             p.name as product_name
@@ -27,7 +20,7 @@ export async function getLicenseHandler(c: Context) {
      INNER JOIN products p ON l.product_id = p.id
      WHERE l.id = ? AND l.organization_id = ?`
   )
-    .bind(id, member.org_id)
+    .bind(id, orgId)
     .first() as {
       id: string;
       product_id: string;

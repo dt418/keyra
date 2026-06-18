@@ -33,6 +33,8 @@ function createMockContext(overrides: Record<string, unknown> = {}) {
     get: vi.fn().mockImplementation((key: string) => {
       if (key === 'userId') return 'user-123';
       if (key === 'userEmail') return 'test@example.com';
+      if (key === 'orgId') return 'org-1';
+      if (key === 'orgRole') return 'owner';
       return undefined;
     }),
     set: vi.fn(),
@@ -84,9 +86,19 @@ describe('listProductsHandler', () => {
   });
 
   it('should throw if user is not admin', async () => {
-    mockDB.first.mockResolvedValueOnce(null);
-
-    const ctx = createMockContext() as any;
+    const ctx = createMockContext({
+      get: vi.fn().mockImplementation((key: string) => {
+        if (key === 'userId') return 'user-123';
+        if (key === 'orgId') return undefined;
+        return undefined;
+      }),
+      req: {
+        json: vi.fn().mockResolvedValue({}),
+        query: vi.fn().mockReturnValue({}),
+        param: vi.fn().mockReturnValue({}),
+        header: vi.fn().mockReturnValue('Bearer token'),
+      },
+    }) as any;
     await expect(listProductsHandler(ctx)).rejects.toThrow('Admin or owner role required');
   });
 });
@@ -130,9 +142,12 @@ describe('createProductHandler', () => {
   });
 
   it('should reject if user is not admin', async () => {
-    mockDB.first.mockResolvedValueOnce(null);
-
     const ctx = createMockContext({
+      get: vi.fn().mockImplementation((key: string) => {
+        if (key === 'userId') return 'user-123';
+        if (key === 'orgId') return undefined;
+        return undefined;
+      }),
       req: {
         json: vi.fn().mockResolvedValue({ name: 'Test Product' }),
         query: vi.fn().mockReturnValue({}),
@@ -157,9 +172,13 @@ describe('getProductHandler', () => {
   });
 
   it('should return product details for admin', async () => {
-    mockDB.first
-      .mockResolvedValueOnce({ role: 'owner' })
-      .mockResolvedValueOnce({ id: 'prod-1', name: 'Test Product', description: 'Desc', created_at: '2024-01-01', updated_at: '2024-01-01' });
+    mockDB.first.mockResolvedValueOnce({
+      id: 'prod-1',
+      name: 'Test Product',
+      description: 'Desc',
+      created_at: '2024-01-01',
+      updated_at: '2024-01-01',
+    });
 
     const ctx = createMockContext({
       req: {
@@ -183,7 +202,6 @@ describe('getProductHandler', () => {
   });
 
   it('should throw if product not found', async () => {
-    mockDB.first.mockResolvedValueOnce({ role: 'owner' });
     mockDB.first.mockResolvedValueOnce(null);
 
     const ctx = createMockContext({
@@ -211,7 +229,6 @@ describe('updateProductHandler', () => {
   });
 
   it('should update product successfully', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.run.mockResolvedValue({ meta: { changes: 1 } });
     mockDB.first.mockResolvedValueOnce({ id: 'prod-1', name: 'Updated', description: 'New desc', created_at: '2024-01-01', updated_at: '2024-01-02' });
 
@@ -237,7 +254,6 @@ describe('updateProductHandler', () => {
   });
 
   it('should return unchanged when no updates provided', async () => {
-    mockDB.first.mockResolvedValueOnce({ org_id: 'org-1' });
     mockDB.first.mockResolvedValueOnce({ id: 'prod-1', name: 'Product', description: 'Desc', created_at: '2024-01-01', updated_at: '2024-01-01' });
 
     const ctx = createMockContext({
@@ -292,9 +308,13 @@ describe('deleteProductHandler', () => {
   });
 
   it('should return 403 for non-owner', async () => {
-    mockDB.first.mockResolvedValueOnce(null);
-
     const ctx = createMockContext({
+      get: vi.fn().mockImplementation((key: string) => {
+        if (key === 'userId') return 'user-123';
+        if (key === 'orgId') return 'org-1';
+        if (key === 'orgRole') return 'admin';
+        return undefined;
+      }),
       req: {
         json: vi.fn().mockResolvedValue({}),
         query: vi.fn().mockReturnValue({}),

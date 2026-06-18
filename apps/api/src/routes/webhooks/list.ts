@@ -34,18 +34,11 @@ export async function listWebhooksHandler(c: Context) {
   if (!userId) {
     throw new AppError("UNAUTHORIZED", "Authentication required", 401);
   }
-
-  const member = (await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
-  )
-    .bind(userId)
-    .first()) as { org_id: string } | null;
-
-  if (!member) {
+  const orgId = c.get("orgId");
+  if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const limit = Math.min(parseInt(c.req.query("limit") || "50", 10), 100);
+const limit = Math.min(parseInt(c.req.query("limit") || "50", 10), 100);
   const cursor = c.req.query("cursor");
 
   const offset = cursor
@@ -59,7 +52,7 @@ export async function listWebhooksHandler(c: Context) {
      ORDER BY created_at DESC
      LIMIT ? OFFSET ?`,
   )
-    .bind(member.org_id, limit + 1, offset)
+    .bind(orgId, limit + 1, offset)
     .all()) as { results: WebhookRow[] };
 
   const items = (rows.results || []).slice(0, limit).map(rowToWebhook);

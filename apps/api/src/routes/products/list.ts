@@ -17,23 +17,16 @@ export async function listProductsHandler(c: Context) {
   }
 
   const { limit, cursor } = parsed.data;
-
-  const member = await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`
-  )
-    .bind(userId)
-    .first() as { org_id: string } | null;
-
-  if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+  const orgId = c.get("orgId");
+  if (!orgId) {
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  let sql = `
+let sql = `
     SELECT id, name, description, created_at, updated_at
     FROM products
     WHERE organization_id = ?
   `;
-  const params: unknown[] = [member.org_id];
+  const params: unknown[] = [orgId];
 
   if (cursor) {
     sql += ` AND id < ?`;

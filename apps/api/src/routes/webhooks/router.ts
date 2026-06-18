@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { authMiddleware } from "../../middleware/auth";
+import { requireOrgMember } from "../../middleware/org";
 import { listWebhooksHandler } from "./list";
 import { createWebhookHandler } from "./create";
 import { getWebhookHandler } from "./get";
@@ -11,6 +12,7 @@ import { listDeliveriesHandler } from "./deliveries";
 export const webhooksRouter = new Hono();
 
 webhooksRouter.use("/*", authMiddleware);
+webhooksRouter.use("/*", requireOrgMember);
 
 webhooksRouter.get("/", listWebhooksHandler);
 webhooksRouter.post("/", createWebhookHandler);

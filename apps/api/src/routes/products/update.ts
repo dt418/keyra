@@ -9,18 +9,11 @@ export async function updateProductHandler(c: Context) {
   }
 
   const { id } = c.req.param();
-
-  const member = await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`
-  )
-    .bind(userId)
-    .first() as { org_id: string } | null;
-
-  if (!member) {
-    throw new AppError('FORBIDDEN', 'Admin or owner role required', 403);
+  const orgId = c.get("orgId");
+  if (!orgId) {
+    throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const body = await c.req.json();
+const body = await c.req.json();
   const parsed = updateProductSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;

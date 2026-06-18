@@ -19,21 +19,14 @@ export async function createLicenseHandler(c: Context) {
 
   const { product_id, type, max_devices, expires_at, feature_flags } =
     parsed.data;
-
-  const member = (await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
-  )
-    .bind(userId)
-    .first()) as { org_id: string } | null;
-
-  if (!member) {
+  const orgId = c.get("orgId");
+  if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const product = (await c.env.DB.prepare(
+const product = (await c.env.DB.prepare(
     `SELECT id FROM products WHERE id = ? AND organization_id = ?`,
   )
-    .bind(product_id, member.org_id)
+    .bind(product_id, orgId)
     .first()) as { id: string } | null;
 
   if (!product) {
@@ -52,7 +45,7 @@ export async function createLicenseHandler(c: Context) {
     .bind(
       licenseId,
       product_id,
-      member.org_id,
+      orgId,
       keyHash,
       type,
       max_devices ?? 1,
@@ -63,7 +56,7 @@ export async function createLicenseHandler(c: Context) {
     )
     .run();
 
-  dispatchWebhookEvent(c, member.org_id, "license.created", {
+  dispatchWebhookEvent(c, orgId, "license.created", {
     license_id: licenseId,
     product_id,
     type,

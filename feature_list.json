@@ -160,8 +160,8 @@
       "name": "Audit S1 — Org-Membership Middleware",
       "description": "Replace 31 inline SELECTs for org_members role check with requireOrgMember Hono middleware; set orgId + orgRole on context; typed helpers",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s1-org-membership-middleware.md (Closes P2-1, unlocks S2/S3)"
+      "status": "done",
+      "evidence": "apps/api/src/middleware/org.ts (requireOrgMember: sets orgId + orgRole on context, ORDER BY role=owner DESC for determinism); apps/api/src/lib/context.ts (typed OrgContext + getOrgContext helper); 6 routers wired (products, licenses, webhooks, analytics, audit-logs, devices); 26 handlers refactored via scripts/s1-refactor-handlers.js to use c.get('orgId') instead of inline SQL; products/get.ts cleaned of redundant subquery; products/delete.ts owner-only check preserved via c.get('orgRole'); products/api-key.ts rewritten to use AppError consistently (P2-2); analytics/overview.ts redundant getOrgId helper removed; apps/api/src/middleware/__tests__/org.test.ts (3 tests: owner, admin, 403); 95/95 API unit tests pass. Plan: docs/superpowers/plans/audit-2026-06-18/s1-org-membership-middleware.md (Closes P2-1, unlocks S2/S3)"
     },
     {
       "id": "feat-021",

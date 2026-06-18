@@ -9,18 +9,11 @@ export async function deactivateDeviceHandler(c: Context) {
   }
 
   const { id } = c.req.param();
-
-  const member = (await c.env.DB.prepare(
-    `SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
-  )
-    .bind(userId)
-    .first()) as { org_id: string } | null;
-
-  if (!member) {
+  const orgId = c.get("orgId");
+  if (!orgId) {
     throw new AppError("FORBIDDEN", "Admin or owner role required", 403);
   }
-
-  const device = (await c.env.DB.prepare(
+const device = (await c.env.DB.prepare(
     `SELECT d.id, d.license_id, l.organization_id 
      FROM devices d
      INNER JOIN licenses l ON d.license_id = l.id
@@ -37,7 +30,7 @@ export async function deactivateDeviceHandler(c: Context) {
     throw new AppError("NOT_FOUND", "Device not found", 404);
   }
 
-  if (device.organization_id !== member.org_id) {
+  if (device.organization_id !== orgId) {
     throw new AppError(
       "FORBIDDEN",
       "You do not have access to this device",
@@ -61,7 +54,7 @@ export async function deactivateDeviceHandler(c: Context) {
     );
   }
 
-  dispatchWebhookEvent(c, member.org_id, "device.deactivated", {
+  dispatchWebhookEvent(c, orgId, "device.deactivated", {
     device_id: id,
     license_id: device.license_id,
   });
