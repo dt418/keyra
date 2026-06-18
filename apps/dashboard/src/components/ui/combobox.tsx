@@ -19,13 +19,13 @@ function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
   return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;
 }
 
-function ComboboxTrigger({
-  className,
-  children,
-  ...props
-}: ComboboxPrimitive.Trigger.Props) {
+const ComboboxTrigger = React.forwardRef<
+  HTMLButtonElement,
+  ComboboxPrimitive.Trigger.Props
+>(function ComboboxTrigger({ className, children, ...props }, ref) {
   return (
     <ComboboxPrimitive.Trigger
+      ref={ref}
       data-slot="combobox-trigger"
       className={cn("[&_svg:not([class*='size-'])]:size-4", className)}
       {...props}
@@ -34,11 +34,15 @@ function ComboboxTrigger({
       <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
     </ComboboxPrimitive.Trigger>
   );
-}
+});
 
-function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
+const ComboboxClear = React.forwardRef<
+  HTMLButtonElement,
+  ComboboxPrimitive.Clear.Props
+>(function ComboboxClear({ className, ...props }, ref) {
   return (
     <ComboboxPrimitive.Clear
+      ref={ref}
       data-slot="combobox-clear"
       render={<InputGroupButton variant="ghost" size="icon-xs" />}
       className={cn(className)}
@@ -47,21 +51,20 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
       <XIcon className="pointer-events-none" />
     </ComboboxPrimitive.Clear>
   );
-}
+});
 
-function ComboboxInput({
-  className,
-  children,
-  disabled = false,
-  showTrigger = true,
-  showClear = false,
-  ...props
-}: ComboboxPrimitive.Input.Props & {
-  showTrigger?: boolean;
-  showClear?: boolean;
-}) {
+const ComboboxInput = React.forwardRef<
+  HTMLDivElement,
+  ComboboxPrimitive.Input.Props & {
+    showTrigger?: boolean;
+    showClear?: boolean;
+  }
+>(function ComboboxInput(
+  { className, children, disabled = false, showTrigger = true, showClear = false, ...props },
+  ref,
+) {
   return (
-    <InputGroup className={cn("w-auto", className)}>
+    <InputGroup ref={ref} className={cn("w-auto", className)}>
       <ComboboxPrimitive.Input
         render={<InputGroupInput disabled={disabled} />}
         {...props}
@@ -82,7 +85,7 @@ function ComboboxInput({
       {children}
     </InputGroup>
   );
-}
+});
 
 function ComboboxContent({
   className,
