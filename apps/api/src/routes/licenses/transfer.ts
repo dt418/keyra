@@ -35,6 +35,17 @@ export async function transferLicenseHandler(c: Context) {
     throw new AppError("BAD_REQUEST", "Can only transfer active licenses", 400);
   }
 
+  const targetMembership = (await c.env.DB.prepare(
+    `SELECT role FROM org_members
+     WHERE org_id = ? AND user_id = ? AND role IN ('owner', 'admin') LIMIT 1`,
+  )
+    .bind(target_org_id, userId)
+    .first()) as { role: string } | null;
+
+  if (!targetMembership) {
+    throw new AppError("NOT_FOUND", "Target organization not found", 404);
+  }
+
   const targetOrg = (await c.env.DB.prepare(
     `SELECT id, name FROM organizations WHERE id = ?`,
   )
@@ -47,11 +58,16 @@ export async function transferLicenseHandler(c: Context) {
 
   const now = new Date().toISOString();
 
-  await c.env.DB.prepare(
-    `UPDATE licenses SET status = 'transferred', transferred_at = ?, updated_at = ? WHERE id = ?`,
+  const transferResult = await c.env.DB.prepare(
+    `UPDATE licenses SET status = 'transferred', transferred_at = ?, updated_at = ?
+     WHERE id = ? AND organization_id = ?`,
   )
-    .bind(now, now, id)
+    .bind(now, now, id, orgId)
     .run();
+
+  if (transferResult.meta?.changes === 0) {
+    throw new AppError("NOT_FOUND", "License not found", 404);
+  }
 
   const transferredLicense = (await c.env.DB.prepare(
     `SELECT product_id, key_hash, type, max_devices, expires_at, feature_flags FROM licenses WHERE id = ?`,

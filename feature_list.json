@@ -176,8 +176,8 @@
       "name": "Audit S3 — Licenses Transfer IDOR Fix",
       "description": "POST /licenses/:id/transfer source UPDATE adds AND organization_id = ?; target-org ownership enforced (caller must be admin/owner of destination)",
       "dependencies": ["feat-020"],
-      "status": "not-started",
-      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s3-licenses-transfer-idor-fix.md (Closes P0-2)"
+      "status": "done",
+      "evidence": "apps/api/src/routes/licenses/transfer.ts: source UPDATE now `WHERE id = ? AND organization_id = ?`; meta.changes === 0 → 404; target-org membership check (caller must be owner/admin of destination) added before the target-org lookup. 95/95 API unit tests pass. Plan: docs/superpowers/plans/audit-2026-06-18/s3-licenses-transfer-idor-fix.md (Closes P0-2)"
     },
     {
       "id": "feat-023",

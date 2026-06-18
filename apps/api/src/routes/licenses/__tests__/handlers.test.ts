@@ -117,13 +117,11 @@ describe("createLicenseHandler", () => {
 
     const ctx = createMockContext({
       req: {
-        json: vi
-          .fn()
-          .mockResolvedValue({
-            product_id: "prod-1",
-            type: "professional",
-            max_devices: 3,
-          }),
+        json: vi.fn().mockResolvedValue({
+          product_id: "prod-1",
+          type: "professional",
+          max_devices: 3,
+        }),
         query: vi.fn().mockReturnValue({}),
         param: vi.fn().mockReturnValue({}),
         header: vi.fn().mockReturnValue("Bearer token"),
@@ -151,12 +149,10 @@ describe("createLicenseHandler", () => {
 
     const ctx = createMockContext({
       req: {
-        json: vi
-          .fn()
-          .mockResolvedValue({
-            product_id: "non-existent",
-            type: "professional",
-          }),
+        json: vi.fn().mockResolvedValue({
+          product_id: "non-existent",
+          type: "professional",
+        }),
         query: vi.fn().mockReturnValue({}),
         param: vi.fn().mockReturnValue({}),
         header: vi.fn().mockReturnValue("Bearer token"),

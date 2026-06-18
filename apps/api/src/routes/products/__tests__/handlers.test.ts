@@ -138,12 +138,10 @@ describe("createProductHandler", () => {
 
     const ctx = createMockContext({
       req: {
-        json: vi
-          .fn()
-          .mockResolvedValue({
-            name: "Test Product",
-            description: "Test desc",
-          }),
+        json: vi.fn().mockResolvedValue({
+          name: "Test Product",
+          description: "Test desc",
+        }),
         query: vi.fn().mockReturnValue({}),
         param: vi.fn().mockReturnValue({}),
         header: vi.fn().mockReturnValue("Bearer token"),
