@@ -230,13 +230,13 @@ importers:
 
   packages/api-client:
     dependencies:
+      '@keyra/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
       axios:
         specifier: ^1.7.0
         version: 1.17.0
     devDependencies:
-      '@keyra/shared-types':
-        specifier: workspace:*
-        version: link:../shared-types
       typescript:
         specifier: ^5.5.0
         version: 5.9.3

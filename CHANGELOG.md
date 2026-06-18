@@ -10,7 +10,7 @@ All notable changes will be documented in this file.
 
 - Removed committed JWT secrets and Cloudflare API token from `apps/api/.dev.vars`
 - `apps/api/.gitignore` (explicit per-package) + root `.gitignore` (line 5) ignores `.dev.vars`
-- `apps/api/.env.example` documents all required env vars (JWT*SECRET, JWT_REFRESH_SECRET, OAUTH*_, CLOUDFLARE\__)
+- `apps/api/.env.example` documents all required env vars (JWT*SECRET, JWT_REFRESH_SECRET, OAUTH*\_, CLOUDFLARE\_\_)
 - `scripts/check-secrets.sh` + `scripts/sync-secrets.sh` — secret rotation + pre-commit grep guard (AWS/JWT/Stripe/GitHub/Cloudflare patterns)
 - `lefthook.yml` pre-commit now runs `secret-scan`
 - All 4 secrets synced to `gh secret list -R dt418/keyra` and `wrangler secret list` (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, JWT_SECRET, JWT_REFRESH_SECRET)

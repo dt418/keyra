@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const createMock = vi.fn();
 const barePost = vi.fn();
 
-vi.mock('axios', () => {
+vi.mock("axios", () => {
   const instance = {
     post: vi.fn(),
     get: vi.fn(),
@@ -25,10 +25,10 @@ vi.mock('axios', () => {
 });
 
 const REFRESH_RESPONSE = {
-  data: { data: { access_token: 'new-at', refresh_token: 'new-rt' } },
+  data: { data: { access_token: "new-at", refresh_token: "new-rt" } },
 };
 
-describe('api-client auth refresh', () => {
+describe("api-client auth refresh", () => {
   beforeEach(() => {
     vi.resetModules();
     localStorage.clear();
@@ -40,10 +40,10 @@ describe('api-client auth refresh', () => {
     vi.unstubAllEnvs();
   });
 
-  it('uses the configured api instance (relative path) when refreshing token, not bare axios.post', async () => {
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com/api/v1');
+  it("uses the configured api instance (relative path) when refreshing token, not bare axios.post", async () => {
+    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
 
-    await import('../client');
+    await import("../client");
 
     expect(createMock).toHaveBeenCalledTimes(1);
     const instance = createMock.mock.results[0]!.value as {
@@ -59,7 +59,7 @@ describe('api-client auth refresh', () => {
       | undefined;
     expect(onRejected).toBeDefined();
 
-    localStorage.setItem('refresh_token', 'rt-abc');
+    localStorage.setItem("refresh_token", "rt-abc");
     barePost.mockResolvedValue(REFRESH_RESPONSE);
     instance.post.mockResolvedValue(REFRESH_RESPONSE);
     instance.request.mockResolvedValue({ data: {} });
@@ -75,10 +75,9 @@ describe('api-client auth refresh', () => {
       // retry path may fail in mocks; assertions below are the contract
     }
 
-    expect(instance.post).toHaveBeenCalledWith(
-      '/auth/refresh',
-      { refresh_token: 'rt-abc' },
-    );
+    expect(instance.post).toHaveBeenCalledWith("/auth/refresh", {
+      refresh_token: "rt-abc",
+    });
     expect(barePost).not.toHaveBeenCalled();
   });
 });
