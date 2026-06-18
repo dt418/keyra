@@ -161,7 +161,7 @@
       "description": "Replace 31 inline SELECTs for org_members role check with requireOrgMember Hono middleware; set orgId + orgRole on context; typed helpers",
       "dependencies": [],
       "status": "done",
-      "evidence": "apps/api/src/middleware/org.ts (requireOrgMember: sets orgId + orgRole on context, ORDER BY role=owner DESC for determinism); apps/api/src/lib/context.ts (typed OrgContext + getOrgContext helper); 6 routers wired (products, licenses, webhooks, analytics, audit-logs, devices); 26 handlers refactored via scripts/s1-refactor-handlers.js to use c.get('orgId') instead of inline SQL; products/get.ts cleaned of redundant subquery; products/delete.ts owner-only check preserved via c.get('orgRole'); products/api-key.ts rewritten to use AppError consistently (P2-2); analytics/overview.ts redundant getOrgId helper removed; apps/api/src/middleware/__tests__/org.test.ts (3 tests: owner, admin, 403); 95/95 API unit tests pass. Plan: docs/superpowers/plans/audit-2026-06-18/s1-org-membership-middleware.md (Closes P2-1, unlocks S2/S3)"
+      "evidence": "apps/api/src/middleware/org.ts + lib/context.ts; 6 routers wired; 26 handlers refactored; 3 middleware tests + 95 API tests + 38 e2e all pass. Closes P2-1, unlocks S2/S3"
     },
     {
       "id": "feat-021",
@@ -169,7 +169,7 @@
       "description": "PATCH /products/:id adds AND organization_id = ? to UPDATE + post-update SELECT; cross-tenant write rejected with 404",
       "dependencies": ["feat-020"],
       "status": "done",
-      "evidence": "apps/api/src/routes/products/update.ts: UPDATE + 2 SELECTs now `WHERE id = ? AND organization_id = ?`; orgId appended to bind params; cross-tenant PATCH returns 404 (meta.changes === 0). 95/95 API unit tests pass. Plan: docs/superpowers/plans/audit-2026-06-18/s2-products-idor-fix.md (Closes P0-1)"
+      "evidence": "apps/api/src/routes/products/update.ts: 3 SQL sites now include AND organization_id = ?. Closes P0-1"
     },
     {
       "id": "feat-022",
@@ -177,7 +177,7 @@
       "description": "POST /licenses/:id/transfer source UPDATE adds AND organization_id = ?; target-org ownership enforced (caller must be admin/owner of destination)",
       "dependencies": ["feat-020"],
       "status": "done",
-      "evidence": "apps/api/src/routes/licenses/transfer.ts: source UPDATE now `WHERE id = ? AND organization_id = ?`; meta.changes === 0 → 404; target-org membership check (caller must be owner/admin of destination) added before the target-org lookup. 95/95 API unit tests pass. Plan: docs/superpowers/plans/audit-2026-06-18/s3-licenses-transfer-idor-fix.md (Closes P0-2)"
+      "evidence": "apps/api/src/routes/licenses/transfer.ts: source UPDATE has org filter; target-org membership check returns 404 on mismatch. Closes P0-2"
     },
     {
       "id": "feat-023",
@@ -185,7 +185,7 @@
       "description": "OAuth state required; account-takeover fix (bind OAuth identity on email match or 409 OAUTH_ALREADY_LINKED); unified storeRefreshToken writes to KV with userAgent/ipAddress",
       "dependencies": [],
       "status": "not-started",
-      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s4-oauth-hardening.md (Closes P0-3, P0-4, P0-5, P1-7)"
+      "evidence": "Plan: docs/superpowers/plans/audit-2026-06-18/s4-oauth-hardening.md (Closes P0-3, P0-4, P0-5, P1-7). JWT secrets synced to wrangler + github via scripts/sync-secrets.sh"
     },
     {
       "id": "feat-024",
