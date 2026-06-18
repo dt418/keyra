@@ -1,10 +1,10 @@
-import type { Context } from 'hono';
-import { loginSchema } from '@keyra/shared-validation';
-import { verifyPassword } from '../../lib/password';
-import { signAccessToken, signRefreshToken } from '../../lib/jwt';
-import { storeRefreshToken } from '../../lib/sessions';
-import { AppError } from '../../middleware/error';
-import { logAuditEvent, extractRequestInfo } from '../../lib/audit';
+import type { Context } from "hono";
+import { loginSchema } from "@keyra/shared-validation";
+import { verifyPassword } from "../../lib/password";
+import { signAccessToken, signRefreshToken } from "../../lib/jwt";
+import { storeRefreshToken } from "../../lib/sessions";
+import { AppError } from "../../middleware/error";
+import { logAuditEvent, extractRequestInfo } from "../../lib/audit";
 
 interface LoginBody {
   email: string;
@@ -20,29 +20,38 @@ export async function loginHandler(c: Context) {
 
   const { email, password } = parsed.data;
 
-  const user = await c.env.DB.prepare(
-    'SELECT id, email, password_hash, name FROM users WHERE email = ?'
+  const user = (await c.env.DB.prepare(
+    "SELECT id, email, password_hash, name FROM users WHERE email = ?",
   )
     .bind(email.toLowerCase())
-    .first() as { id: string; email: string; password_hash: string; name: string } | null;
+    .first()) as {
+    id: string;
+    email: string;
+    password_hash: string;
+    name: string;
+  } | null;
 
   if (!user) {
-    throw new AppError('UNAUTHORIZED', 'Invalid email or password', 401);
+    await verifyPassword(
+      password,
+      "$2b$12$/ycwPOmj3UPVnnysJ/gu3.yGORfFF4OUysPXBea18Bi//813WgU9.",
+    );
+    throw new AppError("UNAUTHORIZED", "Invalid email or password", 401);
   }
 
   const isValid = await verifyPassword(password, user.password_hash);
   if (!isValid) {
-    throw new AppError('UNAUTHORIZED', 'Invalid email or password', 401);
+    throw new AppError("UNAUTHORIZED", "Invalid email or password", 401);
   }
 
   const sessionId = crypto.randomUUID();
   const accessToken = await signAccessToken(
     { sub: user.id, email: user.email, sessionId },
-    c.env.JWT_SECRET
+    c.env.JWT_SECRET,
   );
   const refreshToken = await signRefreshToken(
     { sub: user.id, email: user.email, jti: sessionId },
-    c.env.JWT_REFRESH_SECRET
+    c.env.JWT_REFRESH_SECRET,
   );
 
   const requestInfo = extractRequestInfo(c);
@@ -55,9 +64,9 @@ export async function loginHandler(c: Context) {
   });
 
   logAuditEvent(c, {
-    action: 'user.login',
+    action: "user.login",
     userId: user.id,
-    resourceType: 'user',
+    resourceType: "user",
     resourceId: user.id,
     ipAddress: requestInfo.ipAddress,
     userAgent: requestInfo.userAgent,
@@ -72,6 +81,6 @@ export async function loginHandler(c: Context) {
         user: { id: user.id, email: user.email, name: user.name },
       },
     },
-    200
+    200,
   );
 }

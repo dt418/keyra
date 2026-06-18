@@ -1,9 +1,9 @@
-import type { Context } from 'hono';
-import { oauthCallbackSchema } from '@keyra/shared-validation';
-import { signAccessToken, signRefreshToken } from '../../lib/jwt';
-import { storeRefreshToken as persistSession } from '../../lib/sessions';
-import { AppError } from '../../middleware/error';
-import { logAuditEvent, extractRequestInfo } from '../../lib/audit';
+import type { Context } from "hono";
+import { oauthCallbackSchema } from "@keyra/shared-validation";
+import { signAccessToken, signRefreshToken } from "../../lib/jwt";
+import { storeRefreshToken as persistSession } from "../../lib/sessions";
+import { AppError } from "../../middleware/error";
+import { logAuditEvent, extractRequestInfo } from "../../lib/audit";
 
 interface OAuthConfig {
   tokenUrl: string;
@@ -12,12 +12,12 @@ interface OAuthConfig {
 
 const PROVIDERS: Record<string, OAuthConfig> = {
   google: {
-    tokenUrl: 'https://oauth2.googleapis.com/token',
-    userInfoUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    userInfoUrl: "https://www.googleapis.com/oauth2/v2/userinfo",
   },
   github: {
-    tokenUrl: 'https://github.com/login/oauth/access_token',
-    userInfoUrl: 'https://api.github.com/user',
+    tokenUrl: "https://github.com/login/oauth/access_token",
+    userInfoUrl: "https://api.github.com/user",
   },
 };
 
@@ -47,78 +47,102 @@ async function exchangeCodeForToken(
   ctx: Context,
   provider: string,
   code: string,
-  redirectUri: string
+  redirectUri: string,
 ): Promise<string> {
   const config = PROVIDERS[provider];
   if (!config) {
-    throw new AppError('INVALID_PROVIDER', 'OAuth provider not supported', 400);
+    throw new AppError("INVALID_PROVIDER", "OAuth provider not supported", 400);
   }
 
-  const clientId = ctx.env[`OAUTH_${provider.toUpperCase()}_CLIENT_ID` as keyof typeof ctx.env] as string | undefined;
-  const clientSecret = ctx.env[`OAUTH_${provider.toUpperCase()}_CLIENT_SECRET` as keyof typeof ctx.env] as string | undefined;
+  const clientId = ctx.env[
+    `OAUTH_${provider.toUpperCase()}_CLIENT_ID` as keyof typeof ctx.env
+  ] as string | undefined;
+  const clientSecret = ctx.env[
+    `OAUTH_${provider.toUpperCase()}_CLIENT_SECRET` as keyof typeof ctx.env
+  ] as string | undefined;
+
+  if (!clientId || !clientSecret) {
+    throw new AppError(
+      "OAUTH_NOT_CONFIGURED",
+      `OAuth ${provider} is not configured. Set OAUTH_${provider.toUpperCase()}_CLIENT_ID and OAUTH_${provider.toUpperCase()}_CLIENT_SECRET.`,
+      500,
+    );
+  }
 
   const params = new URLSearchParams({
-    client_id: clientId ?? '',
-    client_secret: clientSecret ?? '',
+    client_id: clientId,
+    client_secret: clientSecret,
     code,
     redirect_uri: redirectUri,
-    grant_type: 'authorization_code',
+    grant_type: "authorization_code",
   });
 
   const response = await fetch(config.tokenUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
   });
 
   if (!response.ok) {
-    throw new AppError('TOKEN_EXCHANGE_FAILED', 'Failed to exchange code for token', 400);
+    throw new AppError(
+      "TOKEN_EXCHANGE_FAILED",
+      "Failed to exchange code for token",
+      400,
+    );
   }
 
   const text = await response.text();
   const parsed = new URLSearchParams(text);
-  const accessToken = parsed.get('access_token');
+  const accessToken = parsed.get("access_token");
   if (!accessToken) {
-    throw new AppError('TOKEN_EXCHANGE_FAILED', 'Failed to exchange code for token', 400);
+    throw new AppError(
+      "TOKEN_EXCHANGE_FAILED",
+      "Failed to exchange code for token",
+      400,
+    );
   }
   return accessToken;
 }
 
 async function getUserInfo(
   provider: string,
-  accessToken: string
+  accessToken: string,
 ): Promise<OAuthUserInfo> {
   const config = PROVIDERS[provider];
   if (!config) {
-    throw new AppError('INVALID_PROVIDER', 'OAuth provider not supported', 400);
+    throw new AppError("INVALID_PROVIDER", "OAuth provider not supported", 400);
   }
 
   const response = await fetch(config.userInfoUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
+      Accept: "application/json",
     },
   });
 
   if (!response.ok) {
-    throw new AppError('USERINFO_FAILED', 'Failed to get user info from provider', 400);
+    throw new AppError(
+      "USERINFO_FAILED",
+      "Failed to get user info from provider",
+      400,
+    );
   }
 
-  if (provider === 'google') {
+  if (provider === "google") {
     const data = (await response.json()) as GoogleUserInfo;
     return {
       id: data.id,
       email: data.email,
-      name: data.name ?? '',
-      avatar_url: data.picture ?? '',
+      name: data.name ?? "",
+      avatar_url: data.picture ?? "",
     };
   } else {
     const data = (await response.json()) as GitHubUserInfo;
     return {
       id: String(data.id),
       email: data.email,
-      name: data.name ?? data.login ?? '',
-      avatar_url: data.avatar_url ?? '',
+      name: data.name ?? data.login ?? "",
+      avatar_url: data.avatar_url ?? "",
     };
   }
 }
@@ -132,9 +156,9 @@ interface DbUser {
 }
 
 export async function oauthCallbackHandler(c: Context) {
-  const provider = c.req.param('provider');
-  if (!provider || !['google', 'github'].includes(provider)) {
-    throw new AppError('INVALID_PROVIDER', 'Invalid provider', 400);
+  const provider = c.req.param("provider");
+  if (!provider || !["google", "github"].includes(provider)) {
+    throw new AppError("INVALID_PROVIDER", "Invalid provider", 400);
   }
 
   const body = await c.req.json();
@@ -146,22 +170,37 @@ export async function oauthCallbackHandler(c: Context) {
   const { code, state } = parsed.data;
 
   if (!state) {
-    throw new AppError('INVALID_STATE', 'Missing state parameter', 400);
+    throw new AppError("INVALID_STATE", "Missing state parameter", 400);
   }
   const storedState = await c.env.SESSIONS.get(`oauth_state:${state}`);
   if (!storedState) {
-    throw new AppError('INVALID_STATE', 'Invalid or expired state parameter', 400);
+    throw new AppError(
+      "INVALID_STATE",
+      "Invalid or expired state parameter",
+      400,
+    );
   }
   await c.env.SESSIONS.delete(`oauth_state:${state}`);
 
-  const redirectUri = (c.env.OAUTH_REDIRECT_URI as string | undefined) ?? '';
+  const redirectUri = c.env.OAUTH_REDIRECT_URI as string | undefined;
+  if (!redirectUri) {
+    throw new AppError(
+      "OAUTH_NOT_CONFIGURED",
+      "OAuth is not configured on this server. Set OAUTH_REDIRECT_URI in wrangler secrets.",
+      500,
+    );
+  }
 
   let accessToken: string;
   try {
     accessToken = await exchangeCodeForToken(c, provider, code, redirectUri);
   } catch (err) {
     if (err instanceof AppError) throw err;
-    throw new AppError('TOKEN_EXCHANGE_FAILED', 'Failed to exchange code for token', 400);
+    throw new AppError(
+      "TOKEN_EXCHANGE_FAILED",
+      "Failed to exchange code for token",
+      400,
+    );
   }
 
   let userInfo: OAuthUserInfo;
@@ -169,30 +208,38 @@ export async function oauthCallbackHandler(c: Context) {
     userInfo = await getUserInfo(provider, accessToken);
   } catch (err) {
     if (err instanceof AppError) throw err;
-    throw new AppError('USERINFO_FAILED', 'Failed to get user info from provider', 400);
+    throw new AppError(
+      "USERINFO_FAILED",
+      "Failed to get user info from provider",
+      400,
+    );
   }
 
   if (!userInfo.email) {
-    throw new AppError('EMAIL_NOT_PROVIDED', 'Email not provided by OAuth provider', 400);
+    throw new AppError(
+      "EMAIL_NOT_PROVIDED",
+      "Email not provided by OAuth provider",
+      400,
+    );
   }
 
   const requestInfo = extractRequestInfo(c);
 
-  const existingByOAuth = await c.env.DB.prepare(
-    'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE oauth_provider = ? AND oauth_id = ?'
+  const existingByOAuth = (await c.env.DB.prepare(
+    "SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE oauth_provider = ? AND oauth_id = ?",
   )
     .bind(provider, userInfo.id)
-    .first() as DbUser | null | undefined;
+    .first()) as DbUser | null | undefined;
 
   if (existingByOAuth) {
     const sessionId = crypto.randomUUID();
     const jwtAccessToken = await signAccessToken(
       { sub: existingByOAuth.id, email: existingByOAuth.email, sessionId },
-      c.env.JWT_SECRET
+      c.env.JWT_SECRET,
     );
     const jwtRefreshToken = await signRefreshToken(
       { sub: existingByOAuth.id, email: existingByOAuth.email, jti: sessionId },
-      c.env.JWT_REFRESH_SECRET
+      c.env.JWT_REFRESH_SECRET,
     );
     await persistSession(c, {
       userId: existingByOAuth.id,
@@ -203,9 +250,9 @@ export async function oauthCallbackHandler(c: Context) {
     });
 
     logAuditEvent(c, {
-      action: 'user.oauth',
+      action: "user.oauth",
       userId: existingByOAuth.id,
-      resourceType: 'user',
+      resourceType: "user",
       resourceId: existingByOAuth.id,
       ipAddress: requestInfo.ipAddress,
       userAgent: requestInfo.userAgent,
@@ -216,21 +263,28 @@ export async function oauthCallbackHandler(c: Context) {
       data: {
         access_token: jwtAccessToken,
         refresh_token: jwtRefreshToken,
-        user: { id: existingByOAuth.id, email: existingByOAuth.email, name: existingByOAuth.name },
+        user: {
+          id: existingByOAuth.id,
+          email: existingByOAuth.email,
+          name: existingByOAuth.name,
+        },
       },
     });
   }
 
-  const existingByEmail = await c.env.DB.prepare(
-    'SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE email = ?'
+  const existingByEmail = (await c.env.DB.prepare(
+    "SELECT id, email, name, oauth_provider, oauth_id FROM users WHERE email = ?",
   )
     .bind(userInfo.email.toLowerCase())
-    .first() as DbUser | null | undefined;
+    .first()) as DbUser | null | undefined;
 
   if (existingByEmail) {
-    if (existingByEmail.oauth_provider && existingByEmail.oauth_provider !== provider) {
+    if (
+      existingByEmail.oauth_provider &&
+      existingByEmail.oauth_provider !== provider
+    ) {
       throw new AppError(
-        'OAUTH_ALREADY_LINKED',
+        "OAUTH_ALREADY_LINKED",
         `This email is linked to ${existingByEmail.oauth_provider}. Sign in with that provider or contact support.`,
         409,
       );
@@ -249,11 +303,11 @@ export async function oauthCallbackHandler(c: Context) {
     const sessionId = crypto.randomUUID();
     const jwtAccessToken = await signAccessToken(
       { sub: existingByEmail.id, email: existingByEmail.email, sessionId },
-      c.env.JWT_SECRET
+      c.env.JWT_SECRET,
     );
     const jwtRefreshToken = await signRefreshToken(
       { sub: existingByEmail.id, email: existingByEmail.email, jti: sessionId },
-      c.env.JWT_REFRESH_SECRET
+      c.env.JWT_REFRESH_SECRET,
     );
     await persistSession(c, {
       userId: existingByEmail.id,
@@ -264,9 +318,9 @@ export async function oauthCallbackHandler(c: Context) {
     });
 
     logAuditEvent(c, {
-      action: 'user.oauth',
+      action: "user.oauth",
       userId: existingByEmail.id,
-      resourceType: 'user',
+      resourceType: "user",
       resourceId: existingByEmail.id,
       ipAddress: requestInfo.ipAddress,
       userAgent: requestInfo.userAgent,
@@ -277,30 +331,43 @@ export async function oauthCallbackHandler(c: Context) {
       data: {
         access_token: jwtAccessToken,
         refresh_token: jwtRefreshToken,
-        user: { id: existingByEmail.id, email: existingByEmail.email, name: existingByEmail.name },
+        user: {
+          id: existingByEmail.id,
+          email: existingByEmail.email,
+          name: existingByEmail.name,
+        },
       },
     });
   }
 
   const userId = crypto.randomUUID();
   const now = new Date().toISOString();
-  const name = userInfo.name ?? userInfo.email.split('@')[0];
+  const name = userInfo.name ?? userInfo.email.split("@")[0];
 
   await c.env.DB.prepare(
     `INSERT INTO users (id, email, name, avatar_url, oauth_provider, oauth_id, email_verified, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
   )
-    .bind(userId, userInfo.email.toLowerCase(), name, userInfo.avatar_url ?? null, provider, userInfo.id, now, now)
+    .bind(
+      userId,
+      userInfo.email.toLowerCase(),
+      name,
+      userInfo.avatar_url ?? null,
+      provider,
+      userInfo.id,
+      now,
+      now,
+    )
     .run();
 
   const sessionId = crypto.randomUUID();
   const jwtAccessToken = await signAccessToken(
     { sub: userId, email: userInfo.email.toLowerCase(), sessionId },
-    c.env.JWT_SECRET
+    c.env.JWT_SECRET,
   );
   const jwtRefreshToken = await signRefreshToken(
     { sub: userId, email: userInfo.email.toLowerCase(), jti: sessionId },
-    c.env.JWT_REFRESH_SECRET
+    c.env.JWT_REFRESH_SECRET,
   );
 
   await persistSession(c, {
@@ -312,13 +379,17 @@ export async function oauthCallbackHandler(c: Context) {
   });
 
   logAuditEvent(c, {
-    action: 'user.oauth',
+    action: "user.oauth",
     userId,
-    resourceType: 'user',
+    resourceType: "user",
     resourceId: userId,
     ipAddress: requestInfo.ipAddress,
     userAgent: requestInfo.userAgent,
-    metadata: { provider, email: userInfo.email.toLowerCase(), isNewUser: true },
+    metadata: {
+      provider,
+      email: userInfo.email.toLowerCase(),
+      isNewUser: true,
+    },
   });
 
   return c.json({
@@ -331,20 +402,32 @@ export async function oauthCallbackHandler(c: Context) {
 }
 
 export async function oauthInitiateHandler(c: Context) {
-  const provider = c.req.param('provider');
-  if (!provider || !['google', 'github'].includes(provider)) {
-    throw new AppError('INVALID_PROVIDER', 'Invalid provider', 400);
+  const provider = c.req.param("provider");
+  if (!provider || !["google", "github"].includes(provider)) {
+    throw new AppError("INVALID_PROVIDER", "Invalid provider", 400);
   }
 
   const state = crypto.randomUUID();
-  await c.env.SESSIONS.put(`oauth_state:${state}`, provider, { expirationTtl: 600 });
+  await c.env.SESSIONS.put(`oauth_state:${state}`, provider, {
+    expirationTtl: 600,
+  });
 
-  const clientId = c.env[`OAUTH_${provider.toUpperCase()}_CLIENT_ID` as keyof typeof c.env] as string | undefined;
-  const redirectUri = (c.env.OAUTH_REDIRECT_URI as string | undefined) ?? '';
+  const clientId = c.env[
+    `OAUTH_${provider.toUpperCase()}_CLIENT_ID` as keyof typeof c.env
+  ] as string | undefined;
+  const redirectUri = c.env.OAUTH_REDIRECT_URI as string | undefined;
+  if (!redirectUri) {
+    throw new AppError(
+      "OAUTH_NOT_CONFIGURED",
+      "OAuth is not configured on this server. Set OAUTH_REDIRECT_URI in wrangler secrets.",
+      500,
+    );
+  }
 
-  const authUrl = provider === 'google'
-    ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&state=${state}`
-    : `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=${state}`;
+  const authUrl =
+    provider === "google"
+      ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&state=${state}`
+      : `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=${state}`;
 
   return c.json({ data: { auth_url: authUrl, state } });
 }

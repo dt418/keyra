@@ -1,10 +1,10 @@
-import type { Context } from 'hono';
-import { registerSchema } from '@keyra/shared-validation';
-import { hashPassword } from '../../lib/password';
-import { signAccessToken, signRefreshToken } from '../../lib/jwt';
-import { storeRefreshToken } from '../../lib/sessions';
-import { AppError } from '../../middleware/error';
-import { logAuditEvent, extractRequestInfo } from '../../lib/audit';
+import type { Context } from "hono";
+import { registerSchema } from "@keyra/shared-validation";
+import { hashPassword } from "../../lib/password";
+import { signAccessToken, signRefreshToken } from "../../lib/jwt";
+import { storeRefreshToken } from "../../lib/sessions";
+import { AppError } from "../../middleware/error";
+import { logAuditEvent, extractRequestInfo } from "../../lib/audit";
 
 interface RegisterBody {
   email: string;
@@ -22,13 +22,13 @@ export async function registerHandler(c: Context) {
   const { email, password, name } = parsed.data;
 
   const existing = await c.env.DB.prepare(
-    'SELECT id FROM users WHERE email = ?'
+    "SELECT id FROM users WHERE email = ?",
   )
     .bind(email.toLowerCase())
     .first();
 
   if (existing) {
-    throw new AppError('CONFLICT', 'User already exists', 409);
+    throw new AppError("CONFLICT", "User already exists", 409);
   }
 
   const hashedPassword = await hashPassword(password);
@@ -37,7 +37,7 @@ export async function registerHandler(c: Context) {
 
   await c.env.DB.prepare(
     `INSERT INTO users (id, email, password_hash, name, email_verified, created_at, updated_at)
-     VALUES (?, ?, ?, ?, 1, ?, ?)`
+     VALUES (?, ?, ?, ?, 0, ?, ?)`,
   )
     .bind(userId, email.toLowerCase(), hashedPassword, name, now, now)
     .run();
@@ -45,11 +45,11 @@ export async function registerHandler(c: Context) {
   const sessionId = crypto.randomUUID();
   const accessToken = await signAccessToken(
     { sub: userId, email: email.toLowerCase(), sessionId },
-    c.env.JWT_SECRET
+    c.env.JWT_SECRET,
   );
   const refreshToken = await signRefreshToken(
     { sub: userId, email: email.toLowerCase(), jti: sessionId },
-    c.env.JWT_REFRESH_SECRET
+    c.env.JWT_REFRESH_SECRET,
   );
 
   const requestInfo = extractRequestInfo(c);
@@ -62,9 +62,9 @@ export async function registerHandler(c: Context) {
   });
 
   logAuditEvent(c, {
-    action: 'user.register',
+    action: "user.register",
     userId,
-    resourceType: 'user',
+    resourceType: "user",
     resourceId: userId,
     ipAddress: requestInfo.ipAddress,
     userAgent: requestInfo.userAgent,
@@ -79,6 +79,6 @@ export async function registerHandler(c: Context) {
         user: { id: userId, email: email.toLowerCase(), name },
       },
     },
-    201
+    201,
   );
 }

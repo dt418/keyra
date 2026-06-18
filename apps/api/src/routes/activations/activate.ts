@@ -136,18 +136,7 @@ export async function activateDeviceHandler(c: Context) {
       data: {
         activation_id: activationId,
         device_id: device.id,
-        license_id: license.id,
-        product_name: license.product_name,
         license_type: license.type,
-        feature_flags: license.feature_flags
-          ? (() => {
-              try {
-                return JSON.parse(license.feature_flags!);
-              } catch {
-                return null;
-              }
-            })()
-          : null,
         expires_at: license.expires_at,
         activated_at: now,
       },

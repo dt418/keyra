@@ -1,41 +1,47 @@
-import type { Context, Next } from 'hono';
+import type { MiddlewareHandler } from "hono";
+import { AppError } from "./error";
 
-const RATE_LIMIT_PREFIX = 'rl:';
-
-interface RateLimitOptions {
-  windowMs: number;
-  maxRequests: number;
+export interface RateLimitOptions {
+  /** window seconds */
+  window: number;
+  /** max requests per window per key */
+  max: number;
+  /** key prefix; combined with ip + bucket */
+  scope: string;
+  /** if true, read DISABLE_RATE_LIMIT env and skip */
+  respectDevFlag?: boolean;
 }
 
-export function rateLimit(options: RateLimitOptions) {
-  return async (c: Context, next: Next) => {
-    if (c.env.DISABLE_RATE_LIMIT) {
-      return next();
+export function rateLimit(opts: RateLimitOptions): MiddlewareHandler {
+  return async (c, next) => {
+    if (opts.respectDevFlag && c.env.DISABLE_RATE_LIMIT === "1") {
+      await next();
+      return;
     }
 
-    const ip = c.req.header('CF-Connecting-IP') ?? 'unknown';
-    const key = `${RATE_LIMIT_PREFIX}${ip}`;
-    const kv = c.env.SESSIONS;
+    const ip =
+      c.req.header("cf-connecting-ip") ??
+      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+      "unknown";
+    const now = Math.floor(Date.now() / 1000);
+    const bucket = Math.floor(now / opts.window);
+    const key = `rl:${opts.scope}:${ip}:${bucket}`;
 
-    const current = await kv.get(key, 'text');
-    const count = current ? parseInt(current, 10) : 0;
-
-    if (count >= options.maxRequests) {
-      return c.json(
-        {
-          error: {
-            code: 'RATE_LIMITED',
-            message: 'Too many requests. Please try again later.',
-          },
-        },
-        429 as const
+    const currentRaw = await c.env.SESSIONS.get(key);
+    const current = currentRaw ? parseInt(currentRaw, 10) : 0;
+    if (current >= opts.max) {
+      const resetIn = (bucket + 1) * opts.window - now;
+      c.header("Retry-After", String(resetIn));
+      throw new AppError(
+        "RATE_LIMITED",
+        `Too many requests. Retry in ${resetIn}s.`,
+        429,
       );
     }
 
-    await kv.put(key, String(count + 1), {
-      expirationTtl: Math.ceil(options.windowMs / 1000),
+    await c.env.SESSIONS.put(key, String(current + 1), {
+      expirationTtl: opts.window * 2,
     });
-
-    return next();
+    await next();
   };
 }
