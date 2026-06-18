@@ -34,13 +34,13 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Build dashboard
-        working-directory: apps/dashboard
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
+        run: pnpm build
 
       - name: Deploy to Cloudflare Pages
         id: deploy
