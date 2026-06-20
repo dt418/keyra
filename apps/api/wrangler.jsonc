@@ -18,7 +18,8 @@
     }
   ],
   "vars": {
-    "ENVIRONMENT": "${ENVIRONMENT}"
+    "ENVIRONMENT": "${ENVIRONMENT}",
+    "CORS_ALLOWED_ORIGINS": "https://keyra.danhthanh.dev,https://keyra.pages.dev,https://keyra-cl8.pages.dev,https://develop.keyra.pages.dev"
   },
   "observability": {
     "enabled": true

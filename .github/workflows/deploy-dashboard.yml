@@ -39,6 +39,9 @@ jobs:
 
       - name: Build
         env:
+          # Set VITE_API_URL in the GitHub `dashboard-production` environment
+          # variables (e.g. https://keyra-api.danhthanh418.workers.dev/api/v1)
+          # Otherwise dashboard calls relative /api/v1, which 404s on Pages.
           VITE_API_URL: ${{ vars.VITE_API_URL }}
         run: pnpm build
 

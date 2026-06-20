@@ -12,7 +12,22 @@ app.onError(errorHandler);
 app.use(
   '*',
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174'],
+    origin: (origin, c) => {
+      if (!origin) return origin;
+      const envOrigins = (
+        (c.env as { CORS_ALLOWED_ORIGINS?: string }).CORS_ALLOWED_ORIGINS || ''
+      )
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean);
+      const allowed = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://localhost:5174',
+        ...envOrigins,
+      ];
+      return allowed.includes(origin) ? origin : '';
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
