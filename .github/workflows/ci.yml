@@ -8,7 +8,6 @@ on:
   workflow_call:
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
@@ -17,7 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -30,7 +31,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -43,7 +46,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -57,7 +62,9 @@ jobs:
     needs: [lint, test-api, test-dashboard]
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -71,7 +78,9 @@ jobs:
     needs: [lint, build]
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v5
         with:
           node-version: 22
