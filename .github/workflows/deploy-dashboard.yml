@@ -52,7 +52,7 @@ jobs:
           wranglerVersion: "4"
           command: >-
             pages deploy dist
-            --project-name=keyra-dashboard
+            --project-name=keyra
             --branch=${{ github.ref_name }}
             --commit-dirty=true
             --commit-message="deploy: ${{ github.sha }}"
