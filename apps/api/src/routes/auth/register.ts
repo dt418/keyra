@@ -42,6 +42,41 @@ export async function registerHandler(c: Context) {
     .bind(userId, email.toLowerCase(), hashedPassword, name, now, now)
     .run();
 
+  const orgId = crypto.randomUUID();
+  const local = email.split("@")[0] ?? email;
+  const baseSlug =
+    local
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "workspace";
+  let orgSlug = baseSlug;
+  for (let suffix = 0; suffix < 100; suffix++) {
+    try {
+      await c.env.DB.prepare(
+        `INSERT INTO organizations (id, name, slug, plan, created_at, updated_at)
+         VALUES (?, ?, ?, 'free', ?, ?)`,
+      )
+        .bind(orgId, `${name}'s Workspace`, orgSlug, now, now)
+        .run();
+      break;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("UNIQUE constraint failed: organizations.slug")) {
+        orgSlug = `${baseSlug}-${suffix + 1}`;
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  const memberId = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO org_members (id, org_id, user_id, role, created_at)
+     VALUES (?, ?, ?, 'owner', ?)`,
+  )
+    .bind(memberId, orgId, userId, now)
+    .run();
+
   const sessionId = crypto.randomUUID();
   const accessToken = await signAccessToken(
     { sub: userId, email: email.toLowerCase(), sessionId },

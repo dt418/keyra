@@ -83,6 +83,30 @@ describe("registerHandler", () => {
 
     await expect(registerHandler(ctx)).rejects.toThrow("User already exists");
   });
+
+  it("should provision a default workspace and owner membership", async () => {
+    mockDB.first.mockResolvedValueOnce(null);
+    const ctx = createMockContext({
+      email: "owner@example.com",
+      password: "password123",
+      name: "Owner User",
+    }) as any;
+
+    await registerHandler(ctx);
+
+    const preparedSql = mockDB.prepare.mock.calls.map((c) => c[0]);
+    expect(preparedSql).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("INSERT INTO organizations"),
+        expect.stringContaining("INSERT INTO org_members"),
+      ]),
+    );
+
+    const memberSql = mockDB.prepare.mock.calls
+      .map((c) => String(c[0]))
+      .find((sql) => sql.includes("INSERT INTO org_members"));
+    expect(memberSql).toContain("'owner'");
+  });
 });
 
 describe("loginHandler", () => {
