@@ -17,7 +17,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://keyra.pages.dev
+      url: https://keyra-api.danhthanh418.workers.dev
     needs: [ci]
     steps:
       - uses: actions/checkout@v5
@@ -40,7 +40,6 @@ jobs:
           environment: production
           command: >-
             deploy
-            --env production
             --var "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}"
           wranglerVersion: "4"
 
@@ -50,7 +49,7 @@ jobs:
     if: github.ref == 'refs/heads/develop'
     environment:
       name: preview
-      url: https://develop.keyra.pages.dev
+      url: https://keyra-api.danhthanh418.workers.dev
     needs: [ci]
     steps:
       - uses: actions/checkout@v5
@@ -73,6 +72,5 @@ jobs:
           environment: preview
           command: >-
             deploy
-            --env preview
             --var "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}"
           wranglerVersion: "4"
