@@ -40,6 +40,8 @@ jobs:
           environment: production
           command: deploy --env production
           wranglerVersion: "4"
+          vars: |
+            CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
 
   deploy-preview:
     name: Deploy Preview
@@ -70,3 +72,5 @@ jobs:
           environment: preview
           command: deploy --env preview
           wranglerVersion: "4"
+          vars: |
+            CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
