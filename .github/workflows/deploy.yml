@@ -41,6 +41,8 @@ jobs:
           secrets: |
             CORS_ALLOWED_ORIGINS
           wranglerVersion: "4"
+        env:
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
 
   deploy-preview:
     name: Deploy Preview
@@ -72,3 +74,5 @@ jobs:
           secrets: |
             CORS_ALLOWED_ORIGINS
           wranglerVersion: "4"
+        env:
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
