@@ -39,6 +39,7 @@ jobs:
           workingDirectory: apps/api
           environment: production
           command: deploy --env production
+          wranglerVersion: "4"
 
   deploy-preview:
     name: Deploy Preview
@@ -68,3 +69,4 @@ jobs:
           workingDirectory: apps/api
           environment: preview
           command: deploy --env preview
+          wranglerVersion: "4"
