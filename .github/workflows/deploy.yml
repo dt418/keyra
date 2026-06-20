@@ -37,9 +37,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/api
-          command: deploy
-          secrets: |
-            CORS_ALLOWED_ORIGINS
+          command: deploy --var CORS_ALLOWED_ORIGINS:"$CORS_ALLOWED_ORIGINS"
           wranglerVersion: "4"
         env:
           CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
@@ -70,9 +68,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/api
-          command: deploy
-          secrets: |
-            CORS_ALLOWED_ORIGINS
+          command: deploy --var CORS_ALLOWED_ORIGINS:"$CORS_ALLOWED_ORIGINS"
           wranglerVersion: "4"
         env:
           CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
