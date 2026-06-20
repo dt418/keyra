@@ -19,6 +19,33 @@ Base URL: `https://keyra-api.danhthanh418.workers.dev/api/v1`
 { "error": { "code": "ERROR_CODE", "message": "Human readable message", "details"?: [...] } }
 ```
 
+## CORS
+
+Allowed origins are **env-driven** (never hardcoded in source). Read at request
+time from `c.env.CORS_ALLOWED_ORIGINS` (comma-separated string) in
+`apps/api/src/index.ts`. Localhost origins (`http://localhost:5173`,
+`http://localhost:3000`, `http://localhost:5174`) are always allowed so local
+dev works without configuration.
+
+Source of truth in CI: GitHub repo secret `CORS_ALLOWED_ORIGINS`, injected at
+deploy time via wrangler-action `vars:` input in `.github/workflows/deploy.yml`.
+
+```
+Access-Control-Allow-Origin: https://keyra.danhthanh.dev
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET,POST,PATCH,DELETE,OPTIONS
+Access-Control-Allow-Headers: Authorization, Content-Type
+```
+
+Preflight `OPTIONS` requests return `204 No Content` without auth.
+
+## Environment
+
+| Key | Source | Purpose |
+|-----|--------|---------|
+| `VITE_API_URL` | GitHub Actions variable (build-time) | `packages/api-client` axios baseURL. Set to `https://keyra-api.danhthanh418.workers.dev/api/v1` in prod. Falls back to `/api/v1` (Vite proxy) when unset. |
+| `CORS_ALLOWED_ORIGINS` | GitHub Actions secret → wrangler var | Comma-separated origin allowlist. Localhost defaults always permitted. |
+
 ## Authentication
 
 Protected endpoints require `Authorization: Bearer <access_token>` header.
@@ -127,7 +154,7 @@ GET /licenses?limit=20&cursor=<opaque>
 ## Error Codes
 
 | Code | HTTP Status | Description |
-|------|------------|-------------|
+|------|-------------|-------------|
 | `UNAUTHORIZED` | 401 | Missing/invalid token |
 | `FORBIDDEN` | 403 | Insufficient permissions |
 | `NOT_FOUND` | 404 | Resource not found |
@@ -138,6 +165,9 @@ GET /licenses?limit=20&cursor=<opaque>
 | `TOKEN_EXCHANGE_FAILED` | 502 | OAuth token exchange failed |
 | `USERINFO_FAILED` | 502 | OAuth userinfo request failed |
 | `EMAIL_NOT_PROVIDED` | 400 | OAuth provider did not provide email |
+| `OAUTH_NOT_CONFIGURED` | 500 | OAuth env vars missing |
+| `OAUTH_ALREADY_LINKED` | 409 | Email already bound to a different provider |
+| `NOT_IMPLEMENTED` | 501 | Endpoint stub (e.g. `/auth/verify-email/:token`) |
 | `RATE_LIMITED` | 429 | Too many requests |
 | `INTERNAL_ERROR` | 500 | Server error |
 

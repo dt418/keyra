@@ -15,7 +15,8 @@ Cloud-native licensing platform for software distribution with device activation
 
 | Layer    | Technology                                       |
 | -------- | ------------------------------------------------ |
-| Runtime  | Cloudflare Workers                               |
+| API      | Cloudflare Workers (`keyra-api`)                 |
+| Dashboard host | Cloudflare Pages project `keyra`           |
 | Database | Cloudflare D1 (SQLite)                           |
 | Cache    | Cloudflare KV                                    |
 | Backend  | Hono                                             |
@@ -24,7 +25,7 @@ Cloud-native licensing platform for software distribution with device activation
 | Language | TypeScript                                       |
 | Frontend | React 18, Vite, Tailwind v4, shadcn/ui (base-ui) |
 | Data     | TanStack Query, TanStack Table                   |
-| Forms    | React Hook Form (planned) + Zod                  |
+| Forms    | React Hook Form + Zod (`@keyra/shared-validation`)|
 
 ## Project Structure
 
@@ -105,7 +106,27 @@ bash scripts/sync-secrets.sh
 ```bash
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 # Fill in JWT_SECRET, JWT_REFRESH_SECRET, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+# Fill in CORS_ALLOWED_ORIGINS (comma-separated; localhost defaults always work)
 ```
+
+### Required GitHub repo secrets / variables
+
+Set with `gh secret set` and `gh variable set -R dt418/keyra`:
+
+| Key | Type | Required | Purpose |
+|-----|------|----------|---------|
+| `CLOUDFLARE_API_TOKEN` | secret | ✓ | wrangler-action deploy |
+| `CLOUDFLARE_ACCOUNT_ID` | secret | ✓ | wrangler-action account |
+| `JWT_SECRET` | secret | ✓ | API access-token signing |
+| `JWT_REFRESH_SECRET` | secret | ✓ | API refresh-token signing |
+| `CORS_ALLOWED_ORIGINS` | secret | ✓ | Comma-separated dashboard origins (prod + preview Pages URLs + custom domain) |
+| `VITE_API_URL` | variable | ✓ | Dashboard axios baseURL; inlined at build time |
+| `OAUTH_*` | secret |  | Google/GitHub OAuth client ids + secrets |
+
+`scripts/sync-secrets.sh` pushes all of the above from `apps/api/.dev.vars` to
+`gh secret set` / `gh variable set` + `wrangler secret put`. Never echoes
+values. `scripts/check-secrets.sh` runs as a lefthook pre-commit hook and
+refuses commits containing known secret patterns.
 
 ### Local Login (after seed)
 
@@ -124,14 +145,18 @@ wrangler kv namespace create sessions
 
 ## Deployment
 
-```bash
-cd apps/api
-wrangler secret put JWT_SECRET
-wrangler secret put JWT_REFRESH_SECRET
-wrangler deploy
-```
+GitHub Actions automatically deploy on push to `main`:
 
-GitHub Actions automatically deploy on push to `main`.
+- **API** — `.github/workflows/deploy.yml` deploys `apps/api/` to Cloudflare
+  Worker `keyra-api` (`https://keyra-api.danhthanh418.workers.dev/api/v1`).
+  Reads `CORS_ALLOWED_ORIGINS` from a GH secret and injects via wrangler-action
+  `vars:` so the deployed worker reads it as `c.env.CORS_ALLOWED_ORIGINS`.
+- **Dashboard** — `.github/workflows/deploy-dashboard.yml` builds with
+  `VITE_API_URL` inlined and deploys `apps/dashboard/dist` to Cloudflare Pages
+  project **`keyra`** (`https://keyra-cl8.pages.dev`, custom domain
+  `https://keyra.danhthanh.dev`). Note: the Pages project name is `keyra`,
+  not `keyra-dashboard` — `apps/dashboard/wrangler.jsonc` `name` field is a
+  local-only reference.
 
 ## Documentation
 

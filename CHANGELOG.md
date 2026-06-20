@@ -4,6 +4,28 @@ All notable changes will be documented in this file.
 
 ## [Unreleased]
 
+### feat-028 — Cloudflare Pages Deploy + Env-Driven CORS
+
+#### Pages project name fix
+
+- `.github/workflows/deploy-dashboard.yml` line 55: `--project-name=keyra-dashboard` → `--project-name=keyra`. The Pages project on this Cloudflare account is `keyra` (served at `keyra-cl8.pages.dev`); `keyra-dashboard` did not exist, so `wrangler-action v3` exited 1 with `[code: 8000007] Project not found` (stderr swallowed, only generic exit code shown). `apps/dashboard/wrangler.jsonc` `name: keyra-dashboard` is a local-only reference and does not have to match the Pages project name.
+
+#### Env-driven CORS
+
+- `apps/api/src/index.ts` — CORS origin resolver reads `c.env.CORS_ALLOWED_ORIGINS` (comma-separated string) at request time. Localhost defaults (`http://localhost:5173`, `http://localhost:3000`, `http://localhost:5174`) are always allowed regardless of env var. **No origins hardcoded in source.**
+- `.github/workflows/deploy.yml` — both `deploy-production` and `deploy-preview` jobs pass `vars: CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}` to wrangler-action, injected as `--var` at deploy time. Source of truth is the GitHub repo secret.
+- `scripts/sync-secrets.sh` — adds `sync_var` helper; `CORS_ALLOWED_ORIGINS` and `VITE_API_URL` are now pushed via `gh variable set` (not `secret set`); `CLOUDFLARE_ACCOUNT_ID` now syncs as a secret.
+- `scripts/check-secrets.sh` — fixed dangling reference to non-existent `scripts/rotate-secrets.sh` → now points to `scripts/sync-secrets.sh`.
+- `docs/ARCHITECTURE.md` — added CORS section, deployment topology (Pages project `keyra` + custom domain `keyra.danhthanh.dev`), env-var reference table, updated test counts (98 api / 70 dashboard / 9 sdk-js / 28 shared-validation), updated architecture diagram, added `/verify` + `/activate` rate limits.
+- `docs/API_SPEC.md` — added CORS section, environment variables table, additional error codes (`OAUTH_NOT_CONFIGURED`, `OAUTH_ALREADY_LINKED`, `NOT_IMPLEMENTED`).
+- `README.md` — replaced ad-hoc deploy instructions with the actual GitHub Actions flow, documented required GH secrets/variables table, named the Pages project `keyra`.
+
+#### Commits
+
+- `f10b9cf` — fix(ci): target existing `keyra` Pages project (not `keyra-dashboard`)
+- `f2eb04f` — feat(api): env-driven CORS via CORS_ALLOWED_ORIGINS
+- `c0f6fc6` — fix(ci): inject CORS_ALLOWED_ORIGINS from GH secret via wrangler-action (no hardcoded vars)
+
 ### Security Audit 2026-06-18 — 9 P0 + 7 P1 + 1 P2 closed (8/8 plans shipped)
 
 #### feat-019 (S0) — Secret Rotation & Env Hygiene

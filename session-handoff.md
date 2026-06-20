@@ -1,11 +1,23 @@
-# Session Handoff — audit-2026-06-18 + post-audit (COMPLETE)
+# Session Handoff — post-audit (DONE 2026-06-18) + deploy fix (2026-06-20)
 
 ## Current Objective
 
-- **Goal 1 (DONE):** Land all 8 audit plans (S0–S7) closing 9 P0 + 7 P1 security findings.
-- **Goal 2 (DONE):** feat-027 (show/hide password) + 3-variant comprehensive seed (`.sh` / `.ts` / `.ps1`).
-- **Status:** All shipped. main @ `5a6a1d8`. Production secrets rotated + synced.
+- **Goal 1 (DONE 2026-06-18):** Land all 8 audit plans (S0–S7) closing 9 P0 + 7 P1 security findings.
+- **Goal 2 (DONE 2026-06-18):** feat-027 (show/hide password) + 3-variant comprehensive seed (`.sh` / `.ts` / `.ps1`).
+- **Goal 3 (DONE 2026-06-20):** Cloudflare Pages project name fix + env-driven CORS + dashboard → API wiring.
+- **Status:** All shipped. main @ `c0f6fc6`. Production secrets + CORS vars rotated + synced.
 - **Branch / commit:** main, all committed and pushed.
+
+## Deploy topology (current)
+
+- **API:** Cloudflare Worker `keyra-api` at `https://keyra-api.danhthanh418.workers.dev/api/v1`.
+  CORS allowlist from `c.env.CORS_ALLOWED_ORIGINS` (injected at deploy time via
+  wrangler-action from GH secret).
+- **Dashboard:** Cloudflare Pages project `keyra` at `keyra-cl8.pages.dev` with
+  custom domain `keyra.danhthanh.dev`. Built with `VITE_API_URL` inlined.
+- **Pages project name gotcha:** `apps/dashboard/wrangler.jsonc` says
+  `keyra-dashboard`; Pages project is `keyra`. Don't rename wrangler.jsonc —
+  CI deploy command targets the Pages project directly.
 
 ## Findings (from docs/superpowers/specs/2026-06-18-keyra-security-audit.md)
 
@@ -43,11 +55,12 @@
 - [x] All 8 audit plans implemented + shipped
 - [x] feat-027 shipped (`PasswordInput` primitive + 3 tests)
 - [x] Comprehensive seed shipped in 3 variants
-- [x] CHANGELOG.md updated with full audit section + feat-027 + tooling
-- [x] README.md updated with seed commands + audit summary
-- [x] progress.md updated to reflect all shipped work
-- [x] session-handoff.md updated to reflect all shipped work
+- [x] CHANGELOG.md, README.md, progress.md, session-handoff.md synced
 - [x] Production secrets rotated + synced to `gh secret list` + `wrangler secret list`
+- [x] Cloudflare Pages project name fix (`f10b9cf`): `keyra-dashboard` → `keyra`
+- [x] Env-driven CORS (`f2eb04f`): `c.env.CORS_ALLOWED_ORIGINS` in `apps/api/src/index.ts`
+- [x] CORS injected via wrangler-action from GH secret (`c0f6fc6`); no hardcoded vars
+- [x] Docs synced: ARCHITECTURE.md (CORS + Pages + env vars + tests), API_SPEC.md (CORS + env vars), README.md (env vars + Pages project), scripts/sync-secrets.sh (vars + CORS_ALLOWED_ORIGINS), scripts/check-secrets.sh (fixed rotate-secrets ref)
 
 ## Verification Evidence
 

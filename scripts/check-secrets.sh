@@ -26,7 +26,7 @@ if [ "$FAIL" -ne 0 ]; then
   echo ""
   echo "Refusing to commit: secret-like pattern found in staged changes."
   echo "If this is a placeholder (e.g. <paste-from-1password>), no real secret is in the diff."
-  echo "If a real secret is staged, rotate it BEFORE committing (see scripts/rotate-secrets.sh)."
+  echo "If a real secret is staged, rotate it BEFORE committing (see scripts/sync-secrets.sh)."
   exit 1
 fi
 

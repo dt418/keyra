@@ -2,10 +2,10 @@
 
 ## Current State
 
-**Last Updated:** 2026-06-18
-**Session:** audit-2026-06-18 + post-audit (feat-027, seed scripts)
-**Active Phase:** NONE — audit complete, follow-up work shipped
-**Branch:** main @ 5a6a1d8
+**Last Updated:** 2026-06-20
+**Session:** post-audit deploy fixes (Pages project name + env-driven CORS) + docs sync
+**Active Phase:** NONE — all shipped
+**Branch:** main @ c0f6fc6
 
 ## Status
 
@@ -24,12 +24,11 @@
   - feat-026 (S7) auth flow hygiene → `8334878`
 - [x] **feat-027 — show/hide password toggle** on Login + Register → `1839931`
 - [x] **Comprehensive seed script** in 3 variants (`.sh`, `.ts`, `.ps1`) populating all 13 tables → `5a6a1d8`
-- [x] **CHANGELOG.md** updated with comprehensive audit section + feat-027 + tooling
-- [x] **README.md** updated with seed commands + audit summary
-- [x] **progress.md** + **session-handoff.md** synced to reflect all shipped work
-- [x] Production secrets rotated + synced to `gh secret list` + `wrangler secret list`
 - [x] forwardRef base-ui warnings fixed (commit `5e7f079`)
 - [x] prior phases feat-001..feat-018 all `done`
+- [x] **Cloudflare Pages project name fix** — `keyra-dashboard` → `keyra` → `f10b9cf`
+- [x] **Env-driven CORS** — `c.env.CORS_ALLOWED_ORIGINS` in API, injected via wrangler-action from GH secret → `f2eb04f` + `c0f6fc6`
+- [x] **Docs sync (feat-028)** — ARCHITECTURE.md, API_SPEC.md, README.md, CHANGELOG.md, session-handoff.md, scripts/sync-secrets.sh, scripts/check-secrets.sh all match current code & deploy flow
 
 ### What's In Progress
 
@@ -38,6 +37,8 @@
 ### What's Next (next session)
 
 1. **Open follow-ups** (per `feature_list.json` last open items):
+
+
    - Email verification flow — S7 stub returns 501; needs Resend integration (`lib/email.ts` + token issuance in `register.ts` + `verify-email.ts` implementation)
 2. **Potential hardening** (post-audit):
    - Durable Objects for strict rate limiting (S5 caveat — currently KV-based, small race)
