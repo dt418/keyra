@@ -1,7 +1,7 @@
 {
   "schema": "feature-list.schema.json",
   "project": "keyra",
-  "lastUpdated": "2026-06-18",
+  "lastUpdated": "2026-06-21",
   "features": [
     {
       "id": "feat-001",
@@ -210,6 +210,30 @@
       "dependencies": [],
       "status": "done",
       "evidence": "apps/dashboard/src/components/ui/password-input.tsx — new PasswordInput primitive built on InputGroup + InputGroupAddon (inline-end) + InputGroupButton (icon-xs ghost). Eye/EyeOff icons from lucide-react. type='password' by default, toggles to type='text'. aria-label and aria-pressed for screen readers. apps/dashboard/src/components/ui/index.ts exports it. login.tsx + register.tsx use PasswordInput (register uses it for both password and confirmPassword). 3 new tests in __tests__/password-input.test.tsx. Dashboard tests 70/70 pass (was 67)."
+    },
+    {
+      "id": "feat-029",
+      "name": "Email Verification Flow",
+      "description": "Replace S7 stub (verify-email.ts 501 NOT_IMPLEMENTED) with token-based verification: 24h single-use tokens stored in KV under verify:<token>, Resend transactional email, /auth/resend-verification endpoint with rate limit 5/min, optional REQUIRE_EMAIL_VERIFICATION env flag to block login until email_verified=1",
+      "dependencies": ["feat-026"],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/2026-06-21-feat-029-email-verification.md — 5 tasks (token model + verify handler, register integration, resend endpoint, login gate, docs). 7 new tests (3 verify-email + 2 resend + 2 login gate). Adds env vars RESEND_API_KEY, RESEND_FROM_EMAIL, REQUIRE_EMAIL_VERIFICATION."
+    },
+    {
+      "id": "feat-030",
+      "name": "Production Hardening (DO Rate Limit + License HMAC + Webhook SSRF)",
+      "description": "Three independent chains: (A) move rate limit from KV get/put race to Cloudflare Durable Object RateLimiter with atomic per-(scope,ip) counters; (B) HMAC-sign license keys with HMAC-SHA256(LICENSE_HMAC_SECRET, raw).slice(0,12).base32 appended as <raw>.<tag>, verified at /verify + /activate (legacy keys without HMAC still accepted); (C) SSRF guard for webhook URLs — block loopback, RFC 1918, link-local (incl. 169.254.169.254), IPv6 ULA/link-local, *.internal, *.local, http://",
+      "dependencies": ["feat-024"],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/2026-06-21-feat-030-hardening.md — 3 chains (A: 3 tasks, B: 3 tasks, C: 3 tasks). ~12 new tests (4 license-hmac + 8 url-guard + 3 rateLimit-do). Adds LICENSE_HMAC_SECRET + RESOLVE_DNS_FOR_SSRF env. DO migration tagged v1 in wrangler.jsonc."
+    },
+    {
+      "id": "feat-031",
+      "name": "RHF Migration for Remaining 7 Dialogs",
+      "description": "Complete feat-017 React Hook Form migration for the 7 entity dialogs still on raw FormField + Input: Create Product (text+textarea), Create Org (text+text), Edit Org (text), Create License (number for maxDevices), Edit License (number for maxDevices), Create Webhook (text+multicheckbox), Edit Webhook (text+multicheckbox)",
+      "dependencies": ["feat-017"],
+      "status": "not-started",
+      "evidence": "Plan: docs/superpowers/plans/2026-06-21-feat-031-rhf-migration.md — 8 tasks (7 dialogs + cleanup). No new unit tests — primitives are already covered in feat-017. Acceptance: grep '<FormField' and 'type=\"checkbox\"' in the 4 entity routes returns no matches; 70/70 dashboard tests still green; e2e green."
     }
   ]
 }

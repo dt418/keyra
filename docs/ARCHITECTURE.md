@@ -312,8 +312,8 @@ Response Format: { data: ... } or { error: { code, message } }
 
 ### Dashboard (`VITE_API_URL`, set as GitHub variable)
 
-| Key | Scope | Purpose |
-|-----|-------|---------|
+| Key            | Scope                                                                                   | Purpose                                                                                                                                                                                  |
+| -------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `VITE_API_URL` | GitHub variable (repo **and** `dashboard-production` / `dashboard-preview` environment) | Base URL for `packages/api-client` axios instance. Read at build time by Vite and inlined into the bundle. If unset, dashboard falls back to `/api/v1` (works with Vite dev proxy only). |
 
 **Production:** `VITE_API_URL=https://keyra-api.danhthanh418.workers.dev/api/v1`.
@@ -326,6 +326,7 @@ a repo-level variable so preview builds work too.
 `${VITE_API_URL}/auth/register`. Without the suffix the API 404s.
 
 Set with:
+
 ```bash
 gh variable set VITE_API_URL -R dt418/keyra \
   --body "https://keyra-api.danhthanh418.workers.dev/api/v1"

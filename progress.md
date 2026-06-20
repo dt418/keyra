@@ -38,8 +38,8 @@
 
 1. **Open follow-ups** (per `feature_list.json` last open items):
 
-
    - Email verification flow — S7 stub returns 501; needs Resend integration (`lib/email.ts` + token issuance in `register.ts` + `verify-email.ts` implementation)
+
 2. **Potential hardening** (post-audit):
    - Durable Objects for strict rate limiting (S5 caveat — currently KV-based, small race)
    - Move license-key generation off `bytes[i] % 36` (modulo bias; cosmetic, 1.3e31 keyspace)

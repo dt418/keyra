@@ -13,19 +13,19 @@ Cloud-native licensing platform for software distribution with device activation
 
 ## Tech Stack
 
-| Layer    | Technology                                       |
-| -------- | ------------------------------------------------ |
-| API      | Cloudflare Workers (`keyra-api`)                 |
-| Dashboard host | Cloudflare Pages project `keyra`           |
-| Database | Cloudflare D1 (SQLite)                           |
-| Cache    | Cloudflare KV                                    |
-| Backend  | Hono                                             |
-| Auth     | JWT + bcrypt + OAuth                             |
-| Monorepo | Turborepo + pnpm                                 |
-| Language | TypeScript                                       |
-| Frontend | React 18, Vite, Tailwind v4, shadcn/ui (base-ui) |
-| Data     | TanStack Query, TanStack Table                   |
-| Forms    | React Hook Form + Zod (`@keyra/shared-validation`)|
+| Layer          | Technology                                         |
+| -------------- | -------------------------------------------------- |
+| API            | Cloudflare Workers (`keyra-api`)                   |
+| Dashboard host | Cloudflare Pages project `keyra`                   |
+| Database       | Cloudflare D1 (SQLite)                             |
+| Cache          | Cloudflare KV                                      |
+| Backend        | Hono                                               |
+| Auth           | JWT + bcrypt + OAuth                               |
+| Monorepo       | Turborepo + pnpm                                   |
+| Language       | TypeScript                                         |
+| Frontend       | React 18, Vite, Tailwind v4, shadcn/ui (base-ui)   |
+| Data           | TanStack Query, TanStack Table                     |
+| Forms          | React Hook Form + Zod (`@keyra/shared-validation`) |
 
 ## Project Structure
 
@@ -113,15 +113,15 @@ cp apps/api/.dev.vars.example apps/api/.dev.vars
 
 Set with `gh secret set` and `gh variable set -R dt418/keyra`:
 
-| Key | Type | Required | Purpose |
-|-----|------|----------|---------|
-| `CLOUDFLARE_API_TOKEN` | secret | ✓ | wrangler-action deploy |
-| `CLOUDFLARE_ACCOUNT_ID` | secret | ✓ | wrangler-action account |
-| `JWT_SECRET` | secret | ✓ | API access-token signing |
-| `JWT_REFRESH_SECRET` | secret | ✓ | API refresh-token signing |
-| `CORS_ALLOWED_ORIGINS` | secret | ✓ | Comma-separated dashboard origins (prod + preview Pages URLs + custom domain) |
-| `VITE_API_URL` | variable | ✓ | Dashboard axios baseURL; inlined at build time |
-| `OAUTH_*` | secret |  | Google/GitHub OAuth client ids + secrets |
+| Key                     | Type     | Required | Purpose                                                                       |
+| ----------------------- | -------- | -------- | ----------------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | secret   | ✓        | wrangler-action deploy                                                        |
+| `CLOUDFLARE_ACCOUNT_ID` | secret   | ✓        | wrangler-action account                                                       |
+| `JWT_SECRET`            | secret   | ✓        | API access-token signing                                                      |
+| `JWT_REFRESH_SECRET`    | secret   | ✓        | API refresh-token signing                                                     |
+| `CORS_ALLOWED_ORIGINS`  | secret   | ✓        | Comma-separated dashboard origins (prod + preview Pages URLs + custom domain) |
+| `VITE_API_URL`          | variable | ✓        | Dashboard axios baseURL; inlined at build time                                |
+| `OAUTH_*`               | secret   |          | Google/GitHub OAuth client ids + secrets                                      |
 
 `scripts/sync-secrets.sh` pushes all of the above from `apps/api/.dev.vars` to
 `gh secret set` / `gh variable set` + `wrangler secret put`. Never echoes

@@ -41,10 +41,10 @@ Preflight `OPTIONS` requests return `204 No Content` without auth.
 
 ## Environment
 
-| Key | Source | Purpose |
-|-----|--------|---------|
-| `VITE_API_URL` | GitHub Actions variable (build-time) | `packages/api-client` axios baseURL. Set to `https://keyra-api.danhthanh418.workers.dev/api/v1` in prod. Falls back to `/api/v1` (Vite proxy) when unset. |
-| `CORS_ALLOWED_ORIGINS` | GitHub Actions secret → wrangler var | Comma-separated origin allowlist. Localhost defaults always permitted. |
+| Key                    | Source                               | Purpose                                                                                                                                                   |
+| ---------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_URL`         | GitHub Actions variable (build-time) | `packages/api-client` axios baseURL. Set to `https://keyra-api.danhthanh418.workers.dev/api/v1` in prod. Falls back to `/api/v1` (Vite proxy) when unset. |
+| `CORS_ALLOWED_ORIGINS` | GitHub Actions secret → wrangler var | Comma-separated origin allowlist. Localhost defaults always permitted.                                                                                    |
 
 ## Authentication
 
@@ -57,60 +57,60 @@ Protected endpoints require `Authorization: Bearer <access_token>` header.
 
 ### Auth
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/auth/register` | Email registration | - |
-| POST | `/auth/login` | Email login | - |
-| POST | `/auth/oauth/:provider/initiate` | Start OAuth flow | - |
-| POST | `/auth/oauth/:provider/callback` | Complete OAuth | - |
-| POST | `/auth/logout` | Logout | ✓ |
-| POST | `/auth/refresh` | Refresh access token | - |
+| Method | Endpoint                         | Description          | Auth |
+| ------ | -------------------------------- | -------------------- | ---- |
+| POST   | `/auth/register`                 | Email registration   | -    |
+| POST   | `/auth/login`                    | Email login          | -    |
+| POST   | `/auth/oauth/:provider/initiate` | Start OAuth flow     | -    |
+| POST   | `/auth/oauth/:provider/callback` | Complete OAuth       | -    |
+| POST   | `/auth/logout`                   | Logout               | ✓    |
+| POST   | `/auth/refresh`                  | Refresh access token | -    |
 
 ### Users
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/users/me` | Get current user | ✓ |
-| PATCH | `/users/me` | Update profile | ✓ |
+| Method | Endpoint    | Description      | Auth |
+| ------ | ----------- | ---------------- | ---- |
+| GET    | `/users/me` | Get current user | ✓    |
+| PATCH  | `/users/me` | Update profile   | ✓    |
 
 ### Organizations
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/organizations` | List user's organizations | ✓ |
-| POST | `/organizations` | Create organization | ✓ |
-| GET | `/organizations/:id` | Get details | ✓ |
-| PATCH | `/organizations/:id` | Update | ✓ (admin/owner) |
-| DELETE | `/organizations/:id` | Delete | ✓ (owner) |
-| GET | `/organizations/:id/members` | List members | ✓ |
-| POST | `/organizations/:id/members` | Invite member | ✓ |
-| PATCH | `/organizations/:id/members/:userId` | Update role | ✓ |
-| DELETE | `/organizations/:id/members/:userId` | Remove member | ✓ |
+| Method | Endpoint                             | Description               | Auth            |
+| ------ | ------------------------------------ | ------------------------- | --------------- |
+| GET    | `/organizations`                     | List user's organizations | ✓               |
+| POST   | `/organizations`                     | Create organization       | ✓               |
+| GET    | `/organizations/:id`                 | Get details               | ✓               |
+| PATCH  | `/organizations/:id`                 | Update                    | ✓ (admin/owner) |
+| DELETE | `/organizations/:id`                 | Delete                    | ✓ (owner)       |
+| GET    | `/organizations/:id/members`         | List members              | ✓               |
+| POST   | `/organizations/:id/members`         | Invite member             | ✓               |
+| PATCH  | `/organizations/:id/members/:userId` | Update role               | ✓               |
+| DELETE | `/organizations/:id/members/:userId` | Remove member             | ✓               |
 
 ### Products
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/products` | List products | ✓ |
-| POST | `/products` | Create product | ✓ |
-| GET | `/products/:id` | Get details | ✓ |
-| PATCH | `/products/:id` | Update | ✓ |
-| DELETE | `/products/:id` | Delete | ✓ |
-| GET | `/products/:id/api-key` | Check API key status | ✓ |
-| POST | `/products/:id/regenerate-key` | Generate new API key | ✓ |
+| Method | Endpoint                       | Description          | Auth |
+| ------ | ------------------------------ | -------------------- | ---- |
+| GET    | `/products`                    | List products        | ✓    |
+| POST   | `/products`                    | Create product       | ✓    |
+| GET    | `/products/:id`                | Get details          | ✓    |
+| PATCH  | `/products/:id`                | Update               | ✓    |
+| DELETE | `/products/:id`                | Delete               | ✓    |
+| GET    | `/products/:id/api-key`        | Check API key status | ✓    |
+| POST   | `/products/:id/regenerate-key` | Generate new API key | ✓    |
 
 ### Licenses
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/licenses` | List licenses | ✓ |
-| POST | `/licenses` | Create license | ✓ |
-| GET | `/licenses/:id` | Get details | ✓ |
-| PATCH | `/licenses/:id` | Update license | ✓ |
-| DELETE | `/licenses/:id` | Delete license | ✓ |
-| POST | `/licenses/:id/revoke` | Revoke license | ✓ |
-| POST | `/licenses/:id/reset-devices` | Reset device activations | ✓ |
-| POST | `/licenses/:id/transfer` | Transfer to other org | ✓ |
+| Method | Endpoint                      | Description              | Auth |
+| ------ | ----------------------------- | ------------------------ | ---- |
+| GET    | `/licenses`                   | List licenses            | ✓    |
+| POST   | `/licenses`                   | Create license           | ✓    |
+| GET    | `/licenses/:id`               | Get details              | ✓    |
+| PATCH  | `/licenses/:id`               | Update license           | ✓    |
+| DELETE | `/licenses/:id`               | Delete license           | ✓    |
+| POST   | `/licenses/:id/revoke`        | Revoke license           | ✓    |
+| POST   | `/licenses/:id/reset-devices` | Reset device activations | ✓    |
+| POST   | `/licenses/:id/transfer`      | Transfer to other org    | ✓    |
 
 **License types:** `trial`, `free`, `personal`, `professional`, `business`, `enterprise`
 
@@ -118,15 +118,15 @@ Protected endpoints require `Authorization: Bearer <access_token>` header.
 
 ### Activations & Devices
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/activations` | List device activations | ✓ |
-| GET | `/activations/:id` | Get activation | ✓ |
-| DELETE | `/activations/:id` | Remove activation | ✓ |
-| GET | `/licenses/:id/activations` | Activations for a license | ✓ |
-| POST | `/activate` | Activate device with license key | API key |
-| POST | `/verify` | Verify a license key | API key |
-| DELETE | `/devices/:deviceToken` | Deactivate a device | API key |
+| Method | Endpoint                    | Description                      | Auth    |
+| ------ | --------------------------- | -------------------------------- | ------- |
+| GET    | `/activations`              | List device activations          | ✓       |
+| GET    | `/activations/:id`          | Get activation                   | ✓       |
+| DELETE | `/activations/:id`          | Remove activation                | ✓       |
+| GET    | `/licenses/:id/activations` | Activations for a license        | ✓       |
+| POST   | `/activate`                 | Activate device with license key | API key |
+| POST   | `/verify`                   | Verify a license key             | API key |
+| DELETE | `/devices/:deviceToken`     | Deactivate a device              | API key |
 
 ## Pagination
 
@@ -137,6 +137,7 @@ GET /licenses?limit=20&cursor=<opaque>
 ```
 
 **Response:**
+
 ```json
 {
   "data": [...],
@@ -153,30 +154,30 @@ GET /licenses?limit=20&cursor=<opaque>
 
 ## Error Codes
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `UNAUTHORIZED` | 401 | Missing/invalid token |
-| `FORBIDDEN` | 403 | Insufficient permissions |
-| `NOT_FOUND` | 404 | Resource not found |
-| `VALIDATION_ERROR` | 400 | Invalid request data |
-| `CONFLICT` | 409 | Resource already exists |
-| `INVALID_PROVIDER` | 400 | OAuth provider not supported |
-| `INVALID_STATE` | 400 | OAuth state validation failed |
-| `TOKEN_EXCHANGE_FAILED` | 502 | OAuth token exchange failed |
-| `USERINFO_FAILED` | 502 | OAuth userinfo request failed |
-| `EMAIL_NOT_PROVIDED` | 400 | OAuth provider did not provide email |
-| `OAUTH_NOT_CONFIGURED` | 500 | OAuth env vars missing |
-| `OAUTH_ALREADY_LINKED` | 409 | Email already bound to a different provider |
-| `NOT_IMPLEMENTED` | 501 | Endpoint stub (e.g. `/auth/verify-email/:token`) |
-| `RATE_LIMITED` | 429 | Too many requests |
-| `INTERNAL_ERROR` | 500 | Server error |
+| Code                    | HTTP Status | Description                                      |
+| ----------------------- | ----------- | ------------------------------------------------ |
+| `UNAUTHORIZED`          | 401         | Missing/invalid token                            |
+| `FORBIDDEN`             | 403         | Insufficient permissions                         |
+| `NOT_FOUND`             | 404         | Resource not found                               |
+| `VALIDATION_ERROR`      | 400         | Invalid request data                             |
+| `CONFLICT`              | 409         | Resource already exists                          |
+| `INVALID_PROVIDER`      | 400         | OAuth provider not supported                     |
+| `INVALID_STATE`         | 400         | OAuth state validation failed                    |
+| `TOKEN_EXCHANGE_FAILED` | 502         | OAuth token exchange failed                      |
+| `USERINFO_FAILED`       | 502         | OAuth userinfo request failed                    |
+| `EMAIL_NOT_PROVIDED`    | 400         | OAuth provider did not provide email             |
+| `OAUTH_NOT_CONFIGURED`  | 500         | OAuth env vars missing                           |
+| `OAUTH_ALREADY_LINKED`  | 409         | Email already bound to a different provider      |
+| `NOT_IMPLEMENTED`       | 501         | Endpoint stub (e.g. `/auth/verify-email/:token`) |
+| `RATE_LIMITED`          | 429         | Too many requests                                |
+| `INTERNAL_ERROR`        | 500         | Server error                                     |
 
 ## Rate Limits
 
-| Endpoint | Limit |
-|----------|-------|
+| Endpoint         | Limit  |
+| ---------------- | ------ |
 | `/auth/register` | 10/min |
-| `/auth/login` | 20/min |
-| `/auth/logout` | 10/min |
-| `/auth/refresh` | 30/min |
-| `/auth/oauth/*` | 20/min |
+| `/auth/login`    | 20/min |
+| `/auth/logout`   | 10/min |
+| `/auth/refresh`  | 30/min |
+| `/auth/oauth/*`  | 20/min |
