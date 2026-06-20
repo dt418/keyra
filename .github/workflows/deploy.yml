@@ -39,6 +39,8 @@ jobs:
           workingDirectory: apps/api
           environment: production
           command: deploy --env production
+          packageManager: pnpm
+          wranglerVersion: "4"
 
   deploy-preview:
     name: Deploy Preview
@@ -68,3 +70,5 @@ jobs:
           workingDirectory: apps/api
           environment: preview
           command: deploy --env preview
+          packageManager: pnpm
+          wranglerVersion: "4"
