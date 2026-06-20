@@ -10,20 +10,20 @@ Built with React 18, Vite, Tailwind v4, and shadcn/ui (base-ui).
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| API runtime | Cloudflare Workers (`keyra-api` → `keyra-api.danhthanh418.workers.dev`) |
-| Dashboard host | Cloudflare Pages (`keyra` → `keyra-cl8.pages.dev` + custom domain) |
-| Framework | Hono |
-| Database | Cloudflare D1 (SQLite) |
-| Cache | Cloudflare KV |
-| Auth | JWT + bcrypt + OAuth (Google, GitHub) |
-| Monorepo | Turborepo + pnpm |
-| Language | TypeScript |
-| Frontend | React 18, Vite, Tailwind v4, shadcn/ui (base-ui) |
-| Data | TanStack Query, TanStack Table |
-| Forms | React Hook Form + Zod (`@keyra/shared-validation`) |
-| Testing | Vitest, Playwright |
+| Layer          | Technology                                                              |
+| -------------- | ----------------------------------------------------------------------- |
+| API runtime    | Cloudflare Workers (`keyra-api` → `keyra-api.danhthanh418.workers.dev`) |
+| Dashboard host | Cloudflare Pages (`keyra` → `keyra-cl8.pages.dev` + custom domain)      |
+| Framework      | Hono                                                                    |
+| Database       | Cloudflare D1 (SQLite)                                                  |
+| Cache          | Cloudflare KV                                                           |
+| Auth           | JWT + bcrypt + OAuth (Google, GitHub)                                   |
+| Monorepo       | Turborepo + pnpm                                                        |
+| Language       | TypeScript                                                              |
+| Frontend       | React 18, Vite, Tailwind v4, shadcn/ui (base-ui)                        |
+| Data           | TanStack Query, TanStack Table                                          |
+| Forms          | React Hook Form + Zod (`@keyra/shared-validation`)                      |
+| Testing        | Vitest, Playwright                                                      |
 
 ## System Architecture
 
@@ -209,9 +209,9 @@ webhooks / analytics / audit-logs / devices routers.
 
 ### Token Security
 
-| Token | TTL | Storage | Secret |
-|-------|-----|---------|--------|
-| Access | 15 min | Memory only | `JWT_SECRET` |
+| Token   | TTL    | Storage      | Secret               |
+| ------- | ------ | ------------ | -------------------- |
+| Access  | 15 min | Memory only  | `JWT_SECRET`         |
 | Refresh | 7 days | KV + DB hash | `JWT_REFRESH_SECRET` |
 
 ### Password Security
@@ -240,15 +240,15 @@ CORS_ALLOWED_ORIGINS=https://keyra.danhthanh.dev,https://keyra.pages.dev,https:/
 
 ### Rate Limiting
 
-| Endpoint | Limit |
-|----------|-------|
+| Endpoint         | Limit      |
+| ---------------- | ---------- |
 | `/auth/register` | 10 req/min |
-| `/auth/login` | 20 req/min |
-| `/auth/logout` | 10 req/min |
-| `/auth/refresh` | 30 req/min |
-| `/auth/oauth/*` | 20 req/min |
-| `/verify` | 60 req/min |
-| `/activate` | 30 req/min |
+| `/auth/login`    | 20 req/min |
+| `/auth/logout`   | 10 req/min |
+| `/auth/refresh`  | 30 req/min |
+| `/auth/oauth/*`  | 20 req/min |
+| `/verify`        | 60 req/min |
+| `/activate`      | 30 req/min |
 
 Per-(scope + ip + bucket) key `rl:<scope>:<ip>:<bucket>` with bucket windowing.
 Throws `AppError RATE_LIMITED 429` with `Retry-After` header.
@@ -298,27 +298,43 @@ Response Format: { data: ... } or { error: { code, message } }
 
 ### API (`apps/api/.dev.vars`, `apps/api/wrangler.jsonc`)
 
-| Key | Scope | Required | Purpose |
-|-----|-------|----------|---------|
-| `JWT_SECRET` | secret | ✓ | Access-token signing |
-| `JWT_REFRESH_SECRET` | secret | ✓ | Refresh-token signing |
-| `OAUTH_REDIRECT_URI` | secret |  | OAuth callback base URL |
-| `OAUTH_GOOGLE_CLIENT_ID` / `_SECRET` | secret |  | Google OAuth |
-| `OAUTH_GITHUB_CLIENT_ID` / `_SECRET` | secret |  | GitHub OAuth |
-| `CLOUDFLARE_API_TOKEN` | secret |  | CI deploy (Pages + Workers) |
-| `CLOUDFLARE_ACCOUNT_ID` | secret |  | wrangler-action account |
-| `CORS_ALLOWED_ORIGINS` | var | ✓ | Comma-separated allowlist |
-| `ENVIRONMENT` | var |  | (legacy placeholder; not template-substituted by wrangler) |
+| Key                                  | Scope  | Required | Purpose                                                    |
+| ------------------------------------ | ------ | -------- | ---------------------------------------------------------- |
+| `JWT_SECRET`                         | secret | ✓        | Access-token signing                                       |
+| `JWT_REFRESH_SECRET`                 | secret | ✓        | Refresh-token signing                                      |
+| `OAUTH_REDIRECT_URI`                 | secret |          | OAuth callback base URL                                    |
+| `OAUTH_GOOGLE_CLIENT_ID` / `_SECRET` | secret |          | Google OAuth                                               |
+| `OAUTH_GITHUB_CLIENT_ID` / `_SECRET` | secret |          | GitHub OAuth                                               |
+| `CLOUDFLARE_API_TOKEN`               | secret |          | CI deploy (Pages + Workers)                                |
+| `CLOUDFLARE_ACCOUNT_ID`              | secret |          | wrangler-action account                                    |
+| `CORS_ALLOWED_ORIGINS`               | var    | ✓        | Comma-separated allowlist                                  |
+| `ENVIRONMENT`                        | var    |          | (legacy placeholder; not template-substituted by wrangler) |
 
-### Dashboard (`VITE_API_URL`, set as GitHub var)
+### Dashboard (`VITE_API_URL`, set as GitHub variable)
 
 | Key | Scope | Purpose |
 |-----|-------|---------|
-| `VITE_API_URL` | GitHub Actions variable | Base URL for `packages/api-client` axios instance. Read at build time by Vite and inlined into the bundle. If unset, dashboard falls back to `/api/v1` (works with Vite dev proxy only). |
+| `VITE_API_URL` | GitHub variable (repo **and** `dashboard-production` / `dashboard-preview` environment) | Base URL for `packages/api-client` axios instance. Read at build time by Vite and inlined into the bundle. If unset, dashboard falls back to `/api/v1` (works with Vite dev proxy only). |
 
-**Production:** `VITE_API_URL=https://keyra-api.danhthanh418.workers.dev/api/v1`
-set as repo-level GitHub variable (`gh variable set VITE_API_URL -R dt418/keyra`).
-Read by `.github/workflows/deploy-dashboard.yml` during the `pnpm build` step.
+**Production:** `VITE_API_URL=https://keyra-api.danhthanh418.workers.dev/api/v1`.
+Set on the `dashboard-production` GitHub Environment (the workflow's
+`environment:` context scopes `${{ vars.X }}` to that env's variables) AND as
+a repo-level variable so preview builds work too.
+
+**Must include `/api/v1` suffix.** All api-client calls are relative
+(`api.post("/auth/register", …)`), so the bundle resolves them as
+`${VITE_API_URL}/auth/register`. Without the suffix the API 404s.
+
+Set with:
+```bash
+gh variable set VITE_API_URL -R dt418/keyra \
+  --body "https://keyra-api.danhthanh418.workers.dev/api/v1"
+gh variable set VITE_API_URL -R dt418/keyra -e dashboard-production \
+  --body "https://keyra-api.danhthanh418.workers.dev/api/v1"
+```
+
+Read by `.github/workflows/deploy-dashboard.yml` line 45 during the
+`pnpm build` step.
 
 ## Deployment
 
@@ -350,55 +366,55 @@ audit_logs, webhooks, webhook_deliveries, api_keys.
 
 ### Users
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | UUID primary key |
-| email | TEXT | Unique, indexed |
-| name | TEXT | Optional |
-| password_hash | TEXT | bcrypt |
-| oauth_provider | TEXT | google/github |
-| oauth_id | TEXT | Provider user ID |
-| avatar_url | TEXT | Profile image |
+| Column         | Type    | Notes                                                     |
+| -------------- | ------- | --------------------------------------------------------- |
+| id             | TEXT    | UUID primary key                                          |
+| email          | TEXT    | Unique, indexed                                           |
+| name           | TEXT    | Optional                                                  |
+| password_hash  | TEXT    | bcrypt                                                    |
+| oauth_provider | TEXT    | google/github                                             |
+| oauth_id       | TEXT    | Provider user ID                                          |
+| avatar_url     | TEXT    | Profile image                                             |
 | email_verified | INTEGER | 0/1 (set to 0 on register; verification flow is 501 stub) |
-| created_at | TEXT | ISO timestamp |
-| updated_at | TEXT | ISO timestamp |
+| created_at     | TEXT    | ISO timestamp                                             |
+| updated_at     | TEXT    | ISO timestamp                                             |
 
 ### Organizations
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | UUID primary key |
-| name | TEXT | Organization name |
-| slug | TEXT | Unique URL-safe identifier |
-| plan | TEXT | free/pro/business/enterprise |
-| settings | TEXT | JSON configuration |
-| created_at | TEXT | ISO timestamp |
-| updated_at | TEXT | ISO timestamp |
+| Column     | Type | Notes                        |
+| ---------- | ---- | ---------------------------- |
+| id         | TEXT | UUID primary key             |
+| name       | TEXT | Organization name            |
+| slug       | TEXT | Unique URL-safe identifier   |
+| plan       | TEXT | free/pro/business/enterprise |
+| settings   | TEXT | JSON configuration           |
+| created_at | TEXT | ISO timestamp                |
+| updated_at | TEXT | ISO timestamp                |
 
 ### Sessions
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | UUID primary key |
-| user_id | TEXT | FK to users |
-| refresh_token_hash | TEXT | bcrypt hash |
-| user_agent | TEXT | Browser/client info |
-| ip_address | TEXT | Client IP |
-| expires_at | TEXT | Expiration timestamp |
-| created_at | TEXT | ISO timestamp |
-| revoked_at | TEXT | Revocation timestamp |
+| Column             | Type | Notes                |
+| ------------------ | ---- | -------------------- |
+| id                 | TEXT | UUID primary key     |
+| user_id            | TEXT | FK to users          |
+| refresh_token_hash | TEXT | bcrypt hash          |
+| user_agent         | TEXT | Browser/client info  |
+| ip_address         | TEXT | Client IP            |
+| expires_at         | TEXT | Expiration timestamp |
+| created_at         | TEXT | ISO timestamp        |
+| revoked_at         | TEXT | Revocation timestamp |
 
 ### Audit Logs
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | UUID primary key |
-| user_id | TEXT | Actor |
-| action | TEXT | user.register, user.login, etc. |
-| ip_address | TEXT | Client IP |
-| user_agent | TEXT | Client info |
-| metadata | TEXT | JSON context |
-| created_at | TEXT | ISO timestamp |
+| Column     | Type | Notes                           |
+| ---------- | ---- | ------------------------------- |
+| id         | TEXT | UUID primary key                |
+| user_id    | TEXT | Actor                           |
+| action     | TEXT | user.register, user.login, etc. |
+| ip_address | TEXT | Client IP                       |
+| user_agent | TEXT | Client info                     |
+| metadata   | TEXT | JSON context                    |
+| created_at | TEXT | ISO timestamp                   |
 
 ## Dashboard Architecture
 
@@ -445,23 +461,23 @@ audit_logs, webhooks, webhook_deliveries, api_keys.
 
 ## Error Codes
 
-| Code | HTTP | Description |
-|------|------|-------------|
-| UNAUTHORIZED | 401 | Invalid/expired token |
-| FORBIDDEN | 403 | Insufficient permissions |
-| NOT_FOUND | 404 | Resource not found |
-| VALIDATION_ERROR | 400 | Invalid request data |
-| CONFLICT | 409 | Resource already exists |
-| RATE_LIMITED | 429 | Too many requests |
-| INTERNAL_ERROR | 500 | Server error |
-| OAUTH_NOT_CONFIGURED | 500 | OAuth env vars missing |
-| OAUTH_ALREADY_LINKED | 409 | Email already bound to another provider |
-| INVALID_PROVIDER | 400 | OAuth provider not supported |
-| INVALID_STATE | 400 | OAuth state validation failed |
-| TOKEN_EXCHANGE_FAILED | 502 | OAuth token exchange failed |
-| USERINFO_FAILED | 502 | OAuth userinfo request failed |
-| EMAIL_NOT_PROVIDED | 400 | OAuth provider did not provide email |
-| NOT_IMPLEMENTED | 501 | Endpoint stub (e.g. email verification) |
+| Code                  | HTTP | Description                             |
+| --------------------- | ---- | --------------------------------------- |
+| UNAUTHORIZED          | 401  | Invalid/expired token                   |
+| FORBIDDEN             | 403  | Insufficient permissions                |
+| NOT_FOUND             | 404  | Resource not found                      |
+| VALIDATION_ERROR      | 400  | Invalid request data                    |
+| CONFLICT              | 409  | Resource already exists                 |
+| RATE_LIMITED          | 429  | Too many requests                       |
+| INTERNAL_ERROR        | 500  | Server error                            |
+| OAUTH_NOT_CONFIGURED  | 500  | OAuth env vars missing                  |
+| OAUTH_ALREADY_LINKED  | 409  | Email already bound to another provider |
+| INVALID_PROVIDER      | 400  | OAuth provider not supported            |
+| INVALID_STATE         | 400  | OAuth state validation failed           |
+| TOKEN_EXCHANGE_FAILED | 502  | OAuth token exchange failed             |
+| USERINFO_FAILED       | 502  | OAuth userinfo request failed           |
+| EMAIL_NOT_PROVIDED    | 400  | OAuth provider did not provide email    |
+| NOT_IMPLEMENTED       | 501  | Endpoint stub (e.g. email verification) |
 
 ## CI Pipeline
 
