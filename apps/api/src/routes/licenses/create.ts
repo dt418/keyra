@@ -34,7 +34,7 @@ export async function createLicenseHandler(c: Context) {
   }
 
   const licenseId = crypto.randomUUID();
-  const licenseKey = generateLicenseKey();
+  const licenseKey = await generateLicenseKey(c.env.LICENSE_HMAC_SECRET);
   const keyHash = await hashApiKey(licenseKey);
   const now = new Date().toISOString();
 

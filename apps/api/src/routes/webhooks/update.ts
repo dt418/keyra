@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { AppError } from "../../middleware/error";
 import { updateWebhookSchema } from "@keyra/shared-validation";
+import { assertPublicUrl } from "../../lib/url-guard";
 
 export async function updateWebhookHandler(c: Context) {
   const userId = c.get("userId");
@@ -17,6 +18,21 @@ export async function updateWebhookHandler(c: Context) {
   const parsed = updateWebhookSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;
+  }
+
+  if (parsed.data.url !== undefined) {
+    try {
+      await assertPublicUrl(
+        parsed.data.url,
+        c.env.RESOLVE_DNS_FOR_SSRF === "1",
+      );
+    } catch (err) {
+      throw new AppError(
+        "WEBHOOK_URL_BLOCKED",
+        err instanceof Error ? err.message : "URL blocked",
+        400,
+      );
+    }
   }
 
   const updates: string[] = [];

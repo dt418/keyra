@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { listActivationsHandler } from "../list";
 import { activateDeviceHandler } from "../activate";
+import { generateLicenseKey } from "../../../lib/license";
 
 const mockDB = {
   prepare: vi.fn().mockReturnThis(),
@@ -10,10 +11,13 @@ const mockDB = {
   run: vi.fn().mockResolvedValue({ success: true }),
 };
 
+const TEST_HMAC_SECRET = "test-license-secret";
+
 const mockEnv = {
   DB: mockDB,
   JWT_SECRET: "test-secret",
   JWT_REFRESH_SECRET: "test-refresh",
+  LICENSE_HMAC_SECRET: TEST_HMAC_SECRET,
 };
 
 function createMockContext(overrides: Record<string, unknown> = {}) {
@@ -96,7 +100,9 @@ describe("listActivationsHandler", () => {
 });
 
 describe("activateDeviceHandler", () => {
-  beforeEach(() => {
+  let signedKey: string;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
     mockDB.prepare.mockClear();
     mockDB.bind.mockClear();
@@ -104,6 +110,7 @@ describe("activateDeviceHandler", () => {
     mockDB.all.mockReset();
     mockDB.run.mockReset();
     mockDB.run.mockResolvedValue({ success: true });
+    signedKey = await generateLicenseKey(TEST_HMAC_SECRET);
   });
 
   it("should activate device successfully", async () => {
@@ -125,7 +132,7 @@ describe("activateDeviceHandler", () => {
     const ctx = createMockContext({
       req: {
         json: vi.fn().mockResolvedValue({
-          license_key: "XXXXX-XXXXX-XXXXX-XXXXX",
+          license_key: signedKey,
           device_name: "MacBook Pro",
           platform: "macos",
           app_version: "1.0.0",
@@ -152,13 +159,32 @@ describe("activateDeviceHandler", () => {
     expect(ctx.json.mock.calls[0]?.[0].data.feature_flags).toBeUndefined();
   });
 
-  it("should reject invalid license key", async () => {
+  it("should reject license key with invalid HMAC signature", async () => {
+    const ctx = createMockContext({
+      req: {
+        json: vi.fn().mockResolvedValue({
+          license_key: "INVALID-KEY",
+          device_name: "MacBook",
+          platform: "macos",
+        }),
+        query: vi.fn().mockReturnValue({}),
+        param: vi.fn().mockReturnValue({}),
+        header: vi.fn().mockReturnValue("Bearer token"),
+      },
+    }) as any;
+
+    await expect(activateDeviceHandler(ctx)).rejects.toThrow(
+      "License key signature mismatch",
+    );
+  });
+
+  it("should reject signed key that is not in DB", async () => {
     mockDB.first.mockResolvedValueOnce(null);
 
     const ctx = createMockContext({
       req: {
         json: vi.fn().mockResolvedValue({
-          license_key: "INVALID-KEY",
+          license_key: signedKey,
           device_name: "MacBook",
           platform: "macos",
         }),
@@ -189,7 +215,7 @@ describe("activateDeviceHandler", () => {
     const ctx = createMockContext({
       req: {
         json: vi.fn().mockResolvedValue({
-          license_key: "XXXXX-XXXXX-XXXXX-XXXXX",
+          license_key: signedKey,
           device_name: "MacBook",
           platform: "macos",
         }),
@@ -220,7 +246,7 @@ describe("activateDeviceHandler", () => {
     const ctx = createMockContext({
       req: {
         json: vi.fn().mockResolvedValue({
-          license_key: "XXXXX-XXXXX-XXXXX-XXXXX",
+          license_key: signedKey,
           device_name: "MacBook",
           platform: "macos",
         }),

@@ -1,5 +1,5 @@
-import type { Context } from 'hono';
-import { ZodError } from 'zod';
+import type { Context } from "hono";
+import { ZodError } from "zod";
 
 /**
  * Standard error codes:
@@ -8,12 +8,14 @@ import { ZodError } from 'zod';
  * - NOT_FOUND: Resource not found (404)
  * - VALIDATION_ERROR: Request validation failed (400)
  * - CONFLICT: Resource already exists (409)
+ * - INVALID_LICENSE_KEY: License key failed HMAC signature check (400)
  * - INVALID_PROVIDER: OAuth provider not supported
  * - INVALID_STATE: OAuth state validation failed
  * - TOKEN_EXCHANGE_FAILED: OAuth token exchange failed
  * - USERINFO_FAILED: OAuth userinfo request failed
  * - EMAIL_NOT_PROVIDED: OAuth provider did not provide email
  * - RATE_LIMITED: Too many requests (429)
+ * - WEBHOOK_URL_BLOCKED: Webhook URL points at a private/loopback/internal host (400)
  * - INTERNAL_ERROR: Unexpected server error (500)
  */
 export class AppError extends Error {
@@ -21,29 +23,40 @@ export class AppError extends Error {
     public code: string,
     message: string,
     public status = 500,
-    public details?: unknown[]
+    public details?: unknown[],
   ) {
     super(message);
-    this.name = 'AppError';
+    this.name = "AppError";
   }
 }
 
-type StatusCode = 400 | 401 | 403 | 404 | 405 | 409 | 422 | 429 | 500 | 502 | 503;
+type StatusCode =
+  | 400
+  | 401
+  | 403
+  | 404
+  | 405
+  | 409
+  | 422
+  | 429
+  | 500
+  | 502
+  | 503;
 
 export function errorHandler(err: unknown, c: Context) {
   if (err instanceof ZodError) {
     return c.json(
       {
         error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid request data',
+          code: "VALIDATION_ERROR",
+          message: "Invalid request data",
           details: err.errors.map((e) => ({
-            path: e.path.join('.'),
+            path: e.path.join("."),
             message: e.message,
           })),
         },
       },
-      400 as StatusCode
+      400 as StatusCode,
     );
   }
 
@@ -56,18 +69,18 @@ export function errorHandler(err: unknown, c: Context) {
           details: err.details,
         },
       },
-      err.status as StatusCode
+      err.status as StatusCode,
     );
   }
 
-  console.error('Unhandled error:', err);
+  console.error("Unhandled error:", err);
   return c.json(
     {
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
       },
     },
-    500 as StatusCode
+    500 as StatusCode,
   );
 }

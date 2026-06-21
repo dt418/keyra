@@ -116,6 +116,17 @@ Protected endpoints require `Authorization: Bearer <access_token>` header.
 
 **License statuses:** `active`, `revoked`, `expired`
 
+**License key format:** Signed keys have the shape `raw.tag` where:
+
+- `raw` — four 5-character segments drawn from a 36-symbol alphabet (`A-Z`, `0-9`), dash-joined: `XXXXX-XXXXX-XXXXX-XXXXX`.
+- `tag` — first 12 bytes of `HMAC-SHA256(raw, LICENSE_HMAC_SECRET)`, each byte reduced modulo 36 and mapped to the same alphabet.
+
+Example: `K3P9Q-R2T8V-M7N1X-W4Y6L.B5F2H9D8C0E1`
+
+Generation: `POST /licenses` signs new keys with the API's `LICENSE_HMAC_SECRET`. Verification: `POST /activate` and `POST /verify` recompute the tag and reject mismatches.
+
+Legacy keys (4 dash-joined segments with no dot) are no longer accepted by the verifier — callers must migrate to the signed `raw.tag` form.
+
 ### Activations & Devices
 
 | Method | Endpoint                    | Description                      | Auth    |
@@ -127,6 +138,31 @@ Protected endpoints require `Authorization: Bearer <access_token>` header.
 | POST   | `/activate`                 | Activate device with license key | API key |
 | POST   | `/verify`                   | Verify a license key             | API key |
 | DELETE | `/devices/:deviceToken`     | Deactivate a device              | API key |
+
+### Webhooks
+
+| Method | Endpoint                   | Description           | Auth            |
+| ------ | -------------------------- | --------------------- | --------------- |
+| GET    | `/webhooks`                | List org webhooks     | ✓               |
+| POST   | `/webhooks`                | Create webhook        | ✓ (admin/owner) |
+| GET    | `/webhooks/:id`            | Get webhook           | ✓               |
+| PATCH  | `/webhooks/:id`            | Update webhook        | ✓ (admin/owner) |
+| DELETE | `/webhooks/:id`            | Delete webhook        | ✓ (admin/owner) |
+| POST   | `/webhooks/:id/test`       | Send a test delivery  | ✓ (admin/owner) |
+| GET    | `/webhooks/:id/deliveries` | List delivery history | ✓               |
+
+**Webhook URL restrictions:** URLs must be HTTPS and resolve to a public address. The guard rejects:
+
+- Non-HTTPS schemes (`http://`, `ws://`, etc.)
+- Loopback (`localhost`, `127.0.0.0/8`, `::1`)
+- Private IPv4 (`10/8`, `172.16/12`, `192.168/16`)
+- Link-local (`169.254/16` — covers cloud metadata `169.254.169.254`)
+- Unique-local IPv6 (`fc00::/7`, `fe80::/10`)
+- Internal TLDs (`*.internal`, `*.local`)
+
+Rejection returns `400 WEBHOOK_URL_BLOCKED` on `POST /webhooks`, `PATCH /webhooks/:id`, and `POST /webhooks/:id/test`.
+
+If `RESOLVE_DNS_FOR_SSRF=1`, the guard additionally resolves the hostname via Cloudflare DNS and rejects answers that fall in any of the ranges above (mitigates DNS rebinding at the cost of one DNS round-trip per write). The check is off by default; production deployments should set it to `1`.
 
 ## Pagination
 
@@ -154,23 +190,24 @@ GET /licenses?limit=20&cursor=<opaque>
 
 ## Error Codes
 
-| Code                    | HTTP Status | Description                                      |
-| ----------------------- | ----------- | ------------------------------------------------ |
-| `UNAUTHORIZED`          | 401         | Missing/invalid token                            |
-| `FORBIDDEN`             | 403         | Insufficient permissions                         |
-| `NOT_FOUND`             | 404         | Resource not found                               |
-| `VALIDATION_ERROR`      | 400         | Invalid request data                             |
-| `CONFLICT`              | 409         | Resource already exists                          |
-| `INVALID_PROVIDER`      | 400         | OAuth provider not supported                     |
-| `INVALID_STATE`         | 400         | OAuth state validation failed                    |
-| `TOKEN_EXCHANGE_FAILED` | 502         | OAuth token exchange failed                      |
-| `USERINFO_FAILED`       | 502         | OAuth userinfo request failed                    |
-| `EMAIL_NOT_PROVIDED`    | 400         | OAuth provider did not provide email             |
-| `OAUTH_NOT_CONFIGURED`  | 500         | OAuth env vars missing                           |
-| `OAUTH_ALREADY_LINKED`  | 409         | Email already bound to a different provider      |
-| `NOT_IMPLEMENTED`       | 501         | Endpoint stub (e.g. `/auth/verify-email/:token`) |
-| `RATE_LIMITED`          | 429         | Too many requests                                |
-| `INTERNAL_ERROR`        | 500         | Server error                                     |
+| Code                    | HTTP Status | Description                                            |
+| ----------------------- | ----------- | ------------------------------------------------------ |
+| `UNAUTHORIZED`          | 401         | Missing/invalid token                                  |
+| `FORBIDDEN`             | 403         | Insufficient permissions                               |
+| `NOT_FOUND`             | 404         | Resource not found                                     |
+| `VALIDATION_ERROR`      | 400         | Invalid request data                                   |
+| `CONFLICT`              | 409         | Resource already exists                                |
+| `INVALID_PROVIDER`      | 400         | OAuth provider not supported                           |
+| `INVALID_STATE`         | 400         | OAuth state validation failed                          |
+| `TOKEN_EXCHANGE_FAILED` | 502         | OAuth token exchange failed                            |
+| `USERINFO_FAILED`       | 502         | OAuth userinfo request failed                          |
+| `EMAIL_NOT_PROVIDED`    | 400         | OAuth provider did not provide email                   |
+| `OAUTH_NOT_CONFIGURED`  | 500         | OAuth env vars missing                                 |
+| `OAUTH_ALREADY_LINKED`  | 409         | Email already bound to a different provider            |
+| `NOT_IMPLEMENTED`       | 501         | Endpoint stub (e.g. `/auth/verify-email/:token`)       |
+| `RATE_LIMITED`          | 429         | Too many requests                                      |
+| `WEBHOOK_URL_BLOCKED`   | 400         | Webhook URL points at a private/loopback/internal host |
+| `INTERNAL_ERROR`        | 500         | Server error                                           |
 
 ## Rate Limits
 

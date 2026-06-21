@@ -3,6 +3,7 @@ import { AppError } from "../../middleware/error";
 import { createWebhookSchema } from "@keyra/shared-validation";
 import { hashApiKey } from "../../lib/password";
 import { generateWebhookSecret } from "../../lib/webhooks";
+import { assertPublicUrl } from "../../lib/url-guard";
 
 export async function createWebhookHandler(c: Context) {
   const userId = c.get("userId");
@@ -17,6 +18,16 @@ export async function createWebhookHandler(c: Context) {
   const parsed = createWebhookSchema.safeParse(body);
   if (!parsed.success) {
     throw parsed.error;
+  }
+
+  try {
+    await assertPublicUrl(parsed.data.url, c.env.RESOLVE_DNS_FOR_SSRF === "1");
+  } catch (err) {
+    throw new AppError(
+      "WEBHOOK_URL_BLOCKED",
+      err instanceof Error ? err.message : "URL blocked",
+      400,
+    );
   }
 
   const id = crypto.randomUUID();

@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { activateDeviceSchema } from "@keyra/shared-validation";
 import { AppError } from "../../middleware/error";
 import { hashApiKey } from "../../lib/password";
+import { verifyLicenseHmac } from "../../lib/license";
 import { dispatchWebhookEvent } from "../../lib/webhooks";
 
 export async function activateDeviceHandler(c: Context) {
@@ -13,6 +14,18 @@ export async function activateDeviceHandler(c: Context) {
 
   const { license_key, device_name, platform, app_version, metadata } =
     parsed.data;
+
+  const hmacOk = await verifyLicenseHmac(
+    license_key,
+    c.env.LICENSE_HMAC_SECRET,
+  );
+  if (hmacOk === false) {
+    throw new AppError(
+      "INVALID_LICENSE_KEY",
+      "License key signature mismatch",
+      400,
+    );
+  }
 
   const keyHash = await hashApiKey(license_key);
 

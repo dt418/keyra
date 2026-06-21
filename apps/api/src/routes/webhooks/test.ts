@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { AppError } from "../../middleware/error";
 import { signWebhookPayload } from "../../lib/webhooks";
+import { assertPublicUrl } from "../../lib/url-guard";
 
 interface WebhookRow {
   id: string;
@@ -31,6 +32,16 @@ export async function testWebhookHandler(c: Context) {
 
   if (!row) {
     throw new AppError("NOT_FOUND", "Webhook not found", 404);
+  }
+
+  try {
+    await assertPublicUrl(row.url, false);
+  } catch (err) {
+    throw new AppError(
+      "WEBHOOK_URL_BLOCKED",
+      err instanceof Error ? err.message : "URL blocked",
+      400,
+    );
   }
 
   const timestamp = new Date().toISOString();
