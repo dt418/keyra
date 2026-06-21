@@ -41,10 +41,16 @@ Preflight `OPTIONS` requests return `204 No Content` without auth.
 
 ## Environment
 
-| Key                    | Source                               | Purpose                                                                                                                                                   |
-| ---------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_API_URL`         | GitHub Actions variable (build-time) | `packages/api-client` axios baseURL. Set to `https://keyra-api.danhthanh418.workers.dev/api/v1` in prod. Falls back to `/api/v1` (Vite proxy) when unset. |
-| `CORS_ALLOWED_ORIGINS` | GitHub Actions secret → wrangler var | Comma-separated origin allowlist. Localhost defaults always permitted.                                                                                    |
+| Key                         | Source                               | Purpose                                                                                                                                                   |
+| --------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_URL`              | GitHub Actions variable (build-time) | `packages/api-client` axios baseURL. Set to `https://keyra-api.danhthanh418.workers.dev/api/v1` in prod. Falls back to `/api/v1` (Vite proxy) when unset. |
+| `CORS_ALLOWED_ORIGINS`      | GitHub Actions secret → wrangler var | Comma-separated origin allowlist. Localhost defaults always permitted.                                                                                    |
+| `LICENSE_HMAC_SECRET`       | wrangler secret                      | 32-byte hex; signs/verifies the license key HMAC tag.                                                                                                     |
+| `RESEND_API_KEY`            | wrangler secret                      | Resend transactional email API token. Unset → scaffold mode (logs only).                                                                                  |
+| `RESEND_FROM_EMAIL`         | wrangler var                         | `From` address for outgoing mail (e.g. `Keyra <no-reply@keyra.dev>`).                                                                                     |
+| `REQUIRE_EMAIL_VERIFICATION`| wrangler var                         | `1` blocks login until `users.email_verified=1`; default `0`.                                                                                             |
+| `APP_URL`                   | wrangler var                         | Base URL for the verify-email link (e.g. `http://localhost:5173`).                                                                                        |
+| `RESOLVE_DNS_FOR_SSRF`      | wrangler var                         | `1` enables DNS-rebinding check on the webhook URL guard (off by default; production should set to `1`).                                                |
 
 ## Authentication
 
@@ -160,7 +166,8 @@ Legacy keys (4 dash-joined segments with no dot) are no longer accepted by the v
 - Private IPv4 (`10/8`, `172.16/12`, `192.168/16`)
 - Link-local (`169.254/16` — covers cloud metadata `169.254.169.254`)
 - Unique-local IPv6 (`fc00::/7`, `fe80::/10`)
-- Internal TLDs (`*.internal`, `*.local`)
+- Internal TLDs (`*.internal`, `*.local`, `*.localhost`)
+- Literal hostnames `localhost`, `metadata`, `metadata.google.internal` (also blocked)
 
 Rejection returns `400 WEBHOOK_URL_BLOCKED` on `POST /webhooks`, `PATCH /webhooks/:id`, and `POST /webhooks/:id/test`.
 
@@ -199,6 +206,7 @@ GET /licenses?limit=20&cursor=<opaque>
 | `NOT_FOUND`                  | 404         | Resource not found                                          |
 | `VALIDATION_ERROR`           | 400         | Invalid request data                                        |
 | `CONFLICT`                   | 409         | Resource already exists                                     |
+| `INVALID_LICENSE_KEY`        | 400         | License key failed HMAC signature check                     |
 | `INVALID_PROVIDER`           | 400         | OAuth provider not supported                                |
 | `INVALID_STATE`              | 400         | OAuth state validation failed                               |
 | `TOKEN_EXCHANGE_FAILED`      | 502         | OAuth token exchange failed                                 |

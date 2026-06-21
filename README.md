@@ -123,6 +123,9 @@ actually deliver.
 | `RESEND_API_KEY`             | secret |          | Resend HTTP API token                                                                             |
 | `RESEND_FROM_EMAIL`          | var    |          | `From` address used on outgoing mail (e.g. `Keyra <no-reply@keyra.dev>`)                          |
 | `REQUIRE_EMAIL_VERIFICATION` | var    |          | `1` blocks login until `users.email_verified=1`; default `0` (backwards-compat with seeded users) |
+| `LICENSE_HMAC_SECRET`        | secret |          | 32-byte hex; signs/verifies license key HMAC tag                                                 |
+| `APP_URL`                    | var    |          | Base URL for verify-email link (e.g. `http://localhost:5173`)                                     |
+| `RESOLVE_DNS_FOR_SSRF`       | var    |          | `1` enables DNS-rebinding check on webhook URL guard                                             |
 
 When `RESEND_API_KEY` is set, `POST /auth/register` and
 `POST /auth/resend-verification` deliver through the Resend API. The

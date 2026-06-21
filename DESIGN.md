@@ -213,8 +213,11 @@ filters as the user types. Arrow keys navigate, Enter selects, Esc closes.
 
 ## Forms
 
-Forms use controlled state with React Hook Form (planned) + Zod validation.
-Currently simple controlled inputs in Dialog components.
+Forms use React Hook Form + Zod validation. All 7 entity dialogs (Create/Edit
+Product, Org, License, Webhook) use shared primitives: `TextField`,
+`TextareaField`, `NumberField`, `DateField`, `SelectField`,
+`MultiCheckboxField`, `CheckboxField`. Validation on blur via the `useZodForm`
+hook.
 
 Patterns:
 
@@ -293,7 +296,7 @@ Auth state managed in `lib/auth.tsx` via React Context. `useAuth()` provides
 
 - **Unit tests:** Vitest + Testing Library (`pnpm --filter @keyra/dashboard test`)
 - **E2E tests:** Playwright (`pnpm --filter @keyra/api test:e2e`)
-- **Test counts:** 40 unit tests, 5 E2E test files
+- **Test counts:** 70 unit tests, 5 E2E test files
 
 ## CI Pipeline
 

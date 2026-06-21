@@ -110,6 +110,38 @@ All notable changes will be documented in this file.
 - `docs/superpowers/plans/audit-2026-06-18/` — 8 self-contained plans (S0..S7), one per feat-019..feat-026
 - `docs/superpowers/plans/audit-2026-06-18/README.md` — overview with sequencing + commit map
 
+### feat-029 — Email Verification Flow (commit `56f64da`)
+
+- New `apps/api/src/lib/email.ts` — Resend HTTP client, env-aware scaffold mode (logs via `console.info` when `RESEND_API_KEY` is unset so local dev / CI run without a Resend account)
+- New `apps/api/src/lib/email-templates/verify.ts` — verification email template (text + HTML)
+- New `apps/api/src/routes/auth/resend-verification.ts` — POST `/auth/resend-verification` (rate-limited 5/min, always 200 for anti-enumeration)
+- `apps/api/src/routes/auth/verify-email.ts` — replaced S7's `501 NOT_IMPLEMENTED` stub with KV token lookup (`verify-email:<uuid>`), `email_verified=1` flip on success, single-use token deletion
+- `apps/api/src/routes/auth/register.ts` — issues verification token on registration + sends email
+- `apps/api/src/routes/auth/login.ts` — gates on `REQUIRE_EMAIL_VERIFICATION=1`; returns `403 EMAIL_NOT_VERIFIED` when `email_verified=0`
+- New error codes: `INVALID_VERIFICATION_TOKEN` (400), `EMAIL_NOT_VERIFIED` (403), `EMAIL_SEND_FAILED` (502)
+- New env: `RESEND_API_KEY` (secret), `RESEND_FROM_EMAIL` (var), `REQUIRE_EMAIL_VERIFICATION` (var), `APP_URL` (var)
+
+### feat-030 — Production Hardening (commit `fedb3a3`)
+
+- New `apps/api/src/do/RateLimiter.ts` — Durable Object strict rate limiter (replaces KV-based limiter for routes that need exact counts; KV still used for /verify + /activate per-scope buckets)
+- New `apps/api/src/lib/license.ts` — HMAC license key generation + verification (`raw.tag` format, `HMAC-SHA256(raw, LICENSE_HMAC_SECRET)` first 12 bytes reduced mod 36 → 36-symbol alphabet)
+- New `apps/api/src/lib/url-guard.ts` — SSRF guard for webhook URLs (HTTPS-only, rejects loopback / private / link-local / unique-local IPv6 / internal TLDs / literal `localhost` / `metadata` / `metadata.google.internal`; optional DNS resolve when `RESOLVE_DNS_FOR_SSRF=1`)
+- Wired into 5 routes (`POST /licenses`, `POST /activate`, `POST /verify`, `POST /devices/:token`) + 1 middleware (webhooks create/update/test)
+- New error codes: `INVALID_LICENSE_KEY` (400), `WEBHOOK_URL_BLOCKED` (400)
+- New env: `LICENSE_HMAC_SECRET` (secret, 32-byte hex), `RESOLVE_DNS_FOR_SSRF` (var)
+- `apps/api/wrangler.jsonc` — durable_objects binding `RATE_LIMITER` + migration `v1 new_sqlite_classes: ["RateLimiter"]`
+
+### feat-031 — RHF Migration for Remaining 7 Dialogs (commit `32cc290`)
+
+- Migrated Create/Edit Product, Create/Edit Org, Create/Edit License, Create Webhook to React Hook Form + `zodResolver` + the shared primitives from feat-017
+- Uses `TextField` / `TextareaField` / `NumberField` / `DateField` / `SelectField` / `MultiCheckboxField` / `CheckboxField` primitives
+- 4 files modified, +683 / −294
+- Closes the feat-017 follow-up "Migrate remaining 4 forms" (extended to 7 with Edit variants)
+
+### Tooling
+
+- Add `.prettierrc` (commit `20cac29`): `singleQuote: true`, `trailingComma: "all"`, `printWidth: 100`. Project-wide Prettier config; no code changes in this commit but future reformat passes will land cleanly.
+
 ## [Unreleased — pre-audit]
 
 ### Added

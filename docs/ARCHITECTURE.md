@@ -168,7 +168,7 @@ keyra/
 │   ├── sdk-js/                 # Verification SDK
 │   ├── shared-types/           # TypeScript types
 │   └── shared-validation/      # Zod schemas
-├── database/migrations/         # D1 schema (13 migrations)
+├── database/migrations/         # D1 schema (14 migrations)
 ├── infrastructure/cloudflare/   # IaC
 ├── .agents/skills/             # AI agent skills
 ├── docs/                        # API_SPEC, ARCHITECTURE, plans, specs
@@ -335,6 +335,9 @@ Response Format: { data: ... } or { error: { code, message } }
 | `RESEND_API_KEY`                     | secret |          | Resend transactional email API token                                 |
 | `RESEND_FROM_EMAIL`                  | var    |          | `From` address for outgoing mail (e.g. `Keyra <no-reply@keyra.dev>`) |
 | `REQUIRE_EMAIL_VERIFICATION`         | var    |          | `1` blocks login until `users.email_verified=1`; default `0`         |
+| `LICENSE_HMAC_SECRET`                | secret |          | 32-byte hex; signs/verifies license key HMAC tag                    |
+| `APP_URL`                            | var    |          | Base URL for verify-email link (e.g. `http://localhost:5173`)       |
+| `RESOLVE_DNS_FOR_SSRF`               | var    |          | `1` enables webhook DNS resolve check (mitigates DNS rebinding)    |
 | `ENVIRONMENT`                        | var    |          | (legacy placeholder; not template-substituted by wrangler)           |
 
 ### Dashboard (`VITE_API_URL`, set as GitHub variable)
@@ -388,9 +391,9 @@ Read by `.github/workflows/deploy-dashboard.yml` line 45 during the
 
 ## Database Schema
 
-13 migrations tracking full schema: users, organizations, org_members,
+14 migrations tracking full schema: users, organizations, org_members,
 sessions, email_verification_tokens, products, licenses, devices, activations,
-audit_logs, webhooks, webhook_deliveries, api_keys.
+audit_logs, webhooks, webhook_deliveries, api_keys, backfill_default_orgs.
 
 ### Users
 
@@ -496,6 +499,8 @@ audit_logs, webhooks, webhook_deliveries, api_keys.
 | NOT_FOUND                    | 404  | Resource not found                                    |
 | VALIDATION_ERROR             | 400  | Invalid request data                                  |
 | CONFLICT                     | 409  | Resource already exists                               |
+| `INVALID_LICENSE_KEY`        | 400  | License key failed HMAC signature check               |
+| `WEBHOOK_URL_BLOCKED`        | 400  | SSRF guard rejection on `/webhooks` create/update/test |
 | RATE_LIMITED                 | 429  | Too many requests                                     |
 | INTERNAL_ERROR               | 500  | Server error                                          |
 | OAUTH_NOT_CONFIGURED         | 500  | OAuth env vars missing                                |
@@ -515,7 +520,7 @@ audit_logs, webhooks, webhook_deliveries, api_keys.
 GitHub Actions runs:
 
 1. `lint & typecheck` — all packages
-2. `test-api` — 98 unit tests
+2. `test-api` — 178 unit tests
 3. `test-dashboard` — 70 unit tests
 4. `test-sdk-js` — 9 unit tests
 5. `test-shared-validation` — 28 unit tests
@@ -524,7 +529,8 @@ GitHub Actions runs:
 8. `deploy-production` — on push to `main`: API via wrangler-action + Dashboard via Pages
 9. `deploy-preview` — on PRs: API preview + Dashboard preview
 
-Pinned to pnpm 10, Node 22.
+Pinned to pnpm 10, Node 22. `wrangler` applies durable object migrations
+(`v1 new_sqlite_classes: ["RateLimiter"]`) on deploy.
 
 ## API Response Convention
 
