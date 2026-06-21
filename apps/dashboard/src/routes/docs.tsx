@@ -48,7 +48,7 @@ if (result.valid) {
 }`;
 
 const activateCode = `const { deviceToken } = await keyra.activate({
-  licenseKey: 'XXXX-XXXX-XXXX-XXXX',
+  licenseKey: 'XXXXX-XXXXX-XXXXX-XXXXX.AAAA-BBBB-CCCC',
   deviceName: 'My Laptop',
   platform: 'macos',
   appVersion: '1.0.0',
