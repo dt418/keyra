@@ -1,8 +1,7 @@
 {
   "schema": "feature-list.schema.json",
   "project": "keyra",
-  "lastUpdated": "2026-06-21",
-  "features": [
+  "lastUpdated": "2026-06-21",  "features": [
     {
       "id": "feat-001",
       "name": "Monorepo Bootstrap",
@@ -204,12 +203,28 @@
       "evidence": "apps/api/src/routes/verify/index.ts — success body now {valid, expires_at, product_id, license_type}; dropped license_id, product_name, feature_flags. apps/api/src/routes/activations/activate.ts — success body now {activation_id, device_id, license_type, expires_at, activated_at}; dropped license_id, product_name, feature_flags. Activation test updated to assert new shape and explicitly assert dropped fields are undefined. Plan: docs/superpowers/plans/audit-2026-06-18/s6-verify-activate-scope-reduction.md (Closes P0-8)"
     },
     {
+      "id": "feat-026",
+      "name": "Audit S7 — Auth Flow Hygiene",
+      "description": "Login timing-narrowing (constant-time regardless of user existence); register sets email_verified=0; org delete cascades audit cleanup; verify-email route stub returns 501 NOT_IMPLEMENTED pending email service",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "apps/api/src/routes/auth/login.ts — bcrypt.compare always runs even when user not found (constant-time); apps/api/src/routes/auth/register.ts — INSERT includes email_verified=0; apps/api/src/routes/auth/verify-email.ts — S7 stub throws NOT_IMPLEMENTED (replaced by feat-029). Closes P1-2, P1-3, P1-4. Plan: docs/superpowers/plans/audit-2026-06-18/s7-auth-flow-hygiene.md"
+    },
+    {
       "id": "feat-027",
       "name": "Show/Hide Password Toggle (Login + Register)",
       "description": "Add eye-icon toggle on the password input fields in the Login and Register pages so users can reveal the typed password before submitting",
       "dependencies": [],
       "status": "done",
       "evidence": "apps/dashboard/src/components/ui/password-input.tsx — new PasswordInput primitive built on InputGroup + InputGroupAddon (inline-end) + InputGroupButton (icon-xs ghost). Eye/EyeOff icons from lucide-react. type='password' by default, toggles to type='text'. aria-label and aria-pressed for screen readers. apps/dashboard/src/components/ui/index.ts exports it. login.tsx + register.tsx use PasswordInput (register uses it for both password and confirmPassword). 3 new tests in __tests__/password-input.test.tsx. Dashboard tests 70/70 pass (was 67)."
+    },
+    {
+      "id": "feat-028",
+      "name": "Cloudflare Pages Deploy + Env-Driven CORS",
+      "description": "Switch Dashboard deploy target to Cloudflare Pages project keyra (keyra-cl8.pages.dev + custom keyra.danhthanh.dev); CORS allowed origins sourced from CORS_ALLOWED_ORIGINS env (comma-separated) instead of hardcoded; deploy workflow drops --var flag in favor of inline folded-block secret passing",
+      "dependencies": [],
+      "status": "done",
+      "evidence": ".github/workflows/deploy-dashboard.yml — Pages project name `keyra` (not `keyra-dashboard`); apps/api/wrangler.jsonc adds CORS_ALLOWED_ORIGINS var; apps/api/src/middleware/cors.ts parses env at boot. CI green for 2 consecutive deploys post-fix."
     },
     {
       "id": "feat-029",
