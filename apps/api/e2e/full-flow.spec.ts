@@ -42,7 +42,7 @@ test.describe("Full License Flow", () => {
     const licenseKey = licenseBody.data.key;
     expect(licenseKey).toBeTruthy();
     expect(licenseKey).toMatch(
-      /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/,
+      /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}\.[A-Z0-9]{12}$/,
     );
 
     const verifyBefore = await request.post("verify", {
