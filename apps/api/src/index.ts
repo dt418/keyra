@@ -4,6 +4,7 @@ import { swaggerUI } from '@hono/swagger-ui';
 import { router } from './router';
 import { openApiSpec } from './openapi';
 import { errorHandler } from './middleware/error';
+import { RateLimiter } from './do/RateLimiter';
 
 const app = new Hono();
 
@@ -40,5 +41,7 @@ app.get('/openapi.json', (c) => c.json(openApiSpec));
 app.get('/docs', swaggerUI({ url: '/openapi.json' }));
 
 app.route('/api/v1', router);
+
+export { RateLimiter };
 
 export default app;
