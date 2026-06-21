@@ -11,6 +11,9 @@ import { ZodError } from "zod";
  * - INVALID_LICENSE_KEY: License key failed HMAC signature check (400)
  * - INVALID_PROVIDER: OAuth provider not supported
  * - INVALID_STATE: OAuth state validation failed
+ * - INVALID_VERIFICATION_TOKEN: Email verification token missing, used, or expired (400)
+ * - EMAIL_NOT_VERIFIED: REQUIRE_EMAIL_VERIFICATION=1 and users.email_verified=0 (403)
+ * - EMAIL_SEND_FAILED: Resend returned non-2xx when sending transactional email (502)
  * - TOKEN_EXCHANGE_FAILED: OAuth token exchange failed
  * - USERINFO_FAILED: OAuth userinfo request failed
  * - EMAIL_NOT_PROVIDED: OAuth provider did not provide email
