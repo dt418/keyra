@@ -194,6 +194,29 @@ keyra/
 6. Logout → mark session revoked in DB
 ```
 
+### Email Verification
+
+Token-based flow backed by Cloudflare KV + Resend transactional email:
+
+```
+1. POST /auth/register → INSERT user (email_verified=0), issue verify:<token> in KV (24h TTL)
+                                              └─▶ send verification email via Resend
+2. GET  /auth/verify-email/:token → look up KV, flip email_verified=1, delete token
+3. POST /auth/resend-verification → reissue token + re-send (rate-limited 5/min, always 200)
+4. POST /auth/login → if REQUIRE_EMAIL_VERIFICATION=1 and email_verified=0, return 403 EMAIL_NOT_VERIFIED
+```
+
+**Scaffold mode:** when `RESEND_API_KEY` is unset, `apps/api/src/lib/email.ts` logs
+the would-be message via `console.info` and resolves successfully. Local dev
+and CI run without a Resend account; verification tokens still land in KV
+and the rest of the flow (verify endpoint + login gate) exercises the real
+code paths. Configure `RESEND_API_KEY` + `RESEND_FROM_EMAIL` to actually
+deliver mail.
+
+Token key prefix in KV: `verify-email:<uuid>`. Value shape:
+`{ "user_id": string, "expires_at": number_ms }`. On `expires_at < Date.now()`
+the verify endpoint deletes the token and returns `400 INVALID_VERIFICATION_TOKEN`.
+
 ### Auth Middleware Behavior
 
 > **Important:** `authMiddleware` **returns a Response** (e.g. `c.json({error}, 401)`)
@@ -240,15 +263,16 @@ CORS_ALLOWED_ORIGINS=https://keyra.danhthanh.dev,https://keyra.pages.dev,https:/
 
 ### Rate Limiting
 
-| Endpoint         | Limit      |
-| ---------------- | ---------- |
-| `/auth/register` | 10 req/min |
-| `/auth/login`    | 20 req/min |
-| `/auth/logout`   | 10 req/min |
-| `/auth/refresh`  | 30 req/min |
-| `/auth/oauth/*`  | 20 req/min |
-| `/verify`        | 60 req/min |
-| `/activate`      | 30 req/min |
+| Endpoint                    | Limit      |
+| --------------------------- | ---------- |
+| `/auth/register`            | 10 req/min |
+| `/auth/login`               | 20 req/min |
+| `/auth/logout`              | 10 req/min |
+| `/auth/refresh`             | 30 req/min |
+| `/auth/oauth/*`             | 20 req/min |
+| `/auth/resend-verification` | 5 req/min  |
+| `/verify`                   | 60 req/min |
+| `/activate`                 | 30 req/min |
 
 Per-(scope + ip + bucket) key `rl:<scope>:<ip>:<bucket>` with bucket windowing.
 Throws `AppError RATE_LIMITED 429` with `Retry-After` header.
@@ -298,17 +322,20 @@ Response Format: { data: ... } or { error: { code, message } }
 
 ### API (`apps/api/.dev.vars`, `apps/api/wrangler.jsonc`)
 
-| Key                                  | Scope  | Required | Purpose                                                    |
-| ------------------------------------ | ------ | -------- | ---------------------------------------------------------- |
-| `JWT_SECRET`                         | secret | ✓        | Access-token signing                                       |
-| `JWT_REFRESH_SECRET`                 | secret | ✓        | Refresh-token signing                                      |
-| `OAUTH_REDIRECT_URI`                 | secret |          | OAuth callback base URL                                    |
-| `OAUTH_GOOGLE_CLIENT_ID` / `_SECRET` | secret |          | Google OAuth                                               |
-| `OAUTH_GITHUB_CLIENT_ID` / `_SECRET` | secret |          | GitHub OAuth                                               |
-| `CLOUDFLARE_API_TOKEN`               | secret |          | CI deploy (Pages + Workers)                                |
-| `CLOUDFLARE_ACCOUNT_ID`              | secret |          | wrangler-action account                                    |
-| `CORS_ALLOWED_ORIGINS`               | var    | ✓        | Comma-separated allowlist                                  |
-| `ENVIRONMENT`                        | var    |          | (legacy placeholder; not template-substituted by wrangler) |
+| Key                                  | Scope  | Required | Purpose                                                              |
+| ------------------------------------ | ------ | -------- | -------------------------------------------------------------------- |
+| `JWT_SECRET`                         | secret | ✓        | Access-token signing                                                 |
+| `JWT_REFRESH_SECRET`                 | secret | ✓        | Refresh-token signing                                                |
+| `OAUTH_REDIRECT_URI`                 | secret |          | OAuth callback base URL                                              |
+| `OAUTH_GOOGLE_CLIENT_ID` / `_SECRET` | secret |          | Google OAuth                                                         |
+| `OAUTH_GITHUB_CLIENT_ID` / `_SECRET` | secret |          | GitHub OAuth                                                         |
+| `CLOUDFLARE_API_TOKEN`               | secret |          | CI deploy (Pages + Workers)                                          |
+| `CLOUDFLARE_ACCOUNT_ID`              | secret |          | wrangler-action account                                              |
+| `CORS_ALLOWED_ORIGINS`               | var    | ✓        | Comma-separated allowlist                                            |
+| `RESEND_API_KEY`                     | secret |          | Resend transactional email API token                                 |
+| `RESEND_FROM_EMAIL`                  | var    |          | `From` address for outgoing mail (e.g. `Keyra <no-reply@keyra.dev>`) |
+| `REQUIRE_EMAIL_VERIFICATION`         | var    |          | `1` blocks login until `users.email_verified=1`; default `0`         |
+| `ENVIRONMENT`                        | var    |          | (legacy placeholder; not template-substituted by wrangler)           |
 
 ### Dashboard (`VITE_API_URL`, set as GitHub variable)
 
@@ -367,18 +394,18 @@ audit_logs, webhooks, webhook_deliveries, api_keys.
 
 ### Users
 
-| Column         | Type    | Notes                                                     |
-| -------------- | ------- | --------------------------------------------------------- |
-| id             | TEXT    | UUID primary key                                          |
-| email          | TEXT    | Unique, indexed                                           |
-| name           | TEXT    | Optional                                                  |
-| password_hash  | TEXT    | bcrypt                                                    |
-| oauth_provider | TEXT    | google/github                                             |
-| oauth_id       | TEXT    | Provider user ID                                          |
-| avatar_url     | TEXT    | Profile image                                             |
-| email_verified | INTEGER | 0/1 (set to 0 on register; verification flow is 501 stub) |
-| created_at     | TEXT    | ISO timestamp                                             |
-| updated_at     | TEXT    | ISO timestamp                                             |
+| Column         | Type    | Notes                                                                     |
+| -------------- | ------- | ------------------------------------------------------------------------- |
+| id             | TEXT    | UUID primary key                                                          |
+| email          | TEXT    | Unique, indexed                                                           |
+| name           | TEXT    | Optional                                                                  |
+| password_hash  | TEXT    | bcrypt                                                                    |
+| oauth_provider | TEXT    | google/github                                                             |
+| oauth_id       | TEXT    | Provider user ID                                                          |
+| avatar_url     | TEXT    | Profile image                                                             |
+| email_verified | INTEGER | 0/1 (set to 0 on register; flipped to 1 by GET /auth/verify-email/:token) |
+| created_at     | TEXT    | ISO timestamp                                                             |
+| updated_at     | TEXT    | ISO timestamp                                                             |
 
 ### Organizations
 
@@ -462,23 +489,26 @@ audit_logs, webhooks, webhook_deliveries, api_keys.
 
 ## Error Codes
 
-| Code                  | HTTP | Description                             |
-| --------------------- | ---- | --------------------------------------- |
-| UNAUTHORIZED          | 401  | Invalid/expired token                   |
-| FORBIDDEN             | 403  | Insufficient permissions                |
-| NOT_FOUND             | 404  | Resource not found                      |
-| VALIDATION_ERROR      | 400  | Invalid request data                    |
-| CONFLICT              | 409  | Resource already exists                 |
-| RATE_LIMITED          | 429  | Too many requests                       |
-| INTERNAL_ERROR        | 500  | Server error                            |
-| OAUTH_NOT_CONFIGURED  | 500  | OAuth env vars missing                  |
-| OAUTH_ALREADY_LINKED  | 409  | Email already bound to another provider |
-| INVALID_PROVIDER      | 400  | OAuth provider not supported            |
-| INVALID_STATE         | 400  | OAuth state validation failed           |
-| TOKEN_EXCHANGE_FAILED | 502  | OAuth token exchange failed             |
-| USERINFO_FAILED       | 502  | OAuth userinfo request failed           |
-| EMAIL_NOT_PROVIDED    | 400  | OAuth provider did not provide email    |
-| NOT_IMPLEMENTED       | 501  | Endpoint stub (e.g. email verification) |
+| Code                         | HTTP | Description                                           |
+| ---------------------------- | ---- | ----------------------------------------------------- |
+| UNAUTHORIZED                 | 401  | Invalid/expired token                                 |
+| FORBIDDEN                    | 403  | Insufficient permissions                              |
+| NOT_FOUND                    | 404  | Resource not found                                    |
+| VALIDATION_ERROR             | 400  | Invalid request data                                  |
+| CONFLICT                     | 409  | Resource already exists                               |
+| RATE_LIMITED                 | 429  | Too many requests                                     |
+| INTERNAL_ERROR               | 500  | Server error                                          |
+| OAUTH_NOT_CONFIGURED         | 500  | OAuth env vars missing                                |
+| OAUTH_ALREADY_LINKED         | 409  | Email already bound to another provider               |
+| INVALID_PROVIDER             | 400  | OAuth provider not supported                          |
+| INVALID_STATE                | 400  | OAuth state validation failed                         |
+| TOKEN_EXCHANGE_FAILED        | 502  | OAuth token exchange failed                           |
+| USERINFO_FAILED              | 502  | OAuth userinfo request failed                         |
+| EMAIL_NOT_PROVIDED           | 400  | OAuth provider did not provide email                  |
+| NOT_IMPLEMENTED              | 501  | Endpoint stub (e.g. email verification)               |
+| `INVALID_VERIFICATION_TOKEN` | 400  | Verification token missing, used, or expired          |
+| `EMAIL_NOT_VERIFIED`         | 403  | `REQUIRE_EMAIL_VERIFICATION=1` and `email_verified=0` |
+| `EMAIL_SEND_FAILED`          | 502  | Resend returned non-2xx                               |
 
 ## CI Pipeline
 

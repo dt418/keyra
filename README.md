@@ -107,7 +107,26 @@ bash scripts/sync-secrets.sh
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 # Fill in JWT_SECRET, JWT_REFRESH_SECRET, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
 # Fill in CORS_ALLOWED_ORIGINS (comma-separated; localhost defaults always work)
+# Optionally fill in RESEND_API_KEY + RESEND_FROM_EMAIL for outbound email;
+# leave blank for scaffold mode (see Email section below).
 ```
+
+### Email (transactional, optional)
+
+Email sending runs in **scaffold mode** when `RESEND_API_KEY` is unset: the API
+logs the would-be message via `console.info` and resolves successfully. This
+keeps local dev / CI runnable without a Resend account. Configure both vars to
+actually deliver.
+
+| Key                          | Type   | Required | Purpose                                                                                           |
+| ---------------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------- |
+| `RESEND_API_KEY`             | secret |          | Resend HTTP API token                                                                             |
+| `RESEND_FROM_EMAIL`          | var    |          | `From` address used on outgoing mail (e.g. `Keyra <no-reply@keyra.dev>`)                          |
+| `REQUIRE_EMAIL_VERIFICATION` | var    |          | `1` blocks login until `users.email_verified=1`; default `0` (backwards-compat with seeded users) |
+
+When `RESEND_API_KEY` is set, `POST /auth/register` and
+`POST /auth/resend-verification` deliver through the Resend API. The
+verification token is stored in KV under `verify-email:<token>` with a 24h TTL.
 
 ### Required GitHub repo secrets / variables
 
@@ -122,6 +141,7 @@ Set with `gh secret set` and `gh variable set -R dt418/keyra`:
 | `CORS_ALLOWED_ORIGINS`  | secret   | ✓        | Comma-separated dashboard origins (prod + preview Pages URLs + custom domain) |
 | `VITE_API_URL`          | variable | ✓        | Dashboard axios baseURL; inlined at build time                                |
 | `OAUTH_*`               | secret   |          | Google/GitHub OAuth client ids + secrets                                      |
+| `RESEND_API_KEY`        | secret   |          | Resend transactional email API token                                          |
 
 `scripts/sync-secrets.sh` pushes all of the above from `apps/api/.dev.vars` to
 `gh secret set` / `gh variable set` + `wrangler secret put`. Never echoes

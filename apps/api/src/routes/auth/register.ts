@@ -5,6 +5,9 @@ import { signAccessToken, signRefreshToken } from "../../lib/jwt";
 import { storeRefreshToken } from "../../lib/sessions";
 import { AppError } from "../../middleware/error";
 import { logAuditEvent, extractRequestInfo } from "../../lib/audit";
+import { issueVerificationToken } from "./verify-email";
+import { sendEmail } from "../../lib/email";
+import { verifyEmailTemplate } from "../../lib/email-templates/verify";
 
 interface RegisterBody {
   email: string;
@@ -41,6 +44,25 @@ export async function registerHandler(c: Context) {
   )
     .bind(userId, email.toLowerCase(), hashedPassword, name, now, now)
     .run();
+
+  const verificationToken = await issueVerificationToken(
+    c.env.SESSIONS,
+    userId,
+  );
+  const appUrl = c.env.APP_URL || "http://localhost:5173";
+  const verifyUrl = `${appUrl}/verify-email/${verificationToken}`;
+  const template = verifyEmailTemplate({
+    verifyUrl,
+    expiresInMinutes: 60 * 24,
+  });
+  try {
+    await sendEmail(c.env, {
+      to: email.toLowerCase(),
+      ...template,
+    });
+  } catch (err) {
+    console.error("[register] verification email send failed", err);
+  }
 
   const orgId = crypto.randomUUID();
   const local = email.split("@")[0] ?? email;

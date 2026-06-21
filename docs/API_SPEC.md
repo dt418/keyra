@@ -57,14 +57,16 @@ Protected endpoints require `Authorization: Bearer <access_token>` header.
 
 ### Auth
 
-| Method | Endpoint                         | Description          | Auth |
-| ------ | -------------------------------- | -------------------- | ---- |
-| POST   | `/auth/register`                 | Email registration   | -    |
-| POST   | `/auth/login`                    | Email login          | -    |
-| POST   | `/auth/oauth/:provider/initiate` | Start OAuth flow     | -    |
-| POST   | `/auth/oauth/:provider/callback` | Complete OAuth       | -    |
-| POST   | `/auth/logout`                   | Logout               | ✓    |
-| POST   | `/auth/refresh`                  | Refresh access token | -    |
+| Method | Endpoint                         | Description                               | Auth |
+| ------ | -------------------------------- | ----------------------------------------- | ---- |
+| POST   | `/auth/register`                 | Email registration                        | -    |
+| POST   | `/auth/login`                    | Email login                               | -    |
+| POST   | `/auth/oauth/:provider/initiate` | Start OAuth flow                          | -    |
+| POST   | `/auth/oauth/:provider/callback` | Complete OAuth                            | -    |
+| POST   | `/auth/logout`                   | Logout                                    | ✓    |
+| POST   | `/auth/refresh`                  | Refresh access token                      | -    |
+| POST   | `/auth/resend-verification`      | Resend verification email (anti-enum 200) | -    |
+| GET    | `/auth/verify-email/:token`      | Verify email from token link              | -    |
 
 ### Users
 
@@ -190,31 +192,35 @@ GET /licenses?limit=20&cursor=<opaque>
 
 ## Error Codes
 
-| Code                    | HTTP Status | Description                                            |
-| ----------------------- | ----------- | ------------------------------------------------------ |
-| `UNAUTHORIZED`          | 401         | Missing/invalid token                                  |
-| `FORBIDDEN`             | 403         | Insufficient permissions                               |
-| `NOT_FOUND`             | 404         | Resource not found                                     |
-| `VALIDATION_ERROR`      | 400         | Invalid request data                                   |
-| `CONFLICT`              | 409         | Resource already exists                                |
-| `INVALID_PROVIDER`      | 400         | OAuth provider not supported                           |
-| `INVALID_STATE`         | 400         | OAuth state validation failed                          |
-| `TOKEN_EXCHANGE_FAILED` | 502         | OAuth token exchange failed                            |
-| `USERINFO_FAILED`       | 502         | OAuth userinfo request failed                          |
-| `EMAIL_NOT_PROVIDED`    | 400         | OAuth provider did not provide email                   |
-| `OAUTH_NOT_CONFIGURED`  | 500         | OAuth env vars missing                                 |
-| `OAUTH_ALREADY_LINKED`  | 409         | Email already bound to a different provider            |
-| `NOT_IMPLEMENTED`       | 501         | Endpoint stub (e.g. `/auth/verify-email/:token`)       |
-| `RATE_LIMITED`          | 429         | Too many requests                                      |
-| `WEBHOOK_URL_BLOCKED`   | 400         | Webhook URL points at a private/loopback/internal host |
-| `INTERNAL_ERROR`        | 500         | Server error                                           |
+| Code                         | HTTP Status | Description                                                 |
+| ---------------------------- | ----------- | ----------------------------------------------------------- |
+| `UNAUTHORIZED`               | 401         | Missing/invalid token                                       |
+| `FORBIDDEN`                  | 403         | Insufficient permissions                                    |
+| `NOT_FOUND`                  | 404         | Resource not found                                          |
+| `VALIDATION_ERROR`           | 400         | Invalid request data                                        |
+| `CONFLICT`                   | 409         | Resource already exists                                     |
+| `INVALID_PROVIDER`           | 400         | OAuth provider not supported                                |
+| `INVALID_STATE`              | 400         | OAuth state validation failed                               |
+| `TOKEN_EXCHANGE_FAILED`      | 502         | OAuth token exchange failed                                 |
+| `USERINFO_FAILED`            | 502         | OAuth userinfo request failed                               |
+| `EMAIL_NOT_PROVIDED`         | 400         | OAuth provider did not provide email                        |
+| `OAUTH_NOT_CONFIGURED`       | 500         | OAuth env vars missing                                      |
+| `OAUTH_ALREADY_LINKED`       | 409         | Email already bound to a different provider                 |
+| `NOT_IMPLEMENTED`            | 501         | Endpoint stub (e.g. `/auth/verify-email/:token`)            |
+| `INVALID_VERIFICATION_TOKEN` | 400         | Verification token missing, already used, or expired        |
+| `EMAIL_NOT_VERIFIED`         | 403         | `REQUIRE_EMAIL_VERIFICATION=1` and `users.email_verified=0` |
+| `EMAIL_SEND_FAILED`          | 502         | Resend returned non-2xx when sending transactional email    |
+| `RATE_LIMITED`               | 429         | Too many requests                                           |
+| `WEBHOOK_URL_BLOCKED`        | 400         | Webhook URL points at a private/loopback/internal host      |
+| `INTERNAL_ERROR`             | 500         | Server error                                                |
 
 ## Rate Limits
 
-| Endpoint         | Limit  |
-| ---------------- | ------ |
-| `/auth/register` | 10/min |
-| `/auth/login`    | 20/min |
-| `/auth/logout`   | 10/min |
-| `/auth/refresh`  | 30/min |
-| `/auth/oauth/*`  | 20/min |
+| Endpoint                    | Limit  |
+| --------------------------- | ------ |
+| `/auth/register`            | 10/min |
+| `/auth/login`               | 20/min |
+| `/auth/logout`              | 10/min |
+| `/auth/refresh`             | 30/min |
+| `/auth/oauth/*`             | 20/min |
+| `/auth/resend-verification` | 5/min  |

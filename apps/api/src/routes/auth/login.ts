@@ -21,7 +21,7 @@ export async function loginHandler(c: Context) {
   const { email, password } = parsed.data;
 
   const user = (await c.env.DB.prepare(
-    "SELECT id, email, password_hash, name FROM users WHERE email = ?",
+    "SELECT id, email, password_hash, name, email_verified FROM users WHERE email = ?",
   )
     .bind(email.toLowerCase())
     .first()) as {
@@ -29,6 +29,7 @@ export async function loginHandler(c: Context) {
     email: string;
     password_hash: string;
     name: string;
+    email_verified: number;
   } | null;
 
   if (!user) {
@@ -42,6 +43,14 @@ export async function loginHandler(c: Context) {
   const isValid = await verifyPassword(password, user.password_hash);
   if (!isValid) {
     throw new AppError("UNAUTHORIZED", "Invalid email or password", 401);
+  }
+
+  if (c.env.REQUIRE_EMAIL_VERIFICATION === "1" && user.email_verified === 0) {
+    throw new AppError(
+      "EMAIL_NOT_VERIFIED",
+      "Please verify your email before logging in",
+      403,
+    );
   }
 
   const sessionId = crypto.randomUUID();

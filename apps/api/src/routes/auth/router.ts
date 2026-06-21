@@ -5,6 +5,7 @@ import { logoutHandler } from "./logout";
 import { refreshHandler } from "./refresh";
 import { oauthCallbackHandler, oauthInitiateHandler } from "./oauth";
 import { verifyEmailHandler } from "./verify-email";
+import { resendVerificationHandler } from "./resend-verification";
 import { authMiddleware } from "../../middleware/auth";
 import { rateLimit } from "../../middleware/rateLimit";
 
@@ -45,4 +46,14 @@ export const authRouter = new Hono()
     rateLimit({ window: 60, max: 20, scope: "oauth-cb", respectDevFlag: true }),
     oauthCallbackHandler,
   )
-  .get("/verify-email/:token", verifyEmailHandler);
+  .get("/verify-email/:token", verifyEmailHandler)
+  .post(
+    "/resend-verification",
+    rateLimit({
+      window: 60,
+      max: 5,
+      scope: "resend-verification",
+      respectDevFlag: true,
+    }),
+    resendVerificationHandler,
+  );

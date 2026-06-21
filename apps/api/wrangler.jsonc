@@ -27,7 +27,9 @@
   ],
   "vars": {
     "ENVIRONMENT": "${ENVIRONMENT}",
-    "LICENSE_HMAC_SECRET": "dev-license-secret-change-me"
+    "LICENSE_HMAC_SECRET": "dev-license-secret-change-me",
+    "APP_URL": "http://localhost:5173",
+    "REQUIRE_EMAIL_VERIFICATION": "0"
   },
   "observability": {
     "enabled": true
