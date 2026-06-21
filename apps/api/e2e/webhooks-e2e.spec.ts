@@ -117,14 +117,17 @@ test.describe('Webhooks CRUD', () => {
   });
 
   test('test webhook returns response details', async ({ request }) => {
+    // Use RFC 2606 reserved .invalid TLD — guaranteed NXDOMAIN at fetch time,
+    // passes feat-030 SSRF guard (not in blocklist).
     const createRes = await request.post('webhooks', {
       headers: { Authorization: `Bearer ${accessToken}` },
       data: {
-        url: 'http://127.0.0.1:1',
+        url: 'https://keyra-e2e-unreachable.invalid/hook',
         events: ['license.created'],
         active: true,
       },
     });
+    expect(createRes.status()).toBe(201);
     const created = await createRes.json();
     createdWebhookIds.push(created.data.id);
 
