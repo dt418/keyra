@@ -1,7 +1,8 @@
 {
   "schema": "feature-list.schema.json",
   "project": "keyra",
-  "lastUpdated": "2026-06-21",  "features": [
+  "lastUpdated": "2026-06-21",
+  "features": [
     {
       "id": "feat-001",
       "name": "Monorepo Bootstrap",
