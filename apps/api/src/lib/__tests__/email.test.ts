@@ -83,9 +83,7 @@ describe("sendEmail", () => {
   });
 
   it("throws AppError EMAIL_SEND_FAILED with status 502 on non-2xx response", async () => {
-    fetchMock.mockResolvedValue(
-      new Response("upstream boom", { status: 500 }),
-    );
+    fetchMock.mockResolvedValue(new Response("upstream boom", { status: 500 }));
     const sendEmail = await loadSendEmail();
 
     let caught: unknown;

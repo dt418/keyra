@@ -21,7 +21,10 @@ describe("verifyEmailTemplate", () => {
 
   it("returns a text fallback that includes the verify url and expiry", () => {
     const url = "https://app.keyra.dev/verify-email/tok_txt";
-    const t = verifyEmailTemplate({ verifyUrl: url, expiresInMinutes: 60 * 24 });
+    const t = verifyEmailTemplate({
+      verifyUrl: url,
+      expiresInMinutes: 60 * 24,
+    });
     expect(t.text).toContain(url);
     expect(t.text).toMatch(/24\s*hours|1440/i);
   });

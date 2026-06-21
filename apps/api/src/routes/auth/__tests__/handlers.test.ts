@@ -1,8 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("../../../lib/email", async () => {
+  const actual =
+    await vi.importActual<typeof import("../../../lib/email")>(
+      "../../../lib/email",
+    );
+  return {
+    ...actual,
+    sendEmail: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
+vi.mock("../../../routes/auth/verify-email", async () => {
+  const actual = await vi.importActual<
+    typeof import("../../../routes/auth/verify-email")
+  >("../../../routes/auth/verify-email");
+  return {
+    ...actual,
+    issueVerificationToken: vi.fn(async () => "tok_mock"),
+  };
+});
+
 import { registerHandler } from "../register";
 import { loginHandler } from "../login";
 import { refreshHandler } from "../refresh";
 import { signRefreshToken } from "../../../lib/jwt";
+import { sendEmail } from "../../../lib/email";
+import { issueVerificationToken } from "../verify-email";
 
 const TEST_SECRET = "test-secret-key";
 const TEST_REFRESH_SECRET = "test-refresh-secret-key";
@@ -27,6 +51,7 @@ const mockEnv = {
   SESSIONS: mockKV,
   JWT_SECRET: TEST_SECRET,
   JWT_REFRESH_SECRET: TEST_REFRESH_SECRET,
+  APP_URL: "http://localhost:5174",
 };
 
 function createMockContext(body: unknown) {
@@ -106,6 +131,58 @@ describe("registerHandler", () => {
       .map((c) => String(c[0]))
       .find((sql) => sql.includes("INSERT INTO org_members"));
     expect(memberSql).toContain("'owner'");
+  });
+
+  it("should issue a verification token and send a verification email", async () => {
+    mockDB.first.mockResolvedValueOnce(null);
+    const ctx = createMockContext({
+      email: "verify@example.com",
+      password: "password123",
+      name: "Verify User",
+    }) as any;
+
+    await registerHandler(ctx);
+
+    expect(issueVerificationToken).toHaveBeenCalledTimes(1);
+    const [kvArg, userIdArg] = (issueVerificationToken as any).mock.calls[0];
+    expect(kvArg).toBe(mockKV);
+    expect(userIdArg).toEqual(expect.any(String));
+
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    const [envArg, msgArg] = (sendEmail as any).mock.calls[0];
+    expect(envArg).toBe(mockEnv);
+    expect(msgArg.to).toBe("verify@example.com");
+    expect(msgArg.subject).toBe("Verify your Keyra email");
+    expect(msgArg.html).toContain("/verify-email/tok_mock");
+    expect(msgArg.html).toContain("http://localhost:5174");
+    expect(msgArg.text).toContain("/verify-email/tok_mock");
+  });
+
+  it("should still return 201 when sendEmail throws", async () => {
+    (sendEmail as any).mockRejectedValueOnce(new Error("resend down"));
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockDB.first.mockResolvedValueOnce(null);
+    const ctx = createMockContext({
+      email: "resilient@example.com",
+      password: "password123",
+      name: "Resilient User",
+    }) as any;
+
+    await expect(registerHandler(ctx)).resolves.not.toThrow();
+    expect(ctx.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          access_token: expect.any(String),
+          refresh_token: expect.any(String),
+        }),
+      }),
+      201,
+    );
+    expect(issueVerificationToken).toHaveBeenCalledTimes(1);
+    expect(errSpy).toHaveBeenCalledWith(
+      "[register] verification email send failed",
+      expect.any(Error),
+    );
   });
 });
 

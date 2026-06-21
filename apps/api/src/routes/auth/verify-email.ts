@@ -17,7 +17,10 @@ export async function issueVerificationToken(
   const token = crypto.randomUUID();
   await kv.put(
     `${TOKEN_KEY_PREFIX}${token}`,
-    JSON.stringify({ user_id: userId, expires_at: Date.now() + ttlSeconds * 1000 }),
+    JSON.stringify({
+      user_id: userId,
+      expires_at: Date.now() + ttlSeconds * 1000,
+    }),
     { expirationTtl: ttlSeconds },
   );
   return token;
@@ -60,9 +63,7 @@ export async function verifyEmailHandler(c: Context) {
     );
   }
 
-  await c.env.DB.prepare(
-    "UPDATE users SET email_verified = 1 WHERE id = ?",
-  )
+  await c.env.DB.prepare("UPDATE users SET email_verified = 1 WHERE id = ?")
     .bind(stored.user_id)
     .run();
 
