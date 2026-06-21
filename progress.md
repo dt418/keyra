@@ -2,10 +2,10 @@
 
 ## Current State
 
-**Last Updated:** 2026-06-20
+**Last Updated:** 2026-06-21
 **Session:** post-audit deploy fixes (Pages project name + env-driven CORS) + docs sync
 **Active Phase:** NONE — all shipped
-**Branch:** main @ c0f6fc6
+**Branch:** main @ 20cac29
 
 ## Status
 
@@ -29,6 +29,10 @@
 - [x] **Cloudflare Pages project name fix** — `keyra-dashboard` → `keyra` → `f10b9cf`
 - [x] **Env-driven CORS** — `c.env.CORS_ALLOWED_ORIGINS` in API, injected via wrangler-action from GH secret → `f2eb04f` + `c0f6fc6`
 - [x] **Docs sync (feat-028)** — ARCHITECTURE.md, API_SPEC.md, README.md, CHANGELOG.md, session-handoff.md, scripts/sync-secrets.sh, scripts/check-secrets.sh all match current code & deploy flow
+- [x] **feat-029 — email verification flow** — Resend integration, KV token issuance + verification, login gate → `56f64da`
+- [x] **feat-030 — production hardening** — Durable Object `RateLimiter`, HMAC license keys, SSRF webhook guard → `fedb3a3`
+- [x] **feat-031 — RHF migration for remaining 7 dialogs** — Create/Edit Product, Org, License, Webhook on shared primitives → `32cc290`
+- [x] **`.prettierrc` added** — project-wide Prettier config (`singleQuote`, `trailingComma: all`, `printWidth: 100`) → `20cac29`
 
 ### What's In Progress
 
@@ -38,15 +42,14 @@
 
 1. **Open follow-ups** (per `feature_list.json` last open items):
 
-   - Email verification flow — S7 stub returns 501; needs Resend integration (`lib/email.ts` + token issuance in `register.ts` + `verify-email.ts` implementation)
+   - (none — feat-029 email verification shipped 2026-06-21)
 
 2. **Potential hardening** (post-audit):
-   - Durable Objects for strict rate limiting (S5 caveat — currently KV-based, small race)
    - Move license-key generation off `bytes[i] % 36` (modulo bias; cosmetic, 1.3e31 keyspace)
    - RFC 7807 Problem Details for error responses (snake_case AppError is close)
 3. **Direction features** (see audit/README `Direction options`):
-   - Hardened outbound webhooks (SSRF guard, retry, DLQ) — S5 caveat
-   - Offline-verifiable signed license keys (HMAC) — S6 caveat
+   - Hardened outbound webhooks — SSRF guard shipped in feat-030; retry + DLQ remaining
+   - Offline-verifiable signed license keys — done via feat-030 (HMAC)
    - Inbound webhook receiver — P2-13
    - Customer-usage analytics surface — direction option
 4. **Misc hygiene**:
@@ -100,7 +103,7 @@
 
 ## Test baseline
 
-- API unit: 98/98 (was 95 after S4; +3 for S4 OAuth tests)
+- API unit: 178/178 (was 98 after audit + feat-027; +80 for feat-029 email + feat-030 hardening)
 - Dashboard unit: 70/70 (was 67; +3 for feat-027)
 - sdk-js: 9/9
 - shared-validation: 28/28
@@ -108,9 +111,7 @@
 
 ## Notes for Next Session
 
-- For the email-verification follow-up (S7 stub returns 501): start with the Resend integration. Add `RESEND_API_KEY` secret, write a `sendVerificationEmail()` helper in `lib/email.ts`, update `register.ts` to issue a token + send, update `verify-email.ts` to validate the token.
 - For OAuth: `OAUTH_REDIRECT_URI` / `OAUTH_GOOGLE_CLIENT_ID/SECRET` / `OAUTH_GITHUB_CLIENT_ID/SECRET` must be set in Cloudflare for production OAuth to work. Local dev can use placeholder values; e2e is stubbed with `test-token`.
-- For S5 rate limit caveat: Durable Objects upgrade is a follow-up; KV-based has small race but acceptable.
 - For S6 scope reduction: SDK only needs `valid` + `expires_at` + `license_type` + `product_id`; do not break the SDK.
 - **After deploying, monitor the audit-log for any `OAUTH_NOT_CONFIGURED` (S7) or `RATE_LIMITED` (S5) errors that indicate misconfiguration.**
 
@@ -123,3 +124,14 @@
 - Edit Product dialog migrated to RHF + zodResolver
 - 62 dashboard unit tests + 28 shared-validation tests + 38 e2e tests pass
 - Login/register (auth flows) intentionally out of scope — separate future feature (now addressed in feat-027 + audit S7)
+
+## feat-031 — RHF Migration for Remaining 7 Dialogs (DONE 2026-06-21)
+
+- All 7 entity dialogs now use the RHF primitives shipped in feat-017:
+  - Create / Edit Product
+  - Create / Edit Org
+  - Create / Edit License
+  - Create Webhook
+- Uses shared primitives: `TextField`, `TextareaField`, `NumberField`, `DateField`, `SelectField`, `MultiCheckboxField`, `CheckboxField`
+- 4 files modified, +683 / −294 (commit `32cc290`)
+- Closes the feat-017 follow-up ("Migrate remaining 4 forms")

@@ -5,7 +5,8 @@
 - **Goal 1 (DONE 2026-06-18):** Land all 8 audit plans (S0–S7) closing 9 P0 + 7 P1 security findings.
 - **Goal 2 (DONE 2026-06-18):** feat-027 (show/hide password) + 3-variant comprehensive seed (`.sh` / `.ts` / `.ps1`).
 - **Goal 3 (DONE 2026-06-20):** Cloudflare Pages project name fix + env-driven CORS + dashboard → API wiring.
-- **Status:** All shipped. main @ `c0f6fc6`. Production secrets + CORS vars rotated + synced.
+- **Goal 4 (DONE 2026-06-21):** feat-029 email verification flow + feat-030 production hardening (DO RateLimiter + HMAC license keys + SSRF webhook guard) + feat-031 RHF migration for 7 remaining dialogs + `.prettierrc`.
+- **Status:** All shipped. main @ `20cac29`. Production secrets + CORS vars rotated + synced.
 - **Branch / commit:** main, all committed and pushed.
 
 ## Deploy topology (current)
@@ -47,6 +48,10 @@
 | feat-027 | Show/hide password toggle on Login + Register (`PasswordInput` primitive) | `1839931` |
 | tooling | Comprehensive seed in `.sh` / `.ts` / `.ps1` (13 tables, 2 users + 1 org + 3 products + 8 licenses + 5 devices + 5 activations + 2 webhooks + 3 deliveries) | `5a6a1d8` |
 | docs | CHANGELOG.md, README.md, progress.md, session-handoff.md synced | `5a6a1d8` (this commit) |
+| feat-029 | Email verification flow — Resend integration, KV token issuance, login gate (`EMAIL_NOT_VERIFIED`) | `56f64da` |
+| feat-030 | Production hardening — DO `RateLimiter` + HMAC license keys + SSRF webhook guard | `fedb3a3` |
+| feat-031 | RHF migration for remaining 7 dialogs (Create/Edit Product, Org, License, Webhook) | `32cc290` |
+| chore | `.prettierrc` (singleQuote, trailingComma=all, printWidth=100) + feat-026/feat-028 backfill | `20cac29` |
 
 ## Completed This Session
 
@@ -70,31 +75,33 @@
 | feat-027 shipped | ✓ | Commit `1839931` |
 | Comprehensive seed shipped | ✓ | Commit `5a6a1d8` |
 | Docs synced (CHANGELOG, README, progress, session-handoff) | ✓ | Commit `5a6a1d8` |
-| API unit tests | 98/98 pass | After S5/S6/S7 test updates |
+| API unit tests | 178/178 pass | After feat-029 + feat-030 added 80+ tests (was 98) |
 | Dashboard unit tests | 70/70 pass | (was 67; +3 for feat-027) |
 | sdk-js tests | 9/9 pass | |
 | shared-validation tests | 28/28 pass | |
 | E2E | 38/38 pass | S6 changed /verify response shape; `full-flow.spec.ts` updated |
-| `gh secret list -R dt418/keyra` | ✓ | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `JWT_SECRET`, `JWT_REFRESH_SECRET` present |
-| `wrangler secret list` | ✓ | Same 4 secrets present |
-| `feature_list.json` | 27 features, all `done` | feat-001..feat-027 |
+| `gh secret list -R dt418/keyra` | ✓ | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `RESEND_API_KEY`, `LICENSE_HMAC_SECRET`, `REQUIRE_EMAIL_VERIFICATION` present |
+| `wrangler secret list` | ✓ | Same 7 secrets present (add `RESEND_API_KEY` + `LICENSE_HMAC_SECRET`; `REQUIRE_EMAIL_VERIFICATION` is a var) |
+| `feature_list.json` | 31 features, all `done` | feat-001..feat-031 (incl. feat-029/030/031) |
 | `init.sh quick` | ✓ | Passes at every ship |
 
 ## Next Session Startup
 
-1. **All audit + post-audit work is shipped.** The 8 plans in `docs/superpowers/plans/audit-2026-06-18/` are historical reference.
-2. Read `feature_list.json` — all features currently `done`. To continue work, either:
+1. **All audit + post-audit + 2026-06-21 hardening work is shipped.** The plans in
+   `docs/superpowers/plans/audit-2026-06-18/` are historical reference.
+   feat-029/030/031 plans live in `docs/superpowers/plans/2026-06-21-*`.
+2. Read `feature_list.json` — all features currently `done` (feat-001..feat-031). To continue work, either:
    a. Pick a new feature (add it to `feature_list.json` first, status=not-started)
-   b. Pick up the email-verification follow-up (S7 stub returns 501; needs Resend integration)
+   b. Pick up a hardening follow-up (DLQ for webhook retries, Resend domain verification + DKIM, modulo bias fix on license key generation)
    c. Open a new audit / design phase
 3. Run `./init.sh quick` before any change.
 4. Read `AGENTS.md` for project conventions.
 
 ## Recommended Next Step
 
-- **Deploy `main` to production.** The rotated secrets are in Cloudflare Workers. Deploy via `pnpm --filter @keyra/api deploy` or your normal deploy flow.
-- After deploy, monitor the audit-log for any `OAUTH_NOT_CONFIGURED` (S7) or `RATE_LIMITED` (S5) errors that indicate misconfiguration.
-- Optional follow-up: ship the email-verification flow (Resend integration for S7's 501 stub).
+- **Deploy `main` to production.** All secrets (incl. new `RESEND_API_KEY`, `LICENSE_HMAC_SECRET`) must be propagated to Cloudflare Workers before deploy.
+- After deploy, monitor the audit-log for any `OAUTH_NOT_CONFIGURED` (S7), `RATE_LIMITED` (S5), `WEBHOOK_URL_BLOCKED` (feat-030), or `INVALID_LICENSE_KEY` (feat-030) errors that indicate misconfiguration.
+- Optional follow-ups: add DLQ for webhook retries; add Resend domain verification + DKIM; move license-key generation off `bytes[i] % 36` (modulo bias).
 
 ---
 
@@ -110,7 +117,7 @@
 
 ## Open follow-up
 
-- Migrate remaining 4 forms (Create Product, Create/Edit Org, Create/Edit License, Create Webhook) to the new RHF primitives — out of scope for feat-017 (Edit Product was the proof)
+- Migrate remaining 4 forms (Create Product, Create/Edit Org, Create/Edit License, Create Webhook) to the new RHF primitives — **DONE via feat-031** (commit `32cc290`)
 - Migrate login/register (auth) to RHF — **DONE via feat-027 + audit S7** (`PasswordInput` primitive with show/hide)
 - Tighten form primitive tests (e.g. error-state coverage in form-field test #2)
 - Add a base-ui/slot ref forwarding to Button so PopoverTrigger stops warning — **DONE in 5e7f079**
