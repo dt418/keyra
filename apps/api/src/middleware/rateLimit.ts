@@ -25,7 +25,11 @@ export function rateLimit(opts: RateLimitOptions): MiddlewareHandler {
     if (res.status === 429) {
       const resetIn = res.headers.get("Retry-After") ?? "60";
       c.header("Retry-After", resetIn);
-      throw new AppError("RATE_LIMITED", `Too many requests. Retry in ${resetIn}s.`, 429);
+      throw new AppError(
+        "RATE_LIMITED",
+        `Too many requests. Retry in ${resetIn}s.`,
+        429,
+      );
     }
     await next();
   };

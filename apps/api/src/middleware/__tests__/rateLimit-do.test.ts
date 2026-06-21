@@ -10,10 +10,15 @@ function makeEnv(disallow = false) {
       idFromName: vi.fn().mockReturnValue({ toString: () => "id1" }),
       get: vi.fn().mockReturnValue({
         fetch: vi.fn().mockResolvedValue(
-          new Response(JSON.stringify(disallow ? { allowed: false, resetIn: 30 } : { allowed: true }), {
-            status: disallow ? 429 : 200,
-            headers: disallow ? { "Retry-After": "30" } : {},
-          }),
+          new Response(
+            JSON.stringify(
+              disallow ? { allowed: false, resetIn: 30 } : { allowed: true },
+            ),
+            {
+              status: disallow ? 429 : 200,
+              headers: disallow ? { "Retry-After": "30" } : {},
+            },
+          ),
         ),
       }),
     },
@@ -27,7 +32,11 @@ describe("rateLimit (DO-backed)", () => {
     app.get("/", (c) => c.json({ ok: true }));
     app.onError(errorHandler);
     const env = makeEnv();
-    const res = await app.request("/", { headers: { "cf-connecting-ip": "1.1.1.1" } }, env);
+    const res = await app.request(
+      "/",
+      { headers: { "cf-connecting-ip": "1.1.1.1" } },
+      env,
+    );
     expect(res.status).toBe(200);
   });
 
@@ -37,7 +46,11 @@ describe("rateLimit (DO-backed)", () => {
     app.get("/", (c) => c.json({ ok: true }));
     app.onError(errorHandler);
     const env = makeEnv(true);
-    const res = await app.request("/", { headers: { "cf-connecting-ip": "1.1.1.1" } }, env);
+    const res = await app.request(
+      "/",
+      { headers: { "cf-connecting-ip": "1.1.1.1" } },
+      env,
+    );
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBe("30");
   });
