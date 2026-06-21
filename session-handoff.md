@@ -6,7 +6,7 @@
 - **Goal 2 (DONE 2026-06-18):** feat-027 (show/hide password) + 3-variant comprehensive seed (`.sh` / `.ts` / `.ps1`).
 - **Goal 3 (DONE 2026-06-20):** Cloudflare Pages project name fix + env-driven CORS + dashboard → API wiring.
 - **Goal 4 (DONE 2026-06-21):** feat-029 email verification flow + feat-030 production hardening (DO RateLimiter + HMAC license keys + SSRF webhook guard) + feat-031 RHF migration for 7 remaining dialogs + `.prettierrc`.
-- **Status:** All shipped. main @ `20cac29`. Production secrets + CORS vars rotated + synced.
+- **Status:** All shipped. main @ `26aa8dd`. Production secrets + CORS vars rotated + synced.
 - **Branch / commit:** main, all committed and pushed.
 
 ## Deploy topology (current)
@@ -52,6 +52,7 @@
 | feat-030 | Production hardening — DO `RateLimiter` + HMAC license keys + SSRF webhook guard | `fedb3a3` |
 | feat-031 | RHF migration for remaining 7 dialogs (Create/Edit Product, Org, License, Webhook) | `32cc290` |
 | chore | `.prettierrc` (singleQuote, trailingComma=all, printWidth=100) + feat-026/feat-028 backfill | `20cac29` |
+| feat-030 gap sweep | `resolveAppUrl()` probe (app-url.ts new), drop APP_URL placeholder, e2e license regex → HMAC format, e2e webhook URL → `.invalid` TLD, docs.tsx example → HMAC, `formatLicenseKey` → identity passthrough (latent landmine) | `82d7921`, `e04cced`, `3553132`, `cbe3ac8`, `5bb9f85`, `5d9e7eb`, `26aa8dd` |
 
 ## Completed This Session
 

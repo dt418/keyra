@@ -3,9 +3,9 @@
 ## Current State
 
 **Last Updated:** 2026-06-21
-**Session:** post-audit deploy fixes (Pages project name + env-driven CORS) + docs sync
+**Session:** feat-030 post-deploy gap sweep + docs sync
 **Active Phase:** NONE — all shipped
-**Branch:** main @ 20cac29
+**Branch:** main @ 26aa8dd
 
 ## Status
 
@@ -88,6 +88,13 @@
 - `scripts/check-secrets.sh` + lefthook wire (S0)
 - `apps/dashboard/src/components/ui/password-input.tsx` (feat-027)
 - `apps/dashboard/src/components/ui/input-group.tsx` (feat-027 padding fix)
+- feat-028: Pages project name fix (`f10b9cf`) + env-driven CORS (`f2eb04f`, `c0f6fc6`)
+- feat-029: `apps/api/src/lib/email.ts` (Resend client + scaffold mode), `lib/email-templates/verify.ts`, `routes/auth/resend-verification.ts`, `verify-email.ts` (KV lookup + email_verified=1 flip), `register.ts` (token issue), `login.ts` (gate)
+- feat-030: `apps/api/src/do/RateLimiter.ts` (durable rate limiter), `apps/api/src/lib/license.ts` (HMAC generate + verify), `apps/api/src/lib/url-guard.ts` (SSRF guard), wired into 5 routes + 1 middleware; `wrangler.jsonc` DO binding + `v1 new_sqlite_classes` migration
+- feat-030 gap sweep: `apps/api/src/lib/app-url.ts` (`resolveAppUrl()` probe helper), `lib/email.ts` (drop APP_URL placeholder), `apps/api/e2e/full-flow.spec.ts` (license regex → HMAC format), `apps/api/e2e/webhooks-e2e.spec.ts` (`.invalid` TLD for blocked test), `apps/dashboard/src/routes/docs.tsx` (example string → HMAC format), `apps/dashboard/src/lib/license.ts` (`formatLicenseKey` → identity passthrough, was mangling HMAC keys)
+- feat-031: 7 dialogs migrated to RHF + `zodResolver` using `TextField` / `TextareaField` / `NumberField` / `DateField` / `SelectField` / `MultiCheckboxField` / `CheckboxField` primitives
+- 5 secrets synced to Cloudflare + GH: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `LICENSE_HMAC_SECRET`, `REQUIRE_EMAIL_VERIFICATION` (var), `APP_URL` (var)
+- CHANGELOG.md + README.md + ARCHITECTURE.md + API_SPEC.md + progress.md + session-handoff.md synced post-feat-031
 
 ## Evidence of Completion (audit phase — ALL DONE)
 

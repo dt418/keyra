@@ -5,11 +5,13 @@ Cloud-native licensing platform for software distribution with device activation
 ## Features
 
 - **Device Activation** — Secure device registration with UUID-based identification
-- **License Management** — Flexible license types (trial, free, paid tiers)
+- **License Management** — Flexible license types (trial, free, paid tiers) with HMAC-signed keys (`raw.tag` format verified server-side)
 - **Multi-tenant** — Organizations with role-based access control
-- **Authentication** — JWT + Refresh tokens, OAuth (Google, GitHub)
+- **Authentication** — JWT + Refresh tokens, OAuth (Google, GitHub), optional email verification (Resend + KV token)
+- **Webhook Delivery** — HMAC-signed payloads with SSRF guard on outbound URLs (HTTPS-only, blocks loopback/private/internal)
+- **Rate Limiting** — Per-scope + per-IP KV buckets + Durable Object `RateLimiter` for exact counts
 - **Audit Logging** — Complete activity tracking
-- **Admin Dashboard** — React 18 SPA with TanStack Table, command palette, dark mode
+- **Admin Dashboard** — React 18 SPA with TanStack Table, command palette, dark mode, RHF + Zod forms
 
 ## Tech Stack
 

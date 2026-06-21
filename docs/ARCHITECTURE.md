@@ -90,12 +90,18 @@ keyra/
 │   │       │   ├── error.ts
 │   │       │   ├── rateLimit.ts
 │   │       │   └── org.ts        # requireOrgMember
+│   │       ├── do/              # Durable Objects (RateLimiter)
 │   │       ├── lib/             # Utilities
 │   │       │   ├── jwt.ts       # JWT sign/verify
 │   │       │   ├── password.ts  # bcrypt hashing
 │   │       │   ├── audit.ts     # Audit logging
 │   │       │   ├── sessions.ts  # persistSession → KV
-│   │       │   └── context.ts   # typed OrgContext
+│   │       │   ├── context.ts   # typed OrgContext
+│   │       │   ├── email.ts     # Resend client (scaffold mode when RESEND_API_KEY unset)
+│   │       │   ├── email-templates/verify.ts
+│   │       │   ├── license.ts   # HMAC sign/verify license keys (raw.tag format)
+│   │       │   ├── url-guard.ts # SSRF guard for webhook URLs
+│   │       │   └── app-url.ts   # resolveAppUrl() probe helper for verify-email link
 │   │       └── routes/
 │   │           ├── auth/         # register, login, oauth, refresh, logout, verify-email
 │   │           ├── orgs/         # Organization + members

@@ -142,6 +142,19 @@ All notable changes will be documented in this file.
 
 - Add `.prettierrc` (commit `20cac29`): `singleQuote: true`, `trailingComma: "all"`, `printWidth: 100`. Project-wide Prettier config; no code changes in this commit but future reformat passes will land cleanly.
 
+### feat-030 — Post-deploy Gap Sweep (commits `82d7921`, `e04cced`, `3553132`, `cbe3ac8`, `5bb9f85`, `5d9e7eb`, `26aa8dd`)
+
+Tests + secrets + docs fixes after feat-030 deploy:
+
+- `82d7921`, `e04cced` — `apps/api/src/lib/app-url.ts` — `resolveAppUrl()` helper probes `http://localhost:5173` then `5174` for verify-email link when `APP_URL` is unset (previously failed to find local dashboard in scaffold mode). New file.
+- `3553132` — `apps/api/src/lib/email.ts` — dropped the legacy `APP_URL` placeholder comment; `APP_URL` now resolved via `resolveAppUrl()` from `lib/app-url.ts`.
+- `cbe3ac8` — ci: trigger deploy to verify secrets (RESEND_*, LICENSE_HMAC_SECRET, REQUIRE_EMAIL_VERIFICATION, APP_URL) — empty commit to re-run the deploy pipeline with the new secrets + vars now synced.
+- `5bb9f85` — `apps/api/e2e/full-flow.spec.ts` — license key regex updated from `/^[A-Z0-9]{4}-([A-Z0-9]{4}-){2}[A-Z0-9]{4}$/` (legacy 4-char segments) to `/^[A-Z0-9]{5}-([A-Z0-9]{5}-){2}[A-Z0-9]{5}\.[A-Z0-9]{4}(-[A-Z0-9]{4}){2}$/` (feat-030 HMAC `raw.tag` format).
+- `5d9e7eb` — `apps/api/e2e/webhooks-e2e.spec.ts` — delivery-failure test URL replaced with `https://blocked-by-ssrf.invalid` (RFC 2606 `.invalid` reserved TLD) so it passes feat-030's HTTPS-only SSRF guard without depending on a real blackhole host.
+- `26aa8dd` — `apps/dashboard/src/routes/docs.tsx:51` — example string updated from `'XXXX-XXXX-XXXX-XXXX'` to `'XXXXX-XXXXX-XXXXX-XXXXX.AAAA-BBBB-CCCC'` to reflect HMAC format. `apps/dashboard/src/lib/license.ts` — `formatLicenseKey()` was matching input against `/.{1,4}/g` which would mangle HMAC keys (segmented them as 4-char regardless of structure); now an identity passthrough `return key ?? ''`. Latent landmine — function exported from `@/lib` but had no current callers.
+
+Net effect: CI green for `26aa8dd`; all 3 secrets + 4 vars synced to Cloudflare + GitHub; production HMAC license keys + email verification flow operational.
+
 ## [Unreleased — pre-audit]
 
 ### Added
