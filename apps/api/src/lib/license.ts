@@ -1,4 +1,4 @@
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const SEGMENT_COUNT = 4;
 const SEGMENT_LENGTH = 5;
 const TAG_LENGTH = 12;
@@ -6,7 +6,7 @@ const TAG_LENGTH = 12;
 function randomChunk(len: number): string {
   const bytes = new Uint8Array(len);
   crypto.getRandomValues(bytes);
-  let out = '';
+  let out = "";
   for (let i = 0; i < len; i++) {
     out += ALPHABET[bytes[i]! % 36]!;
   }
@@ -16,13 +16,13 @@ function randomChunk(len: number): string {
 function legacyLicenseKey(): string {
   const segments: string[] = [];
   for (let s = 0; s < SEGMENT_COUNT; s++) {
-    let segment = '';
+    let segment = "";
     for (let i = 0; i < SEGMENT_LENGTH; i++) {
       segment += randomChunk(1);
     }
     segments.push(segment);
   }
-  return segments.join('-');
+  return segments.join("-");
 }
 
 async function hmacSlice(
@@ -31,20 +31,20 @@ async function hmacSlice(
   sliceLen = TAG_LENGTH,
 ): Promise<string> {
   const key = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
+    { name: "HMAC", hash: "SHA-256" },
     false,
-    ['sign'],
+    ["sign"],
   );
   const sig = new Uint8Array(
-    await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data)),
+    await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data)),
   );
   const out: string[] = [];
   for (let i = 0; i < sliceLen; i++) {
     out.push(ALPHABET[sig[i]! % 36]!);
   }
-  return out.join('');
+  return out.join("");
 }
 
 function constantTimeEqual(a: string, b: string): boolean {
@@ -69,9 +69,7 @@ function constantTimeEqual(a: string, b: string): boolean {
  * still classify correctly.
  */
 export function isLegacyLicenseKey(key: string): boolean {
-  return /^[A-Z0-9]{4,5}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}$/.test(
-    key,
-  );
+  return /^[A-Z0-9]{4,5}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}$/.test(key);
 }
 
 /**
@@ -109,7 +107,7 @@ export async function verifyLicenseHmac(
   provided: string,
   secret: string,
 ): Promise<boolean> {
-  const dot = provided.indexOf('.');
+  const dot = provided.indexOf(".");
   if (dot === -1) return false;
   const raw = provided.slice(0, dot);
   const tag = provided.slice(dot + 1);
