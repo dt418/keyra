@@ -1,14 +1,14 @@
-import type { Context } from "hono";
-import { registerSchema } from "@keyra/shared-validation";
-import { hashPassword } from "../../lib/password";
-import { signAccessToken, signRefreshToken } from "../../lib/jwt";
-import { storeRefreshToken } from "../../lib/sessions";
-import { AppError } from "../../middleware/error";
-import { logAuditEvent, extractRequestInfo } from "../../lib/audit";
-import { issueVerificationToken } from "./verify-email";
-import { sendEmail } from "../../lib/email";
-import { resolveAppUrl } from "../../lib/app-url";
-import { verifyEmailTemplate } from "../../lib/email-templates/verify";
+import type { Context } from 'hono';
+import { registerSchema } from '@keyra/shared-validation';
+import { hashPassword } from '../../lib/password';
+import { signAccessToken, signRefreshToken } from '../../lib/jwt';
+import { storeRefreshToken } from '../../lib/sessions';
+import { AppError } from '../../middleware/error';
+import { logAuditEvent, extractRequestInfo } from '../../lib/audit';
+import { issueVerificationToken } from './verify-email';
+import { sendEmail } from '../../lib/email';
+import { resolveAppUrl } from '../../lib/app-url';
+import { verifyEmailTemplate } from '../../lib/email-templates/verify';
 
 interface RegisterBody {
   email: string;
@@ -25,14 +25,12 @@ export async function registerHandler(c: Context) {
 
   const { email, password, name } = parsed.data;
 
-  const existing = await c.env.DB.prepare(
-    "SELECT id FROM users WHERE email = ?",
-  )
+  const existing = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?')
     .bind(email.toLowerCase())
     .first();
 
   if (existing) {
-    throw new AppError("CONFLICT", "User already exists", 409);
+    throw new AppError('CONFLICT', 'User already exists', 409);
   }
 
   const hashedPassword = await hashPassword(password);
@@ -46,10 +44,7 @@ export async function registerHandler(c: Context) {
     .bind(userId, email.toLowerCase(), hashedPassword, name, now, now)
     .run();
 
-  const verificationToken = await issueVerificationToken(
-    c.env.SESSIONS,
-    userId,
-  );
+  const verificationToken = await issueVerificationToken(c.env.SESSIONS, userId);
   const appUrl = await resolveAppUrl(c.env);
   const verifyUrl = `${appUrl}/verify-email/${verificationToken}`;
   const template = verifyEmailTemplate({
@@ -62,16 +57,16 @@ export async function registerHandler(c: Context) {
       ...template,
     });
   } catch (err) {
-    console.error("[register] verification email send failed", err);
+    console.error('[register] verification email send failed', err);
   }
 
   const orgId = crypto.randomUUID();
-  const local = email.split("@")[0] ?? email;
+  const local = email.split('@')[0] ?? email;
   const baseSlug =
     local
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "workspace";
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'workspace';
   let orgSlug = baseSlug;
   for (let suffix = 0; suffix < 100; suffix++) {
     try {
@@ -84,7 +79,7 @@ export async function registerHandler(c: Context) {
       break;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      if (message.includes("UNIQUE constraint failed: organizations.slug")) {
+      if (message.includes('UNIQUE constraint failed: organizations.slug')) {
         orgSlug = `${baseSlug}-${suffix + 1}`;
       } else {
         throw err;
@@ -120,9 +115,9 @@ export async function registerHandler(c: Context) {
   });
 
   logAuditEvent(c, {
-    action: "user.register",
+    action: 'user.register',
     userId,
-    resourceType: "user",
+    resourceType: 'user',
     resourceId: userId,
     ipAddress: requestInfo.ipAddress,
     userAgent: requestInfo.userAgent,

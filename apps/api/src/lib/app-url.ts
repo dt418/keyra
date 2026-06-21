@@ -19,7 +19,7 @@ export async function resolveAppUrl(env: { APP_URL?: string }): Promise<string> 
   for (const port of [5173, 5174]) {
     try {
       const res = await fetch(`http://localhost:${port}/`, {
-        method: "HEAD",
+        method: 'HEAD',
         signal: AbortSignal.timeout(200),
       });
       if (res.ok || res.status < 500) {
@@ -32,6 +32,6 @@ export async function resolveAppUrl(env: { APP_URL?: string }): Promise<string> 
   }
 
   // Default to 5173 if neither responds (likely no dashboard running yet)
-  cachedUrl = "http://localhost:5173";
+  cachedUrl = 'http://localhost:5173';
   return cachedUrl;
 }
