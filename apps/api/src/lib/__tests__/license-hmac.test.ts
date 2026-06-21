@@ -4,7 +4,9 @@ import { generateLicenseKey, verifyLicenseHmac } from "../license";
 describe("license HMAC", () => {
   it("round-trips a freshly generated key", async () => {
     const key = await generateLicenseKey("test-secret-xyz");
-    expect(key).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}\.[A-Z0-9]{12}$/);
+    expect(key).toMatch(
+      /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}\.[A-Z0-9]{12}$/,
+    );
     expect(await verifyLicenseHmac(key, "test-secret-xyz")).toBe(true);
   });
 

@@ -22,16 +22,20 @@ function legacyLicenseKey(): string {
   return segments.join("-");
 }
 
-async function hmacSlice(secret: string, data: string, sliceLen = 12): Promise<string> {
+async function hmacSlice(
+  secret: string,
+  data: string,
+  sliceLen = 12,
+): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
   const sig = new Uint8Array(
-    await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data))
+    await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data)),
   );
   const out: string[] = [];
   for (let i = 0; i < sliceLen; i++) {
