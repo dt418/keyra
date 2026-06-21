@@ -21,7 +21,18 @@ export function rateLimit(opts: RateLimitOptions): MiddlewareHandler {
     const id = c.env.RATE_LIMITER.idFromName(`${opts.scope}:${ip}`);
     const stub = c.env.RATE_LIMITER.get(id);
     const url = `https://rl/check?window=${opts.window}&max=${opts.max}`;
-    const res = await stub.fetch(url);
+    // Fail-closed: any error reaching the DO is treated as backend unavailable
+    // rather than silently allowing the request through.
+    let res: Response;
+    try {
+      res = await stub.fetch(url);
+    } catch {
+      throw new AppError(
+        "INTERNAL_ERROR",
+        "Rate limit backend unavailable",
+        503,
+      );
+    }
     if (res.status === 429) {
       const resetIn = res.headers.get("Retry-After") ?? "60";
       c.header("Retry-After", resetIn);
@@ -29,6 +40,13 @@ export function rateLimit(opts: RateLimitOptions): MiddlewareHandler {
         "RATE_LIMITED",
         `Too many requests. Retry in ${resetIn}s.`,
         429,
+      );
+    }
+    if (res.status >= 400) {
+      throw new AppError(
+        "INTERNAL_ERROR",
+        "Rate limit backend rejected request",
+        502,
       );
     }
     await next();
