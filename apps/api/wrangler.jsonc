@@ -17,6 +17,14 @@
       "id": "a5a762f9abea41678f39c59d151b883e"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "RATE_LIMITER", "class_name": "RateLimiter" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["RateLimiter"] }
+  ],
   "vars": {
     "ENVIRONMENT": "${ENVIRONMENT}"
   },
