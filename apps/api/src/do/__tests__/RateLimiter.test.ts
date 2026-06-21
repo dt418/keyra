@@ -149,9 +149,7 @@ describe("RateLimiter", () => {
 
   it("deletes bucket 2 windows back to prevent storage growth", async () => {
     const { limiter, storage } = createLimiter();
-    await limiter.fetch(
-      makeRequest("https://do/check?window=60&max=20"),
-    );
+    await limiter.fetch(makeRequest("https://do/check?window=60&max=20"));
     const bucket = Math.floor(Date.now() / 1000 / 60);
     expect(storage.delete).toHaveBeenCalledWith(`b:${bucket - 2}`);
   });
@@ -161,9 +159,7 @@ describe("RateLimiter", () => {
     const { limiter, storage } = createLimiter({
       [`b:${bucket}`]: { count: 5 },
     });
-    await limiter.fetch(
-      makeRequest("https://do/check?window=60&max=20"),
-    );
+    await limiter.fetch(makeRequest("https://do/check?window=60&max=20"));
     expect(storage.put).toHaveBeenCalledWith(`b:${bucket}`, { count: 6 });
   });
 

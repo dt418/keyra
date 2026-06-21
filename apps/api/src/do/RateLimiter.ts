@@ -19,22 +19,18 @@ export class RateLimiter implements DurableObject {
       !Number.isFinite(max) ||
       max <= 0
     ) {
-      return new Response(
-        JSON.stringify({ error: "invalid window or max" }),
-        {
-          status: 400,
-          headers: { "content-type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "invalid window or max" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
     const now = Math.floor(Date.now() / 1000);
     const bucket = Math.floor(now / window);
     const bucketKey = `b:${bucket}`;
 
-    const cur =
-      (await this.state.storage.get<RateLimitState>(bucketKey)) ?? {
-        count: 0,
-      };
+    const cur = (await this.state.storage.get<RateLimitState>(bucketKey)) ?? {
+      count: 0,
+    };
     if (cur.count >= max) {
       const resetIn = (bucket + 1) * window - now;
       return new Response(JSON.stringify({ allowed: false, resetIn }), {
