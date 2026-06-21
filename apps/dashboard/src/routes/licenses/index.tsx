@@ -1,15 +1,59 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { licensesApi, productsApi, type LicenseType } from '@keyra/api-client';
-import { Button, Input, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog, DataTable } from '@/components/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, useZodForm, DateField, SelectField } from '@/components/ui/form';
-import { createLicenseFormSchema, createLicenseDefaults, editLicenseFormSchema, editLicenseDefaults, licenseTypeOptions } from '@keyra/shared-validation';
-import { Plus, Loader2, Copy, Key, Pencil, Trash2, ShieldOff, Shield, Search, Copy as CopyIcon } from 'lucide-react';
-import { toast } from 'sonner';
-import { errorMessage } from '@/lib/error-message';
-import { formatRelativeTime } from '@/lib/date';
-import type { ColumnDef } from '@tanstack/react-table';
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { licensesApi, productsApi, type LicenseType } from "@keyra/api-client";
+import {
+  Button,
+  Input,
+  PageHeader,
+  Skeleton,
+  StatusBadge,
+  EmptyState,
+  ConfirmDialog,
+  DataTable,
+} from "@/components/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  useZodForm,
+  DateField,
+  SelectField,
+  NumberField,
+} from "@/components/ui/form";
+import {
+  createLicenseFormSchema,
+  createLicenseDefaults,
+  editLicenseFormSchema,
+  editLicenseDefaults,
+  licenseTypeOptions,
+} from "@keyra/shared-validation";
+import {
+  Plus,
+  Loader2,
+  Copy,
+  Key,
+  Pencil,
+  Trash2,
+  ShieldOff,
+  Shield,
+  Search,
+  Copy as CopyIcon,
+} from "lucide-react";
+import { toast } from "sonner";
+import { errorMessage } from "@/lib/error-message";
+import { formatRelativeTime } from "@/lib/date";
+import type { ColumnDef } from "@tanstack/react-table";
 
 const LICENSE_TYPE_BADGE_MAP: Record<string, string> = Object.fromEntries(
   licenseTypeOptions.map((o) => [o.value, o.variant]),
@@ -43,9 +87,11 @@ function LicenseRowSkeleton() {
 export default function Licenses() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
-  const [createdLicenseKey, setCreatedLicenseKey] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [createdLicenseKey, setCreatedLicenseKey] = useState<string | null>(
+    null,
+  );
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [cursor, setCursor] = useState<string | null>(null);
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -65,13 +111,13 @@ export default function Licenses() {
       editForm.form.reset({
         type: editingLicense.type as LicenseType,
         maxDevices: editingLicense.max_devices,
-        expiresAt: editingLicense.expires_at || '',
+        expiresAt: editingLicense.expires_at || "",
       });
     }
   }, [editingLicense, editForm.form]);
 
   const { data: products } = useQuery({
-    queryKey: ['products'],
+    queryKey: ["products"],
     queryFn: async () => {
       const res = await productsApi.list();
       return res.data.data;
@@ -79,12 +125,12 @@ export default function Licenses() {
   });
 
   const { data: licensesResponse, isLoading } = useQuery({
-    queryKey: ['licenses', cursor, filterStatus],
+    queryKey: ["licenses", cursor, filterStatus],
     queryFn: async () => {
       const res = await licensesApi.list({
         limit: PAGE_SIZE,
         cursor: cursor || undefined,
-        status: filterStatus === 'all' ? undefined : filterStatus,
+        status: filterStatus === "all" ? undefined : filterStatus,
       });
       return res.data;
     },
@@ -93,34 +139,45 @@ export default function Licenses() {
   const licenses: License[] = licensesResponse?.data || [];
 
   const createMutation = useMutation({
-    mutationFn: async (data: { product_id: string; type: LicenseType; max_devices?: number; expires_at?: string }) => {
+    mutationFn: async (data: {
+      product_id: string;
+      type: LicenseType;
+      max_devices?: number;
+      expires_at?: string;
+    }) => {
       const res = await licensesApi.create(data);
       return res.data.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['licenses'] });
+      queryClient.invalidateQueries({ queryKey: ["licenses"] });
       setCreatedLicenseKey(data.key);
       setIsCreating(false);
       createForm.form.reset(createLicenseDefaults);
-      toast.success('License created');
+      toast.success("License created");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to create license'));
+      toast.error(errorMessage(err, "Failed to create license"));
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { type?: LicenseType; max_devices?: number; expires_at?: string } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { type?: LicenseType; max_devices?: number; expires_at?: string };
+    }) => {
       const res = await licensesApi.update(id, data);
       return res.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['licenses'] });
+      queryClient.invalidateQueries({ queryKey: ["licenses"] });
       setEditingLicense(null);
-      toast.success('License updated');
+      toast.success("License updated");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to update license'));
+      toast.error(errorMessage(err, "Failed to update license"));
     },
   });
 
@@ -129,31 +186,31 @@ export default function Licenses() {
       await licensesApi.delete(licenseId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['licenses'] });
+      queryClient.invalidateQueries({ queryKey: ["licenses"] });
       setDeleteConfirm(null);
-      toast.success('License deleted');
+      toast.success("License deleted");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to delete license'));
+      toast.error(errorMessage(err, "Failed to delete license"));
     },
   });
 
   const revokeMutation = useMutation({
     mutationFn: async (licenseId: string) => {
-      await licensesApi.revoke(licenseId, { reason: 'Revoked by admin' });
+      await licensesApi.revoke(licenseId, { reason: "Revoked by admin" });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['licenses'] });
-      toast.success('License revoked');
+      queryClient.invalidateQueries({ queryKey: ["licenses"] });
+      toast.success("License revoked");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to revoke license'));
+      toast.error(errorMessage(err, "Failed to revoke license"));
     },
   });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard');
+    toast.success("Copied to clipboard");
   };
 
   const filteredLicenses = licenses.filter((l) => {
@@ -167,63 +224,94 @@ export default function Licenses() {
 
   const statusVariant = (status: string) => {
     switch (status) {
-      case 'active': return 'success' as const;
-      case 'revoked': return 'danger' as const;
-      case 'expired': return 'warning' as const;
-      default: return 'default' as const;
+      case "active":
+        return "success" as const;
+      case "revoked":
+        return "danger" as const;
+      case "expired":
+        return "warning" as const;
+      default:
+        return "default" as const;
     }
   };
 
   const typeVariant = (type: string) => {
-    return (LICENSE_TYPE_BADGE_MAP[type] as 'violet' | 'slate' | 'info' | 'success' | 'warning' | 'danger' | undefined) || 'default' as const;
+    return (
+      (LICENSE_TYPE_BADGE_MAP[type] as
+        | "violet"
+        | "slate"
+        | "info"
+        | "success"
+        | "warning"
+        | "danger"
+        | undefined) || ("default" as const)
+    );
   };
 
   const columns: ColumnDef<License>[] = [
     {
-      accessorKey: 'id',
-      header: 'License Key',
+      accessorKey: "id",
+      header: "License Key",
       cell: ({ row }) => (
         <button
           onClick={() => copyToClipboard(row.original.id)}
           className="font-mono text-xs hover:text-primary inline-flex items-center gap-1 group"
         >
-          <span className="truncate max-w-[160px]">{row.original.id.slice(0, 16)}...</span>
+          <span className="truncate max-w-[160px]">
+            {row.original.id.slice(0, 16)}...
+          </span>
           <CopyIcon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       ),
     },
     {
-      accessorKey: 'product_name',
-      header: 'Product',
-      cell: ({ row }) => <span className="text-sm">{row.original.product_name || '-'}</span>,
+      accessorKey: "product_name",
+      header: "Product",
+      cell: ({ row }) => (
+        <span className="text-sm">{row.original.product_name || "-"}</span>
+      ),
     },
     {
-      accessorKey: 'type',
-      header: 'Type',
-      cell: ({ row }) => <StatusBadge variant={typeVariant(row.original.type)}>{row.original.type}</StatusBadge>,
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => (
+        <StatusBadge variant={typeVariant(row.original.type)}>
+          {row.original.type}
+        </StatusBadge>
+      ),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => <StatusBadge variant={statusVariant(row.original.status)}>{row.original.status}</StatusBadge>,
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <StatusBadge variant={statusVariant(row.original.status)}>
+          {row.original.status}
+        </StatusBadge>
+      ),
     },
     {
-      accessorKey: 'max_devices',
-      header: 'Devices',
-      cell: ({ row }) => <span className="text-sm tabular-nums">{row.original.max_devices}</span>,
+      accessorKey: "max_devices",
+      header: "Devices",
+      cell: ({ row }) => (
+        <span className="text-sm tabular-nums">{row.original.max_devices}</span>
+      ),
     },
     {
-      accessorKey: 'created_at',
-      header: 'Created',
-      cell: ({ row }) => <span className="text-sm text-muted-foreground">{formatRelativeTime(row.original.created_at)}</span>,
+      accessorKey: "created_at",
+      header: "Created",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {formatRelativeTime(row.original.created_at)}
+        </span>
+      ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       enableHiding: false,
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-1">
-          {row.original.status === 'active' && (
+          {row.original.status === "active" && (
             <Button
               variant="ghost"
               size="icon"
@@ -242,7 +330,7 @@ export default function Licenses() {
               editForm.form.reset({
                 type: row.original.type as any,
                 maxDevices: row.original.max_devices,
-                expiresAt: row.original.expires_at || '',
+                expiresAt: row.original.expires_at || "",
               });
               setEditingLicense(row.original);
             }}
@@ -271,7 +359,10 @@ export default function Licenses() {
         description="Create and manage license keys"
         icon={Key}
         actions={
-          <Button onClick={() => setIsCreating(true)} disabled={!products?.length}>
+          <Button
+            onClick={() => setIsCreating(true)}
+            disabled={!products?.length}
+          >
             <Plus className="mr-2 h-4 w-4" />
             New License
           </Button>
@@ -289,10 +380,10 @@ export default function Licenses() {
           />
         </div>
         <div className="flex gap-1">
-          {['all', 'active', 'revoked', 'expired'].map((status) => (
+          {["all", "active", "revoked", "expired"].map((status) => (
             <Button
               key={status}
-              variant={filterStatus === status ? 'default' : 'outline'}
+              variant={filterStatus === status ? "default" : "outline"}
               size="sm"
               onClick={() => {
                 setFilterStatus(status);
@@ -308,7 +399,9 @@ export default function Licenses() {
 
       {isLoading ? (
         <div className="space-y-1 rounded-xl border border-border bg-card overflow-hidden">
-          {[...Array(5)].map((_, i) => <LicenseRowSkeleton key={i} />)}
+          {[...Array(5)].map((_, i) => (
+            <LicenseRowSkeleton key={i} />
+          ))}
         </div>
       ) : filteredLicenses.length > 0 ? (
         <DataTable
@@ -320,9 +413,25 @@ export default function Licenses() {
       ) : (
         <EmptyState
           icon={Key}
-          title={search || filterStatus !== 'all' ? 'No licenses match' : 'No licenses yet'}
-          description={search || filterStatus !== 'all' ? 'Try a different filter or search' : 'Create your first license to start activating devices'}
-          primaryAction={!search && filterStatus === 'all' && products?.length ? { label: 'Create License', onClick: () => setIsCreating(true), icon: Plus } : undefined}
+          title={
+            search || filterStatus !== "all"
+              ? "No licenses match"
+              : "No licenses yet"
+          }
+          description={
+            search || filterStatus !== "all"
+              ? "Try a different filter or search"
+              : "Create your first license to start activating devices"
+          }
+          primaryAction={
+            !search && filterStatus === "all" && products?.length
+              ? {
+                  label: "Create License",
+                  onClick: () => setIsCreating(true),
+                  icon: Plus,
+                }
+              : undefined
+          }
         />
       )}
 
@@ -362,7 +471,12 @@ export default function Licenses() {
                     <FormControl>
                       <SelectField
                         name="productId"
-                        options={products?.map((p: any) => ({ value: p.id, label: p.name })) || []}
+                        options={
+                          products?.map((p: any) => ({
+                            value: p.id,
+                            label: p.name,
+                          })) || []
+                        }
                         placeholder="Select a product"
                       />
                     </FormControl>
@@ -391,11 +505,15 @@ export default function Licenses() {
                 <FormField
                   control={createForm.form.control}
                   name="maxDevices"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
                       <FormLabel>Max Devices</FormLabel>
                       <FormControl>
-                        <Input type="number" min={1} {...field} onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(Math.max(1, parseInt(e.target.value, 10) || 0))} />
+                        <NumberField
+                          name="maxDevices"
+                          placeholder="2"
+                          min={1}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -409,16 +527,28 @@ export default function Licenses() {
                   <FormItem>
                     <FormLabel>Expires At (optional)</FormLabel>
                     <FormControl>
-                      <DateField name="expiresAt" placeholder="No expiration" showTime />
+                      <DateField
+                        name="expiresAt"
+                        placeholder="No expiration"
+                        showTime
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreating(false)}
+                >
+                  Cancel
+                </Button>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {createMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Create
                 </Button>
               </DialogFooter>
@@ -477,11 +607,11 @@ export default function Licenses() {
               <FormField
                 control={editForm.form.control}
                 name="maxDevices"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Max Devices</FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} {...field} onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(Math.max(1, parseInt(e.target.value, 10) || 0))} />
+                      <NumberField name="maxDevices" placeholder="2" min={1} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -494,16 +624,28 @@ export default function Licenses() {
                   <FormItem>
                     <FormLabel>Expires At (optional)</FormLabel>
                     <FormControl>
-                      <DateField name="expiresAt" placeholder="No expiration" showTime />
+                      <DateField
+                        name="expiresAt"
+                        placeholder="No expiration"
+                        showTime
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditingLicense(null)}>Cancel</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingLicense(null)}
+                >
+                  Cancel
+                </Button>
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {updateMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Save Changes
                 </Button>
               </DialogFooter>
@@ -512,23 +654,43 @@ export default function Licenses() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!createdLicenseKey} onOpenChange={(open) => !open && setCreatedLicenseKey(null)}>
+      <Dialog
+        open={!!createdLicenseKey}
+        onOpenChange={(open) => !open && setCreatedLicenseKey(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
               <Shield className="h-5 w-5" />
               License Key Created
             </DialogTitle>
-            <DialogDescription>Copy this key now. You won't be able to see it again.</DialogDescription>
+            <DialogDescription>
+              Copy this key now. You won't be able to see it again.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
-            <Input value={createdLicenseKey || ''} readOnly className="font-mono text-sm" />
-            <Button onClick={() => createdLicenseKey && copyToClipboard(createdLicenseKey)} variant="default" size="icon">
+            <Input
+              value={createdLicenseKey || ""}
+              readOnly
+              className="font-mono text-sm"
+            />
+            <Button
+              onClick={() =>
+                createdLicenseKey && copyToClipboard(createdLicenseKey)
+              }
+              variant="default"
+              size="icon"
+            >
               <Copy className="h-4 w-4" />
             </Button>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreatedLicenseKey(null)}>Done</Button>
+            <Button
+              variant="outline"
+              onClick={() => setCreatedLicenseKey(null)}
+            >
+              Done
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

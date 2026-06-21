@@ -1,16 +1,54 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { orgsApi } from '@keyra/api-client';
-import { Card, Button, Input, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog } from '@/components/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, useZodForm } from '@/components/ui/form';
-import { createOrgFormSchema, createOrgDefaults, editOrgFormSchema, editOrgDefaults } from '@keyra/shared-validation';
-import { Plus, Loader2, Users, Pencil, Trash2, Search, Building2 } from 'lucide-react';
-import { formatDate } from '@/lib/date';
-import { useAuth } from '@/lib/auth';
-import { errorMessage } from '@/lib/error-message';
-import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { orgsApi } from "@keyra/api-client";
+import {
+  Card,
+  Button,
+  Input,
+  PageHeader,
+  Skeleton,
+  StatusBadge,
+  EmptyState,
+  ConfirmDialog,
+} from "@/components/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  TextField,
+  useZodForm,
+} from "@/components/ui/form";
+import {
+  createOrgFormSchema,
+  createOrgDefaults,
+  editOrgFormSchema,
+  editOrgDefaults,
+} from "@keyra/shared-validation";
+import {
+  Plus,
+  Loader2,
+  Users,
+  Pencil,
+  Trash2,
+  Search,
+  Building2,
+} from "lucide-react";
+import { formatDate } from "@/lib/date";
+import { useAuth } from "@/lib/auth";
+import { errorMessage } from "@/lib/error-message";
+import { toast } from "sonner";
+import { useEffect } from "react";
 
 const PAGE_SIZE = 20;
 
@@ -48,7 +86,7 @@ export default function Organizations() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [editingOrg, setEditingOrg] = useState<ApiOrg | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<ApiOrg | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const createForm = useZodForm({
     schema: createOrgFormSchema,
@@ -61,9 +99,12 @@ export default function Organizations() {
   });
 
   const { data: orgsResponse, isLoading } = useQuery({
-    queryKey: ['organizations', cursor],
+    queryKey: ["organizations", cursor],
     queryFn: async () => {
-      const res = await orgsApi.list({ limit: PAGE_SIZE, cursor: cursor || undefined });
+      const res = await orgsApi.list({
+        limit: PAGE_SIZE,
+        cursor: cursor || undefined,
+      });
       return res.data;
     },
   });
@@ -73,7 +114,7 @@ export default function Organizations() {
   const currentCursor = orgsResponse?.pagination?.cursor;
 
   const filteredOrgs = organizations.filter((o) =>
-    o.name.toLowerCase().includes(search.toLowerCase())
+    o.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   useEffect(() => {
@@ -84,23 +125,19 @@ export default function Organizations() {
 
   const createMutation = useMutation({
     mutationFn: async (data: { name: string; slug?: string }) => {
-      const payload: { name: string; slug?: string } = { name: data.name };
-      if (data.slug && data.slug.trim()) {
-        payload.slug = data.slug.trim();
-      }
-      const res = await orgsApi.create(payload);
+      const res = await orgsApi.create(data);
       return res.data.data;
     },
     onSuccess: async (newOrg) => {
       await refreshOrgs();
       if (newOrg) switchOrg(newOrg.id);
-      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
       setIsCreating(false);
       createForm.form.reset(createOrgDefaults);
-      toast.success('Organization created');
+      toast.success("Organization created");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to create organization'));
+      toast.error(errorMessage(err, "Failed to create organization"));
     },
   });
 
@@ -110,13 +147,13 @@ export default function Organizations() {
       return res.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
       refreshOrgs();
       setEditingOrg(null);
-      toast.success('Organization updated');
+      toast.success("Organization updated");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to update organization'));
+      toast.error(errorMessage(err, "Failed to update organization"));
     },
   });
 
@@ -125,13 +162,13 @@ export default function Organizations() {
       await orgsApi.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
       refreshOrgs();
       setDeleteConfirm(null);
-      toast.success('Organization deleted');
+      toast.success("Organization deleted");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to delete organization'));
+      toast.error(errorMessage(err, "Failed to delete organization"));
     },
   });
 
@@ -161,13 +198,18 @@ export default function Organizations() {
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => <OrganizationCardSkeleton key={i} />)}
+          {[...Array(6)].map((_, i) => (
+            <OrganizationCardSkeleton key={i} />
+          ))}
         </div>
       ) : filteredOrgs.length > 0 ? (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredOrgs.map((org: ApiOrg) => (
-              <Card key={org.id} className="group p-5 transition-colors hover:border-primary/50">
+              <Card
+                key={org.id}
+                className="group p-5 transition-colors hover:border-primary/50"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold text-sm flex-shrink-0">
@@ -175,7 +217,9 @@ export default function Organizations() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-sm truncate">{org.name}</h3>
+                        <h3 className="font-semibold text-sm truncate">
+                          {org.name}
+                        </h3>
                         {currentOrg?.id === org.id && (
                           <StatusBadge variant="success">Current</StatusBadge>
                         )}
@@ -209,11 +253,15 @@ export default function Organizations() {
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-3 pt-4 border-t border-border">
                   <div>
-                    <div className="text-xs text-muted-foreground">Products</div>
+                    <div className="text-xs text-muted-foreground">
+                      Products
+                    </div>
                     <div className="text-lg font-semibold mt-0.5">-</div>
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">Licenses</div>
+                    <div className="text-xs text-muted-foreground">
+                      Licenses
+                    </div>
                     <div className="text-lg font-semibold mt-0.5">-</div>
                   </div>
                   <div>
@@ -237,7 +285,9 @@ export default function Organizations() {
 
           {organizations.length > 0 && (
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Showing {organizations.length} organizations{hasMore ? '+' : ''}</span>
+              <span>
+                Showing {organizations.length} organizations{hasMore ? "+" : ""}
+              </span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -262,18 +312,20 @@ export default function Organizations() {
       ) : (
         <EmptyState
           icon={Users}
-          title={search ? 'No organizations match' : 'No organizations yet'}
+          title={search ? "No organizations match" : "No organizations yet"}
           description={
             search
-              ? 'Try a different search term'
-              : 'Create your first organization to get started'
+              ? "Try a different search term"
+              : "Create your first organization to get started"
           }
           primaryAction={
-            !search ? {
-              label: 'Create organization',
-              onClick: () => setIsCreating(true),
-              icon: Plus,
-            } : undefined
+            !search
+              ? {
+                  label: "Create organization",
+                  onClick: () => setIsCreating(true),
+                  icon: Plus,
+                }
+              : undefined
           }
         />
       )}
@@ -290,24 +342,33 @@ export default function Organizations() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Organization</DialogTitle>
-            <DialogDescription>Add a new organization to manage products and licenses</DialogDescription>
+            <DialogDescription>
+              Add a new organization to manage products and licenses
+            </DialogDescription>
           </DialogHeader>
           <Form {...createForm.form}>
             <form
               id="create-org-form"
               onSubmit={createForm.form.handleSubmit((values) => {
-                createMutation.mutate({ name: values.name, slug: values.slug });
+                createMutation.mutate({
+                  name: values.name.trim(),
+                  slug: values.slug?.trim() || undefined,
+                });
               })}
               className="space-y-4"
             >
               <FormField
                 control={createForm.form.control}
                 name="name"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Organization Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="My Organization" autoFocus {...field} />
+                      <TextField
+                        name="name"
+                        placeholder="My Organization"
+                        autoFocus
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -316,22 +377,28 @@ export default function Organizations() {
               <FormField
                 control={createForm.form.control}
                 name="slug"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Slug (optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="my-org" {...field} value={field.value || ''} />
+                      <TextField name="slug" placeholder="my-org" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreating(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {createMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Create
                 </Button>
               </DialogFooter>
@@ -359,29 +426,42 @@ export default function Organizations() {
               id="edit-org-form"
               onSubmit={editForm.form.handleSubmit((values) => {
                 if (!editingOrg) return;
-                updateMutation.mutate({ id: editingOrg.id, name: values.name });
+                updateMutation.mutate({
+                  id: editingOrg.id,
+                  name: values.name.trim(),
+                });
               })}
               className="space-y-4"
             >
               <FormField
                 control={editForm.form.control}
                 name="name"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Organization Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="My Organization" autoFocus {...field} />
+                      <TextField
+                        name="name"
+                        placeholder="My Organization"
+                        autoFocus
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditingOrg(null)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingOrg(null)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {updateMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Save Changes
                 </Button>
               </DialogFooter>
@@ -398,7 +478,9 @@ export default function Organizations() {
         confirmLabel="Delete"
         variant="destructive"
         loading={deleteMutation.isPending}
-        onConfirm={() => deleteConfirm && deleteMutation.mutate(deleteConfirm.id)}
+        onConfirm={() =>
+          deleteConfirm && deleteMutation.mutate(deleteConfirm.id)
+        }
       />
     </div>
   );

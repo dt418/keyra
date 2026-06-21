@@ -18,8 +18,27 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, useZodForm } from "@/components/ui/form";
-import { createWebhookFormSchema, createWebhookDefaults, editWebhookFormSchema, editWebhookDefaults, webhookEventOptions, webhookEventLabels, type EditWebhookFormValues } from "@keyra/shared-validation";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  TextField,
+  CheckboxField,
+  MultiCheckboxField,
+  useZodForm,
+} from "@/components/ui/form";
+import {
+  createWebhookFormSchema,
+  createWebhookDefaults,
+  editWebhookFormSchema,
+  editWebhookDefaults,
+  webhookEventOptions,
+  webhookEventLabels,
+  type EditWebhookFormValues,
+} from "@keyra/shared-validation";
 import {
   Webhook,
   Plus,
@@ -100,7 +119,11 @@ export default function Webhooks() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { url: string; events: string[]; active: boolean }) => {
+    mutationFn: async (data: {
+      url: string;
+      events: string[];
+      active: boolean;
+    }) => {
       const res = await webhooksApi.create(data);
       return res.data.data as { id: string; secret: string };
     },
@@ -115,7 +138,13 @@ export default function Webhooks() {
   });
 
   const editMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { url: string; events: string[]; active: boolean } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { url: string; events: string[]; active: boolean };
+    }) => {
       const res = await webhooksApi.update(id, data);
       return res.data.data as Webhook;
     },
@@ -225,7 +254,9 @@ export default function Webhooks() {
                         key={e}
                         className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[10px] font-mono text-muted-foreground"
                       >
-                        {webhookEventLabels[e as keyof typeof webhookEventLabels] ?? e}
+                        {webhookEventLabels[
+                          e as keyof typeof webhookEventLabels
+                        ] ?? e}
                       </span>
                     ))}
                   </div>
@@ -335,21 +366,26 @@ export default function Webhooks() {
             <form
               id="create-webhook-form"
               onSubmit={createForm.form.handleSubmit((values) => {
-                createMutation.mutate(values);
+                createMutation.mutate({
+                  url: values.url.trim(),
+                  events: values.events,
+                  active: values.active,
+                });
               })}
               className="space-y-4"
             >
               <FormField
                 control={createForm.form.control}
                 name="url"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Endpoint URL</FormLabel>
                     <FormControl>
-                      <Input
+                      <TextField
+                        name="url"
                         type="url"
                         placeholder="https://api.example.com/webhooks"
-                        {...field}
+                        autoFocus
                       />
                     </FormControl>
                     <FormMessage />
@@ -359,32 +395,14 @@ export default function Webhooks() {
               <FormField
                 control={createForm.form.control}
                 name="events"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Events</FormLabel>
                     <FormControl>
-                      <div className="mt-2 space-y-1.5 rounded-md border border-border p-3 max-h-60 overflow-y-auto">
-                        {webhookEventOptions.map((e) => (
-                          <label
-                            key={e.value}
-                            className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={field.value.includes(e.value)}
-                              onChange={(ev) => {
-                                const target = ev.target as HTMLInputElement;
-                                const newValue = target.checked
-                                  ? [...field.value, e.value]
-                                  : field.value.filter((v: string) => v !== e.value);
-                                field.onChange(newValue);
-                              }}
-                              className="h-3.5 w-3.5 rounded border-input"
-                            />
-                            <span className="font-mono text-xs">{e.label}</span>
-                          </label>
-                        ))}
-                      </div>
+                      <MultiCheckboxField
+                        name="events"
+                        options={webhookEventOptions}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -398,10 +416,7 @@ export default function Webhooks() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                >
+                <Button type="submit" disabled={createMutation.isPending}>
                   {createMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
@@ -425,9 +440,7 @@ export default function Webhooks() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Webhook</DialogTitle>
-            <DialogDescription>
-              Update webhook configuration
-            </DialogDescription>
+            <DialogDescription>Update webhook configuration</DialogDescription>
           </DialogHeader>
           <Form {...editForm.form}>
             <form
@@ -436,7 +449,11 @@ export default function Webhooks() {
                 if (!editingWebhook) return;
                 editMutation.mutate({
                   id: editingWebhook.id,
-                  data: values,
+                  data: {
+                    url: values.url.trim(),
+                    events: values.events,
+                    active: values.active,
+                  },
                 });
               })}
               className="space-y-4"
@@ -444,14 +461,14 @@ export default function Webhooks() {
               <FormField
                 control={editForm.form.control}
                 name="url"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Endpoint URL</FormLabel>
                     <FormControl>
-                      <Input
+                      <TextField
+                        name="url"
                         type="url"
                         placeholder="https://api.example.com/webhooks"
-                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -461,32 +478,14 @@ export default function Webhooks() {
               <FormField
                 control={editForm.form.control}
                 name="events"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Events</FormLabel>
                     <FormControl>
-                      <div className="mt-2 space-y-1.5 rounded-md border border-border p-3 max-h-60 overflow-y-auto">
-                        {webhookEventOptions.map((e) => (
-                          <label
-                            key={e.value}
-                            className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={field.value.includes(e.value)}
-                              onChange={(ev) => {
-                                const target = ev.target as HTMLInputElement;
-                                const newValue = target.checked
-                                  ? [...field.value, e.value]
-                                  : field.value.filter((v: string) => v !== e.value);
-                                field.onChange(newValue);
-                              }}
-                              className="h-3.5 w-3.5 rounded border-input"
-                            />
-                            <span className="font-mono text-xs">{e.label}</span>
-                          </label>
-                        ))}
-                      </div>
+                      <MultiCheckboxField
+                        name="events"
+                        options={webhookEventOptions}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -495,17 +494,11 @@ export default function Webhooks() {
               <FormField
                 control={editForm.form.control}
                 name="active"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={field.value}
-                        onChange={(e) => field.onChange(e.target.checked)}
-                        className="h-3.5 w-3.5 rounded border-input"
-                      />
-                      <span>Active</span>
-                    </label>
+                    <FormControl>
+                      <CheckboxField name="active" label="Active" />
+                    </FormControl>
                   </FormItem>
                 )}
               />
@@ -517,10 +510,7 @@ export default function Webhooks() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={editMutation.isPending}
-                >
+                <Button type="submit" disabled={editMutation.isPending}>
                   {editMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}

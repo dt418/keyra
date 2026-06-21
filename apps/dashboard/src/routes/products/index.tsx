@@ -1,18 +1,69 @@
-import { useEffect, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { productsApi } from '@keyra/api-client';
-import { Card, Button, Input, Label, PageHeader, Skeleton, StatusBadge, EmptyState, ConfirmDialog } from '@/components/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, TextField, useZodForm } from '@/components/ui/form';
-import { editProductFormSchema, editProductDefaults, createProductFormSchema, createProductDefaults } from '@keyra/shared-validation';
-import { Plus, Loader2, Copy, Key as KeyIcon, Package, Pencil, Trash2, Eye, EyeOff, AlertCircle, Search, CheckCircle2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { errorMessage } from '@/lib/error-message';
-import { formatRelativeTime } from '@/lib/date';
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { productsApi } from "@keyra/api-client";
+import {
+  Card,
+  Button,
+  Input,
+  Label,
+  PageHeader,
+  Skeleton,
+  StatusBadge,
+  EmptyState,
+  ConfirmDialog,
+} from "@/components/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  TextField,
+  TextareaField,
+  useZodForm,
+} from "@/components/ui/form";
+import {
+  editProductFormSchema,
+  editProductDefaults,
+  createProductFormSchema,
+  createProductDefaults,
+} from "@keyra/shared-validation";
+import {
+  Plus,
+  Loader2,
+  Copy,
+  Key as KeyIcon,
+  Package,
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Search,
+  CheckCircle2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { errorMessage } from "@/lib/error-message";
+import { formatRelativeTime } from "@/lib/date";
 
 const PAGE_SIZE = 20;
 
-type ApiProduct = { id: string; name: string; description: string | null; created_at: string; updated_at: string };
+type ApiProduct = {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};
 type ProductWithStatus = ApiProduct & {
   hasApiKey?: boolean;
 };
@@ -44,9 +95,12 @@ function ProductCardSkeleton() {
 export default function Products() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
-  const [search, setSearch] = useState('');
-  const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, string>>({});
-  const [editingProduct, setEditingProduct] = useState<ProductWithStatus | null>(null);
+  const [search, setSearch] = useState("");
+  const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, string>>(
+    {},
+  );
+  const [editingProduct, setEditingProduct] =
+    useState<ProductWithStatus | null>(null);
   const createForm = useZodForm({
     schema: createProductFormSchema,
     defaultValues: createProductDefaults,
@@ -62,15 +116,22 @@ export default function Products() {
     if (editingProduct) {
       editForm.form.reset({
         name: editingProduct.name,
-        description: editingProduct.description || '',
+        description: editingProduct.description || "",
       });
     }
   }, [editingProduct]);
 
-  const { data: productsResponse, isLoading, isFetching } = useQuery({
-    queryKey: ['products', cursor],
+  const {
+    data: productsResponse,
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ["products", cursor],
     queryFn: async () => {
-      const res = await productsApi.list({ limit: PAGE_SIZE, cursor: cursor || undefined });
+      const res = await productsApi.list({
+        limit: PAGE_SIZE,
+        cursor: cursor || undefined,
+      });
       return res.data;
     },
   });
@@ -78,7 +139,7 @@ export default function Products() {
   const products: ProductWithStatus[] = productsResponse?.data || [];
 
   const { data: apiKeyStatuses } = useQuery({
-    queryKey: ['products-api-keys'],
+    queryKey: ["products-api-keys"],
     queryFn: async () => {
       if (!products.length) return {};
       const statuses: Record<string, { hasApiKey: boolean }> = {};
@@ -90,7 +151,7 @@ export default function Products() {
           } catch {
             statuses[p.id] = { hasApiKey: false };
           }
-        })
+        }),
       );
       return statuses;
     },
@@ -103,29 +164,35 @@ export default function Products() {
       return res.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['products-api-keys'] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-api-keys"] });
       setIsCreating(false);
       createForm.form.reset(createProductDefaults);
-      toast.success('Product created');
+      toast.success("Product created");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to create product'));
+      toast.error(errorMessage(err, "Failed to create product"));
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { name: string; description?: string } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { name: string; description?: string };
+    }) => {
       const res = await productsApi.update(id, data);
       return res.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       setEditingProduct(null);
-      toast.success('Product updated');
+      toast.success("Product updated");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to update product'));
+      toast.error(errorMessage(err, "Failed to update product"));
     },
   });
 
@@ -134,13 +201,13 @@ export default function Products() {
       await productsApi.delete(productId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['products-api-keys'] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-api-keys"] });
       setDeleteConfirm(null);
-      toast.success('Product deleted');
+      toast.success("Product deleted");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to delete product'));
+      toast.error(errorMessage(err, "Failed to delete product"));
     },
   });
 
@@ -151,17 +218,19 @@ export default function Products() {
     },
     onSuccess: (data) => {
       setVisibleApiKeys((prev) => ({ ...prev, [data.productId]: data.apiKey }));
-      queryClient.invalidateQueries({ queryKey: ['products-api-keys'] });
-      toast.success('API key generated. Make sure to update your applications.');
+      queryClient.invalidateQueries({ queryKey: ["products-api-keys"] });
+      toast.success(
+        "API key generated. Make sure to update your applications.",
+      );
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, 'Failed to regenerate API key'));
+      toast.error(errorMessage(err, "Failed to regenerate API key"));
     },
   });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard');
+    toast.success("Copied to clipboard");
   };
 
   const toggleApiKeyVisibility = (productId: string) => {
@@ -175,9 +244,10 @@ export default function Products() {
     });
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    (p.description || '').toLowerCase().includes(search.toLowerCase())
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.description || "").toLowerCase().includes(search.toLowerCase()),
   );
 
   const hasMore = productsResponse?.pagination?.has_more || false;
@@ -210,7 +280,9 @@ export default function Products() {
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
+          {[...Array(8)].map((_, i) => (
+            <ProductCardSkeleton key={i} />
+          ))}
         </div>
       ) : filteredProducts.length > 0 ? (
         <>
@@ -219,19 +291,26 @@ export default function Products() {
               const apiKeyStatus = apiKeyStatuses?.[product.id];
               const hasApiKey = apiKeyStatus?.hasApiKey ?? false;
               const visibleKey = visibleApiKeys[product.id];
-              const isRegenerating = regenerateKeyMutation.isPending && regenerateKeyMutation.variables === product.id;
+              const isRegenerating =
+                regenerateKeyMutation.isPending &&
+                regenerateKeyMutation.variables === product.id;
 
               return (
-                <Card key={product.id} className="group p-5 transition-colors hover:border-primary/50">
+                <Card
+                  key={product.id}
+                  className="group p-5 transition-colors hover:border-primary/50"
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                         <Package className="h-5 w-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-sm truncate">{product.name}</h3>
+                        <h3 className="font-semibold text-sm truncate">
+                          {product.name}
+                        </h3>
                         <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                          {product.description || 'No description'}
+                          {product.description || "No description"}
                         </p>
                       </div>
                     </div>
@@ -250,13 +329,27 @@ export default function Products() {
 
                   {visibleKey && (
                     <div className="mt-4 space-y-2 rounded-md border border-border bg-muted/30 p-2">
-                      <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">API Key</Label>
+                      <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                        API Key
+                      </Label>
                       <div className="flex items-center gap-1">
-                        <code className="flex-1 text-[10px] font-mono truncate">{visibleKey}</code>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleApiKeyVisibility(product.id)}>
+                        <code className="flex-1 text-[10px] font-mono truncate">
+                          {visibleKey}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => toggleApiKeyVisibility(product.id)}
+                        >
                           <EyeOff className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(visibleKey)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => copyToClipboard(visibleKey)}
+                        >
                           <Copy className="h-3 w-3" />
                         </Button>
                       </div>
@@ -265,7 +358,9 @@ export default function Products() {
 
                   <div className="mt-4 pt-3 border-t border-border space-y-2">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Created {formatRelativeTime(product.created_at)}</span>
+                      <span>
+                        Created {formatRelativeTime(product.created_at)}
+                      </span>
                     </div>
                     <div className="flex gap-1">
                       {hasApiKey && !visibleKey && (
@@ -273,14 +368,20 @@ export default function Products() {
                           variant="outline"
                           size="sm"
                           className="flex-1 h-8"
-                          onClick={() => regenerateKeyMutation.mutate(product.id)}
+                          onClick={() =>
+                            regenerateKeyMutation.mutate(product.id)
+                          }
                           disabled={regenerateKeyMutation.isPending}
                         >
-                          {isRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+                          {isRegenerating ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
                         </Button>
                       )}
                       <Button
-                        variant={hasApiKey ? 'secondary' : 'default'}
+                        variant={hasApiKey ? "secondary" : "default"}
                         size="sm"
                         className="flex-1 h-8"
                         onClick={() => regenerateKeyMutation.mutate(product.id)}
@@ -324,12 +425,24 @@ export default function Products() {
 
           {products.length > 0 && (
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Showing {products.length} products{hasMore ? '+' : ''}</span>
+              <span>
+                Showing {products.length} products{hasMore ? "+" : ""}
+              </span>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCursor(null)} disabled={!cursor || isFetching}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCursor(null)}
+                  disabled={!cursor || isFetching}
+                >
                   Previous
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => currentCursor && setCursor(currentCursor)} disabled={!hasMore || isFetching}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => currentCursor && setCursor(currentCursor)}
+                  disabled={!hasMore || isFetching}
+                >
                   Next
                 </Button>
               </div>
@@ -339,9 +452,21 @@ export default function Products() {
       ) : (
         <EmptyState
           icon={Package}
-          title={search ? 'No products match' : 'No products yet'}
-          description={search ? 'Try a different search term' : 'Create your first product to start generating license keys'}
-          primaryAction={!search ? { label: 'Create product', onClick: () => setIsCreating(true), icon: Plus } : undefined}
+          title={search ? "No products match" : "No products yet"}
+          description={
+            search
+              ? "Try a different search term"
+              : "Create your first product to start generating license keys"
+          }
+          primaryAction={
+            !search
+              ? {
+                  label: "Create product",
+                  onClick: () => setIsCreating(true),
+                  icon: Plus,
+                }
+              : undefined
+          }
         />
       )}
 
@@ -357,7 +482,9 @@ export default function Products() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Product</DialogTitle>
-            <DialogDescription>Add a new product to generate license keys</DialogDescription>
+            <DialogDescription>
+              Add a new product to generate license keys
+            </DialogDescription>
           </DialogHeader>
           <Form {...createForm.form}>
             <form
@@ -373,11 +500,15 @@ export default function Products() {
               <FormField
                 control={createForm.form.control}
                 name="name"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Product Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="My Awesome App" autoFocus {...field} />
+                      <TextField
+                        name="name"
+                        placeholder="My Awesome App"
+                        autoFocus
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -386,20 +517,31 @@ export default function Products() {
               <FormField
                 control={createForm.form.control}
                 name="description"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Description (optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Product description" {...field} value={field.value || ''} />
+                      <TextareaField
+                        name="description"
+                        placeholder="Product description"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreating(false)}
+                >
+                  Cancel
+                </Button>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {createMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Create
                 </Button>
               </DialogFooter>
@@ -444,7 +586,11 @@ export default function Products() {
                   <FormItem>
                     <FormLabel>Product Name</FormLabel>
                     <FormControl>
-                      <TextField name="name" placeholder="My Awesome App" autoFocus />
+                      <TextField
+                        name="name"
+                        placeholder="My Awesome App"
+                        autoFocus
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -457,18 +603,27 @@ export default function Products() {
                   <FormItem>
                     <FormLabel>Description (optional)</FormLabel>
                     <FormControl>
-                      <TextField name="description" placeholder="Product description" />
+                      <TextField
+                        name="description"
+                        placeholder="Product description"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditingProduct(null)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingProduct(null)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {updateMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Save Changes
                 </Button>
               </DialogFooter>
