@@ -116,6 +116,17 @@ Protected endpoints require `Authorization: Bearer <access_token>` header.
 
 **License statuses:** `active`, `revoked`, `expired`
 
+**License key format:** Signed keys have the shape `raw.tag` where:
+
+- `raw` — four 5-character segments drawn from a 36-symbol alphabet (`A-Z`, `0-9`), dash-joined: `XXXXX-XXXXX-XXXXX-XXXXX`.
+- `tag` — first 12 bytes of `HMAC-SHA256(raw, LICENSE_HMAC_SECRET)`, each byte reduced modulo 36 and mapped to the same alphabet.
+
+Example: `K3P9Q-R2T8V-M7N1X-W4Y6L.B5F2H9D8C0E1`
+
+Generation: `POST /licenses` signs new keys with the API's `LICENSE_HMAC_SECRET`. Verification: `POST /activate` and `POST /verify` recompute the tag and reject mismatches.
+
+Legacy keys (4 dash-joined segments with no dot) are no longer accepted by the verifier — callers must migrate to the signed `raw.tag` form.
+
 ### Activations & Devices
 
 | Method | Endpoint                    | Description                      | Auth    |
