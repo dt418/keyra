@@ -34,9 +34,11 @@ test.describe('Webhooks CRUD', () => {
 
   test.afterAll(async ({ request }) => {
     for (const id of createdWebhookIds) {
-      await request.delete(`webhooks/${id}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }).catch(() => undefined);
+      await request
+        .delete(`webhooks/${id}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        .catch(() => undefined);
     }
   });
 

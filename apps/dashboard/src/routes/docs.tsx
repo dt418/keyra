@@ -11,25 +11,16 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "@/components/ui";
-import {
-  Book,
-  Code2,
-  Key,
-  Copy,
-  Check,
-  Package,
-  Terminal,
-  Zap,
-} from "lucide-react";
-import { toast } from "sonner";
-import { useState } from "react";
+} from '@/components/ui';
+import { Book, Code2, Key, Copy, Check, Package, Terminal, Zap } from 'lucide-react';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 const installCode = {
-  npm: "npm install @keyra-sdk/sdk-js",
-  pnpm: "pnpm add @keyra-sdk/sdk-js",
-  yarn: "yarn add @keyra-sdk/sdk-js",
-  bun: "bun add @keyra-sdk/sdk-js",
+  npm: 'npm install @keyra-sdk/sdk-js',
+  pnpm: 'pnpm add @keyra-sdk/sdk-js',
+  yarn: 'yarn add @keyra-sdk/sdk-js',
+  bun: 'bun add @keyra-sdk/sdk-js',
 };
 
 const initCode = `import { createClient } from '@keyra-sdk/sdk-js';
@@ -62,19 +53,13 @@ if (deviceToken) {
   await keyra.clearStoredDeviceToken();
 }`;
 
-function CodeBlock({
-  code,
-  language = "typescript",
-}: {
-  code: string;
-  language?: string;
-}) {
+function CodeBlock({ code, language = 'typescript' }: { code: string; language?: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
     setCopied(true);
-    toast.success("Copied to clipboard");
+    toast.success('Copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -82,17 +67,8 @@ function CodeBlock({
     <div className="relative rounded-md border border-border bg-muted/50 overflow-hidden">
       <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-1.5">
         <span className="text-xs text-muted-foreground">{language}</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={handleCopy}
-        >
-          {copied ? (
-            <Check className="h-3 w-3" />
-          ) : (
-            <Copy className="h-3 w-3" />
-          )}
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}>
+          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
         </Button>
       </div>
       <pre className="overflow-x-auto p-3 text-xs">
@@ -149,9 +125,7 @@ export default function Docs() {
               <Key className="h-4 w-4" />
             </div>
             <CardTitle>2. Configure</CardTitle>
-            <CardDescription>
-              Initialize the client with your API key
-            </CardDescription>
+            <CardDescription>Initialize the client with your API key</CardDescription>
           </CardHeader>
           <CardContent>
             <CodeBlock code={initCode} />
@@ -196,52 +170,50 @@ export default function Docs() {
             <Terminal className="h-4 w-4 text-muted-foreground" />
             <CardTitle>API Reference</CardTitle>
           </div>
-          <CardDescription>
-            Complete API documentation for all endpoints
-          </CardDescription>
+          <CardDescription>Complete API documentation for all endpoints</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             {[
               {
-                method: "POST",
-                endpoint: "/api/v1/auth/register",
-                desc: "Register a new user",
+                method: 'POST',
+                endpoint: '/api/v1/auth/register',
+                desc: 'Register a new user',
               },
               {
-                method: "POST",
-                endpoint: "/api/v1/auth/login",
-                desc: "Sign in and get tokens",
+                method: 'POST',
+                endpoint: '/api/v1/auth/login',
+                desc: 'Sign in and get tokens',
               },
               {
-                method: "POST",
-                endpoint: "/api/v1/products",
-                desc: "Create a new product",
+                method: 'POST',
+                endpoint: '/api/v1/products',
+                desc: 'Create a new product',
               },
               {
-                method: "GET",
-                endpoint: "/api/v1/products",
-                desc: "List products",
+                method: 'GET',
+                endpoint: '/api/v1/products',
+                desc: 'List products',
               },
               {
-                method: "POST",
-                endpoint: "/api/v1/verify",
-                desc: "Verify a license key",
+                method: 'POST',
+                endpoint: '/api/v1/verify',
+                desc: 'Verify a license key',
               },
               {
-                method: "POST",
-                endpoint: "/api/v1/activate",
-                desc: "Activate a license on a device",
+                method: 'POST',
+                endpoint: '/api/v1/activate',
+                desc: 'Activate a license on a device',
               },
               {
-                method: "DELETE",
-                endpoint: "/api/v1/devices/:id",
-                desc: "Deactivate a device",
+                method: 'DELETE',
+                endpoint: '/api/v1/devices/:id',
+                desc: 'Deactivate a device',
               },
               {
-                method: "POST",
-                endpoint: "/api/v1/licenses/:id/revoke",
-                desc: "Revoke a license",
+                method: 'POST',
+                endpoint: '/api/v1/licenses/:id/revoke',
+                desc: 'Revoke a license',
               },
             ].map((route) => (
               <div
@@ -250,21 +222,19 @@ export default function Docs() {
               >
                 <span
                   className={`rounded px-2 py-0.5 text-xs font-semibold ${
-                    route.method === "GET"
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                      : route.method === "POST"
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                        : route.method === "DELETE"
-                          ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
-                          : "bg-slate-100 text-slate-700"
+                    route.method === 'GET'
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : route.method === 'POST'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : route.method === 'DELETE'
+                          ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                          : 'bg-slate-100 text-slate-700'
                   }`}
                 >
                   {route.method}
                 </span>
                 <code className="font-mono text-xs">{route.endpoint}</code>
-                <span className="text-xs text-muted-foreground ml-auto">
-                  {route.desc}
-                </span>
+                <span className="text-xs text-muted-foreground ml-auto">{route.desc}</span>
               </div>
             ))}
           </div>
