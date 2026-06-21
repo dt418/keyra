@@ -7,6 +7,7 @@ import { AppError } from "../../middleware/error";
 import { logAuditEvent, extractRequestInfo } from "../../lib/audit";
 import { issueVerificationToken } from "./verify-email";
 import { sendEmail } from "../../lib/email";
+import { resolveAppUrl } from "../../lib/app-url";
 import { verifyEmailTemplate } from "../../lib/email-templates/verify";
 
 interface RegisterBody {
@@ -49,7 +50,7 @@ export async function registerHandler(c: Context) {
     c.env.SESSIONS,
     userId,
   );
-  const appUrl = c.env.APP_URL || "http://localhost:5173";
+  const appUrl = await resolveAppUrl(c.env);
   const verifyUrl = `${appUrl}/verify-email/${verificationToken}`;
   const template = verifyEmailTemplate({
     verifyUrl,
