@@ -8,6 +8,7 @@ import { ZodError } from 'zod';
  * - NOT_FOUND: Resource not found (404)
  * - VALIDATION_ERROR: Request validation failed (400)
  * - CONFLICT: Resource already exists (409)
+ * - INVALID_LICENSE_KEY: License key failed HMAC signature check (400)
  * - INVALID_PROVIDER: OAuth provider not supported
  * - INVALID_STATE: OAuth state validation failed
  * - TOKEN_EXCHANGE_FAILED: OAuth token exchange failed

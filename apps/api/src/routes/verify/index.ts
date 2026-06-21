@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { verifyLicenseSchema } from "@keyra/shared-validation";
 import { AppError } from "../../middleware/error";
 import { hashApiKey } from "../../lib/password";
+import { verifyLicenseHmac } from "../../lib/license";
 
 export async function verifyLicenseHandler(c: Context) {
   const body = await c.req.json();
@@ -11,6 +12,15 @@ export async function verifyLicenseHandler(c: Context) {
   }
 
   const { license_key, device_id } = parsed.data;
+
+  const hmacOk = await verifyLicenseHmac(license_key, c.env.LICENSE_HMAC_SECRET);
+  if (hmacOk === false) {
+    throw new AppError(
+      "INVALID_LICENSE_KEY",
+      "License key signature mismatch",
+      400,
+    );
+  }
 
   const keyHash = await hashApiKey(license_key);
 

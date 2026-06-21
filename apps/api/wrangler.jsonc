@@ -26,7 +26,8 @@
     { "tag": "v1", "new_sqlite_classes": ["RateLimiter"] }
   ],
   "vars": {
-    "ENVIRONMENT": "${ENVIRONMENT}"
+    "ENVIRONMENT": "${ENVIRONMENT}",
+    "LICENSE_HMAC_SECRET": "dev-license-secret-change-me"
   },
   "observability": {
     "enabled": true

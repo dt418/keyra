@@ -17,6 +17,7 @@ const mockEnv = {
   DB: mockDB,
   JWT_SECRET: "test-secret",
   JWT_REFRESH_SECRET: "test-refresh",
+  LICENSE_HMAC_SECRET: "test-license-secret",
 };
 
 function createMockContext(overrides: Record<string, unknown> = {}) {
@@ -137,7 +138,7 @@ describe("createLicenseHandler", () => {
           type: "professional",
           status: "active",
           max_devices: 3,
-          key: expect.stringMatching(/^[A-Z0-9-]+$/),
+          key: expect.stringMatching(/^[A-Z0-9.-]+$/),
         }),
       }),
       201,
